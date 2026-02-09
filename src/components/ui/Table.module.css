@@ -1,0 +1,37 @@
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.header {
+    background: var(--color-gray-50);
+}
+
+.row {
+    border-bottom: 1px solid var(--color-border);
+    transition: background var(--transition);
+}
+
+.row:hover {
+    background: var(--color-gray-50);
+}
+
+.head {
+    padding: var(--spacing-3) var(--spacing-4);
+    text-align: left;
+    font-weight: 600;
+    color: var(--color-text-light);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.cell {
+    padding: var(--spacing-4);
+    color: var(--color-text);
+}
+
+.body .row:last-child {
+    border-bottom: none;
+}

@@ -1,0 +1,300 @@
+.container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    height: calc(100vh - 120px);
+    padding: 24px;
+}
+
+@media (max-width: 1024px) {
+    .container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+.panel {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panelHeader {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+
+.panelTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.searchBox {
+    margin-top: 16px;
+    position: relative;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 12px 12px 12px 42px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.panelContent {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.memberItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.memberItem:hover {
+    background: #f9fafb;
+}
+
+.memberInfo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.memberAvatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.memberName {
+    font-weight: 600;
+    color: #111827;
+    font-size: 15px;
+}
+
+.memberMeta {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+.memberPoints {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.pointsPositive {
+    color: #10b981;
+}
+
+.pointsNegative {
+    color: #ef4444;
+}
+
+/* History Table */
+.historyTable {
+    width: 100%;
+    font-size: 14px;
+}
+
+.historyHeader {
+    display: grid;
+    grid-template-columns: 2fr 3fr 1fr 50px;
+    gap: 12px;
+    padding: 12px 24px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.historyRow {
+    display: grid;
+    grid-template-columns: 2fr 3fr 1fr 50px;
+    gap: 12px;
+    padding: 14px 24px;
+    border-bottom: 1px solid #f3f4f6;
+    align-items: center;
+}
+
+.historyRow:hover {
+    background: #fafafa;
+}
+
+.historyRowDeleted {
+    opacity: 0.5;
+    background: #fef2f2;
+}
+
+.historyMember {
+    font-weight: 500;
+    color: #111827;
+}
+
+.historyTime {
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.historyDesc {
+    color: #374151;
+}
+
+.deleteBtn {
+    background: none;
+    border: none;
+    color: #d1d5db;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+
+.deleteBtn:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+.emptyState {
+    padding: 48px 24px;
+    text-align: center;
+    color: #9ca3af;
+}
+
+/* Modal Styles */
+.modalTypeGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 24px;
+}
+
+.typeCard {
+    padding: 32px 24px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+}
+
+.typeCardAchievement {
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+}
+
+.typeCardAchievement:hover {
+    border-color: #10b981;
+    background: #d1fae5;
+}
+
+.typeCardViolation {
+    background: #fef2f2;
+    border-color: #fecaca;
+}
+
+.typeCardViolation:hover {
+    border-color: #ef4444;
+    background: #fee2e2;
+}
+
+.typeIcon {
+    font-size: 36px;
+    margin-bottom: 12px;
+}
+
+.typeLabel {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.rulesList {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.ruleItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ruleItem:hover {
+    background: #f9fafb;
+}
+
+.ruleItemAchievement:hover {
+    background: #ecfdf5;
+}
+
+.ruleItemViolation:hover {
+    background: #fef2f2;
+}
+
+.ruleName {
+    font-weight: 500;
+    color: #111827;
+}
+
+.ruleCode {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.rulePoints {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.modalFooter {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 12px;
+}

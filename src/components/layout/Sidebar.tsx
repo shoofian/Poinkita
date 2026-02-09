@@ -1,0 +1,81 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe } from 'react-icons/fa';
+import { useLanguage } from '@/lib/context/LanguageContext';
+import { useStore } from '@/lib/context/StoreContext';
+import styles from './Sidebar.module.css';
+
+export const Sidebar = () => {
+    const pathname = usePathname();
+    const router = useRouter();
+    const { t, language, setLanguage } = useLanguage();
+    const { currentUser, setCurrentUser } = useStore();
+
+    const MENU_ITEMS = [
+        { label: t.sidebar.dashboard, href: '/dashboard', icon: FaHome },
+        { label: t.sidebar.transactions, href: '/dashboard/transactions', icon: FaChartBar },
+        { label: t.sidebar.members, href: '/dashboard/members', icon: FaUsers },
+        { label: t.sidebar.rules, href: '/dashboard/rules', icon: FaUserCog },
+        { label: t.sidebar.recap, href: '/dashboard/recap', icon: FaClipboardList },
+    ];
+
+    const toggleLanguage = () => {
+        setLanguage(language === 'en' ? 'id' : 'en');
+    };
+
+    const handleLogout = () => {
+        setCurrentUser(null);
+        router.push('/login');
+    };
+
+    return (
+        <aside className={styles.sidebar}>
+            <div className={styles.logo}>
+                <span className={styles.logoText}>Poinkita</span>
+            </div>
+
+            <nav className={styles.nav}>
+                {MENU_ITEMS.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    return (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={`${styles.navLink} ${isActive ? styles.navLinkActive : ''}`}
+                        >
+                            <Icon className={styles.navIcon} />
+                            <span>{item.label}</span>
+                        </Link>
+                    );
+                })}
+            </nav>
+
+            <div className={styles.footer}>
+                <div className={styles.userCard}>
+                    <div className={styles.userAvatar}>
+                        {currentUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                    </div>
+                    <div className={styles.userDetails}>
+                        <span className={styles.userName}>{currentUser?.name || 'User'}</span>
+                        <span className={styles.userRole}>{currentUser?.role || 'Guest'}</span>
+                    </div>
+                </div>
+
+                <div className={styles.actions}>
+                    <button onClick={toggleLanguage} className={styles.actionBtn}>
+                        <FaGlobe />
+                        <span>{language === 'en' ? 'ID' : 'EN'}</span>
+                    </button>
+                    <button onClick={handleLogout} className={`${styles.actionBtn} ${styles.logoutBtn}`}>
+                        <FaSignOutAlt />
+                        <span>{t.common.logout}</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    );
+};
