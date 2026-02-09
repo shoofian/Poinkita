@@ -1,17 +1,88 @@
 .container {
     display: flex;
     min-height: 100vh;
+    position: relative;
 }
 
 .main {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 260px;
+    /* Matched sidebar width */
     background: #f9fafb;
     min-height: 100vh;
+    width: 100%;
+    padding: 24px;
+    transition: margin-left 0.3s ease;
+}
+
+.mobileHeader {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 30;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+}
+
+.hamburgerBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #374151;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.hamburgerBtn:hover {
+    background: #f3f4f6;
+}
+
+.mobileLogo {
+    font-weight: 700;
+    color: #3b82f6;
+    font-size: 18px;
+}
+
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 35;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
 }
 
 @media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+    }
+
     .main {
         margin-left: 0;
+        margin-top: 60px;
+        /* Height of mobile header */
+    }
+
+    .mobileHeader {
+        display: flex;
     }
 }

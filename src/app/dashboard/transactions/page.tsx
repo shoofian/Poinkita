@@ -5,12 +5,12 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { FaSearch, FaHistory, FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
+import { FaSearch, FaHistory, FaTrash } from 'react-icons/fa';
 import { Member, Rule } from '@/lib/store';
 import styles from './page.module.css';
 
 export default function TransactionsPage() {
-    const { members, rules, transactions, auditLogs, addTransaction, deleteTransaction, currentUser, users } = useStore();
+    const { members, rules, transactions, auditLogs, addTransaction, deleteTransaction, currentUser } = useStore();
     const { t } = useLanguage();
 
     const [memberSearch, setMemberSearch] = useState('');

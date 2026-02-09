@@ -1,6 +1,4 @@
 import React, { useEffect } from 'react';
-import clsx from 'clsx';
-import { Button } from './Button';
 import styles from './Modal.module.css';
 
 interface ModalProps {

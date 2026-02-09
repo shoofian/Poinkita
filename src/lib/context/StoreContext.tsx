@@ -3,6 +3,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { INITIAL_MEMBERS, INITIAL_RULES, INITIAL_USERS, Member, Rule, Transaction, User, AuditLog } from '@/lib/store';
 
+/* eslint-disable react-hooks/set-state-in-effect */
+
 interface StoreContextType {
     members: Member[];
     rules: Rule[];
@@ -46,7 +48,6 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (storedAuditLogs) setAuditLogs(JSON.parse(storedAuditLogs));
         if (storedUsers) setUsers(JSON.parse(storedUsers));
         if (storedCurrentUser) setCurrentUser(JSON.parse(storedCurrentUser));
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Save to localStorage on change

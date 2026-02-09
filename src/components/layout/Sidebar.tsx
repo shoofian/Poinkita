@@ -3,12 +3,17 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe } from 'react-icons/fa';
+import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe, FaTimes } from 'react-icons/fa';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useStore } from '@/lib/context/StoreContext';
 import styles from './Sidebar.module.css';
 
-export const Sidebar = () => {
+interface SidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const pathname = usePathname();
     const router = useRouter();
     const { t, language, setLanguage } = useLanguage();
@@ -32,9 +37,12 @@ export const Sidebar = () => {
     };
 
     return (
-        <aside className={styles.sidebar}>
+        <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
             <div className={styles.logo}>
                 <span className={styles.logoText}>Poinkita</span>
+                <button className={styles.closeBtn} onClick={onClose}>
+                    <FaTimes />
+                </button>
             </div>
 
             <nav className={styles.nav}>
@@ -46,6 +54,7 @@ export const Sidebar = () => {
                             key={item.href}
                             href={item.href}
                             className={`${styles.navLink} ${isActive ? styles.navLinkActive : ''}`}
+                            onClick={onClose} // Close sidebar on navigation on mobile
                         >
                             <Icon className={styles.navIcon} />
                             <span>{item.label}</span>

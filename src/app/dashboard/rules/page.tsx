@@ -2,13 +2,14 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Modal } from '@/components/ui/Modal';
 import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { Rule } from '@/lib/store';
-import { FaPlus, FaTrash, FaEdit } from 'react-icons/fa';
+import { FaPlus, FaTrash } from 'react-icons/fa';
 import clsx from 'clsx';
 
 export default function RulesPage() {
@@ -41,56 +42,59 @@ export default function RulesPage() {
 
     return (
         <div className="flex flex-col gap-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">{t.rules.title}</h1>
-                <Button onClick={() => setIsModalOpen(true)}>
-                    <FaPlus /> {t.rules.addRule}
-                </Button>
-            </div>
-
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>{t.rules.code}</TableHead>
-                        <TableHead>{t.rules.description}</TableHead>
-                        <TableHead>{t.rules.type}</TableHead>
-                        <TableHead>{t.rules.points}</TableHead>
-                        <TableHead>{t.common.actions}</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {rules.map((rule) => {
-                        const typeLabel = rule.type === 'ACHIEVEMENT' ? t.rules.achievement : t.rules.violation;
-                        return (
-                            <TableRow key={rule.id}>
-                                <TableCell className="font-medium">{rule.id}</TableCell>
-                                <TableCell>{rule.description}</TableCell>
-                                <TableCell>
-                                    <span className={clsx(
-                                        "px-2 py-1 rounded text-xs font-bold",
-                                        rule.type === 'ACHIEVEMENT' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                                    )} style={{
-                                        color: rule.type === 'ACHIEVEMENT' ? 'var(--color-success)' : 'var(--color-danger)',
-                                        background: rule.type === 'ACHIEVEMENT' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
-                                        padding: '0.25rem 0.5rem',
-                                        borderRadius: 'var(--radius-sm)'
-                                    }}>
-                                        {typeLabel}
-                                    </span>
-                                </TableCell>
-                                <TableCell style={{ fontWeight: 600, color: rule.points > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                                    {rule.points > 0 ? `+${rule.points}` : rule.points}
-                                </TableCell>
-                                <TableCell>
-                                    <Button variant="ghost" className="p-2 text-danger" onClick={() => handleDelete(rule.id)}>
-                                        <FaTrash />
-                                    </Button>
-                                </TableCell>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>{t.rules.title}</CardTitle>
+                    <Button onClick={() => setIsModalOpen(true)}>
+                        <FaPlus /> {t.rules.addRule}
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>{t.rules.code}</TableHead>
+                                <TableHead>{t.rules.description}</TableHead>
+                                <TableHead>{t.rules.type}</TableHead>
+                                <TableHead>{t.rules.points}</TableHead>
+                                <TableHead>{t.common.actions}</TableHead>
                             </TableRow>
-                        )
-                    })}
-                </TableBody>
-            </Table>
+                        </TableHeader>
+                        <TableBody>
+                            {rules.map((rule) => {
+                                const typeLabel = rule.type === 'ACHIEVEMENT' ? t.rules.achievement : t.rules.violation;
+                                return (
+                                    <TableRow key={rule.id}>
+                                        <TableCell className="font-medium">{rule.id}</TableCell>
+                                        <TableCell>{rule.description}</TableCell>
+                                        <TableCell>
+                                            <span className={clsx(
+                                                "px-2 py-1 rounded text-xs font-bold",
+                                                rule.type === 'ACHIEVEMENT' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                                            )} style={{
+                                                color: rule.type === 'ACHIEVEMENT' ? 'var(--color-success)' : 'var(--color-danger)',
+                                                background: rule.type === 'ACHIEVEMENT' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: 'var(--radius-sm)'
+                                            }}>
+                                                {typeLabel}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell style={{ fontWeight: 600, color: rule.points > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                                            {rule.points > 0 ? `+${rule.points}` : rule.points}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button variant="ghost" className="p-2 text-danger" onClick={() => handleDelete(rule.id)}>
+                                                <FaTrash />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )
+                            })}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
             <Modal
                 isOpen={isModalOpen}

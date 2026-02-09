@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
-import { FaDownload, FaFilter } from 'react-icons/fa';
+import { FaDownload } from 'react-icons/fa';
 import clsx from 'clsx';
 
 export default function RecapPage() {

@@ -18,6 +18,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     useEffect(() => {
         const storedLang = localStorage.getItem('language') as Language;
+        // eslint-disable-next-line
         if (storedLang) setLanguage(storedLang);
     }, []);
 
