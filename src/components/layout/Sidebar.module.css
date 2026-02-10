@@ -85,6 +85,11 @@
     background: #f9fafb;
 }
 
+.userCardLink {
+    text-decoration: none;
+    display: block;
+}
+
 .userCard {
     display: flex;
     align-items: center;
@@ -94,6 +99,15 @@
     border: 1px solid #e5e7eb;
     border-radius: 10px;
     margin-bottom: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.userCard:hover {
+    background: #f8fafc;
+    border-color: #3b82f633;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transform: translateY(-1px);
 }
 
 .userAvatar {

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe, FaTimes } from 'react-icons/fa';
+import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe, FaTimes, FaArchive } from 'react-icons/fa';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useStore } from '@/lib/context/StoreContext';
 import styles from './Sidebar.module.css';
@@ -19,13 +19,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const { t, language, setLanguage } = useLanguage();
     const { currentUser, setCurrentUser } = useStore();
 
-    const MENU_ITEMS = [
+    const allMenuItems = [
         { label: t.sidebar.dashboard, href: '/dashboard', icon: FaHome },
         { label: t.sidebar.transactions, href: '/dashboard/transactions', icon: FaChartBar },
         { label: t.sidebar.members, href: '/dashboard/members', icon: FaUsers },
         { label: t.sidebar.rules, href: '/dashboard/rules', icon: FaUserCog },
         { label: t.sidebar.recap, href: '/dashboard/recap', icon: FaClipboardList },
+        { label: t.sidebar.archive, href: '/dashboard/archive', icon: FaArchive },
     ];
+
+    const MENU_ITEMS = currentUser?.role === 'ADMIN'
+        ? allMenuItems
+        : allMenuItems.filter(item => item.href === '/dashboard/transactions');
 
     const toggleLanguage = () => {
         setLanguage(language === 'en' ? 'id' : 'en');
@@ -64,15 +69,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             </nav>
 
             <div className={styles.footer}>
-                <div className={styles.userCard}>
-                    <div className={styles.userAvatar}>
-                        {currentUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                <Link href="/dashboard/profile" className={styles.userCardLink} onClick={onClose}>
+                    <div className={styles.userCard}>
+                        <div className={styles.userAvatar}>
+                            {currentUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
+                        <div className={styles.userDetails}>
+                            <span className={styles.userName}>{currentUser?.name || 'User'}</span>
+                            <span className={styles.userRole}>{currentUser?.role || 'Guest'}</span>
+                        </div>
                     </div>
-                    <div className={styles.userDetails}>
-                        <span className={styles.userName}>{currentUser?.name || 'User'}</span>
-                        <span className={styles.userRole}>{currentUser?.role || 'Guest'}</span>
-                    </div>
-                </div>
+                </Link>
 
                 <div className={styles.actions}>
                     <button onClick={toggleLanguage} className={styles.actionBtn}>

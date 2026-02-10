@@ -8,42 +8,50 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Modal } from '@/components/ui/Modal';
 import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
+import { useDialog } from '@/components/ui/ConfirmDialog';
 import { Rule } from '@/lib/store';
 import { FaPlus, FaTrash } from 'react-icons/fa';
 import clsx from 'clsx';
 
 export default function RulesPage() {
-    const { rules, addRule, deleteRule } = useStore();
+    const { rules, addRule, deleteRule, generateId } = useStore();
     const { t } = useLanguage();
+    const { confirm } = useDialog();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newRule, setNewRule] = useState<Partial<Rule>>({ description: '', points: 0, type: 'VIOLATION' });
 
     const handleAddRule = () => {
         if (!newRule.description || !newRule.points) return;
 
-        const id = 'R' + (rules.length + 1).toString().padStart(3, '0');
-
         addRule({
-            id,
+            id: generateId('RUL', newRule.points && newRule.points > 0 ? 'ACH' : 'VIO'),
             description: newRule.description,
             points: Number(newRule.points),
-            type: newRule.points > 0 ? 'ACHIEVEMENT' : 'VIOLATION'
+            type: newRule.points && newRule.points > 0 ? 'ACHIEVEMENT' : 'VIOLATION'
         } as Rule);
 
         setIsModalOpen(false);
         setNewRule({ description: '', points: 0, type: 'VIOLATION' });
     };
 
-    const handleDelete = (id: string) => {
-        if (confirm(t.rules.deleteConfirm)) {
+    const handleDelete = async (id: string) => {
+        const ok = await confirm({
+            title: t.rules.deleteConfirm,
+            message: "This action will permanently delete this rule and cannot be undone.",
+            variant: 'danger',
+            confirmLabel: t.common.delete,
+            cancelLabel: t.common.cancel
+        });
+
+        if (ok) {
             deleteRule(id);
         }
     };
 
     return (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <CardTitle>{t.rules.title}</CardTitle>
                     <Button onClick={() => setIsModalOpen(true)}>
                         <FaPlus /> {t.rules.addRule}
@@ -107,7 +115,7 @@ export default function RulesPage() {
                     </>
                 }
             >
-                <div className="flex flex-col gap-4" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
                     <Input
                         label={t.rules.description}
                         placeholder="e.g. Broken Window"

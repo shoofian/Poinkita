@@ -32,8 +32,35 @@
     box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
-.input::placeholder {
+.wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.inputWithIcon {
+    padding-right: 42px !important;
+}
+
+.toggleBtn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
     color: var(--color-gray-400);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    z-index: 1;
+}
+
+.toggleBtn:hover {
+    color: var(--color-primary);
+    background: var(--color-gray-100);
 }
 
 .error {

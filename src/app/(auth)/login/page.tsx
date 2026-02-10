@@ -72,9 +72,6 @@ export default function LoginPage() {
                         <Button type="submit" className="w-full" isLoading={isLoading} style={{ width: '100%' }}>
                             {t.auth.signIn}
                         </Button>
-                        <div className="text-center text-sm">
-                            {t.auth.alreadyHaveAccount} <Link href="/register" className="text-blue-500 hover:underline" style={{ color: 'var(--color-primary)' }}>{t.auth.createAccount}</Link>
-                        </div>
                     </CardFooter>
                 </form>
             </Card>

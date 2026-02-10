@@ -5,13 +5,113 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { useDialog } from '@/components/ui/ConfirmDialog';
 import { FaSearch, FaHistory, FaTrash } from 'react-icons/fa';
 import { Member, Rule } from '@/lib/store';
 import styles from './page.module.css';
 
+// Reusable history modal content
+function MemberHistoryContent({ memberLogs, t, users }: { memberLogs: { id: string; action: string; points: number; details: string; timestamp: string; contributorId: string }[]; t: ReturnType<typeof import('@/lib/context/LanguageContext').useLanguage>['t']; users: { id: string; name: string }[] }) {
+    if (memberLogs.length === 0) {
+        return (
+            <div style={{
+                textAlign: 'center',
+                padding: '2rem 1rem',
+                color: 'var(--color-text-muted)',
+                fontSize: '0.9rem'
+            }}>
+                {t.members.noHistory}
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {memberLogs.map((log) => {
+                const isCreate = log.action === 'CREATE';
+                const isPositivePoints = log.points > 0;
+
+                return (
+                    <div
+                        key={log.id}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '0.75rem',
+                            padding: '0.875rem 1rem',
+                            borderRadius: 'var(--radius-md)',
+                            border: '1px solid var(--color-border)',
+                            background: isCreate ? 'var(--color-white)' : '#fef2f2',
+                        }}
+                    >
+                        <div style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            marginTop: '6px',
+                            flexShrink: 0,
+                            background: isCreate
+                                ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
+                                : 'var(--color-gray-400)',
+                        }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                marginBottom: '0.25rem',
+                            }}>
+                                <span style={{
+                                    fontSize: '0.8rem',
+                                    fontWeight: 600,
+                                    padding: '0.125rem 0.5rem',
+                                    borderRadius: 'var(--radius-sm)',
+                                    background: isCreate
+                                        ? (isPositivePoints ? '#d1fae5' : '#fee2e2')
+                                        : '#f3f4f6',
+                                    color: isCreate
+                                        ? (isPositivePoints ? '#065f46' : '#991b1b')
+                                        : '#6b7280',
+                                }}>
+                                    {isCreate ? t.members.added : t.members.reverted}
+                                </span>
+                                <span style={{
+                                    fontSize: '1rem',
+                                    fontWeight: 700,
+                                    color: log.points > 0 ? 'var(--color-success)' : 'var(--color-danger)',
+                                }}>
+                                    {log.points > 0 ? '+' : ''}{log.points}
+                                </span>
+                            </div>
+                            <div style={{
+                                fontSize: '0.875rem',
+                                color: 'var(--color-text)',
+                                marginBottom: '0.25rem',
+                            }}>
+                                {log.details}
+                            </div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--color-text-muted)',
+                                display: 'flex',
+                                gap: '0.5rem',
+                                flexWrap: 'wrap' as const,
+                            }}>
+                                <span>{new Date(log.timestamp).toLocaleString()}</span>
+                                <span>• {t.members.changedBy} {users.find(u => u.id === log.contributorId)?.name || log.contributorId}</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 export default function TransactionsPage() {
-    const { members, rules, transactions, auditLogs, addTransaction, deleteTransaction, currentUser } = useStore();
+    const { members, rules, transactions, auditLogs, addTransaction, deleteTransaction, currentUser, users, generateId } = useStore();
     const { t } = useLanguage();
+    const { confirm, alert } = useDialog();
 
     const [memberSearch, setMemberSearch] = useState('');
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -19,6 +119,10 @@ export default function TransactionsPage() {
     const [step, setStep] = useState<'TYPE' | 'RULE'>('TYPE');
     const [selectedType, setSelectedType] = useState<'ACHIEVEMENT' | 'VIOLATION' | null>(null);
     const [ruleSearch, setRuleSearch] = useState('');
+
+    // History modal state
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [historyMember, setHistoryMember] = useState<Member | null>(null);
 
     const filteredMembers = members.filter(m =>
         m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
@@ -44,15 +148,27 @@ export default function TransactionsPage() {
         setStep('RULE');
     };
 
-    const handleRuleSelect = (rule: Rule) => {
+    const handleRuleSelect = async (rule: Rule) => {
         if (!selectedMember || !currentUser) {
-            alert("Please login first.");
+            alert({
+                title: "Error",
+                message: "Please login first.",
+                variant: 'info'
+            });
             return;
         }
 
-        if (confirm(t.transactions.confirm)) {
+        const ok = await confirm({
+            title: t.transactions.confirm,
+            message: `${t.members.added}: ${rule.description} (${rule.points} pts) ${t.members.changedBy} ${selectedMember.name}`,
+            variant: 'warning',
+            confirmLabel: t.common.save,
+            cancelLabel: t.common.cancel
+        });
+
+        if (ok) {
             addTransaction({
-                id: crypto.randomUUID(),
+                id: generateId('TX', rule.type === 'ACHIEVEMENT' ? 'ACH' : 'VIO'),
                 memberId: selectedMember.id,
                 contributorId: currentUser.id,
                 ruleId: rule.id,
@@ -63,11 +179,31 @@ export default function TransactionsPage() {
         }
     };
 
-    const handleDelete = (txId: string) => {
-        if (confirm(t.transactions.deleteConfirm)) {
+    const handleDelete = async (txId: string) => {
+        const ok = await confirm({
+            title: t.transactions.deleteConfirm,
+            message: "This action cannot be undone.",
+            variant: 'danger',
+            confirmLabel: t.common.delete,
+            cancelLabel: t.common.cancel
+        });
+
+        if (ok) {
             deleteTransaction(txId);
         }
     };
+
+    const handleViewHistory = (memberId: string) => {
+        const member = members.find(m => m.id === memberId);
+        if (member) {
+            setHistoryMember(member);
+            setIsHistoryOpen(true);
+        }
+    };
+
+    const historyLogs = historyMember
+        ? auditLogs.filter(log => log.memberId === historyMember.id)
+        : [];
 
     return (
         <div className={styles.container}>
@@ -144,9 +280,17 @@ export default function TransactionsPage() {
                                     className={`${styles.historyRow} ${log.action === 'DELETE' ? styles.historyRowDeleted : ''}`}
                                 >
                                     <div>
-                                        <div className={styles.historyMember}>{member?.name || log.memberId}</div>
+                                        <div
+                                            className={styles.historyMember}
+                                            onClick={(e) => { e.stopPropagation(); handleViewHistory(log.memberId); }}
+                                            style={{ cursor: 'pointer', textDecoration: 'underline', textDecorationColor: 'transparent', transition: 'text-decoration-color 0.15s' }}
+                                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.textDecorationColor = 'currentColor'; }}
+                                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.textDecorationColor = 'transparent'; }}
+                                        >
+                                            {member?.name || log.memberId}
+                                        </div>
                                         <div className={styles.historyTime}>
-                                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {t.members.changedBy} {users.find(u => u.id === log.contributorId)?.name || log.contributorId}
                                         </div>
                                     </div>
                                     <div className={styles.historyDesc}>
@@ -179,22 +323,46 @@ export default function TransactionsPage() {
                 title={selectedMember ? `${selectedMember.name}` : ''}
             >
                 {step === 'TYPE' ? (
-                    <div className={styles.modalTypeGrid}>
-                        <div
-                            className={`${styles.typeCard} ${styles.typeCardAchievement}`}
-                            onClick={() => handleTypeSelect('ACHIEVEMENT')}
-                        >
-                            <div className={styles.typeIcon}>✅</div>
-                            <div className={styles.typeLabel}>{t.rules.achievement}</div>
+                    <>
+                        <div className={styles.modalTypeGrid}>
+                            <div
+                                className={`${styles.typeCard} ${styles.typeCardAchievement}`}
+                                onClick={() => handleTypeSelect('ACHIEVEMENT')}
+                            >
+                                <div className={styles.typeIcon}>✅</div>
+                                <div className={styles.typeLabel}>{t.rules.achievement}</div>
+                            </div>
+                            <div
+                                className={`${styles.typeCard} ${styles.typeCardViolation}`}
+                                onClick={() => handleTypeSelect('VIOLATION')}
+                            >
+                                <div className={styles.typeIcon}>⚠️</div>
+                                <div className={styles.typeLabel}>{t.rules.violation}</div>
+                            </div>
                         </div>
-                        <div
-                            className={`${styles.typeCard} ${styles.typeCardViolation}`}
-                            onClick={() => handleTypeSelect('VIOLATION')}
-                        >
-                            <div className={styles.typeIcon}>⚠️</div>
-                            <div className={styles.typeLabel}>{t.rules.violation}</div>
-                        </div>
-                    </div>
+
+                        {/* Member History inside modal */}
+                        {selectedMember && (() => {
+                            const selectedMemberLogs = auditLogs.filter(log => log.memberId === selectedMember.id);
+                            return (
+                                <div style={{ borderTop: '1px solid var(--color-border)' }}>
+                                    <div style={{
+                                        padding: '1rem 1.5rem 0.5rem',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 600,
+                                        color: 'var(--color-text-light)',
+                                        textTransform: 'uppercase' as const,
+                                        letterSpacing: '0.05em',
+                                    }}>
+                                        {t.members.historyTitle}
+                                    </div>
+                                    <div style={{ padding: '0 1.5rem 1.5rem', maxHeight: '250px', overflowY: 'auto' }}>
+                                        <MemberHistoryContent memberLogs={selectedMemberLogs} t={t} users={users} />
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </>
                 ) : (
                     <>
                         <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
@@ -210,7 +378,7 @@ export default function TransactionsPage() {
                                 />
                             </div>
                         </div>
-                        <div className={styles.rulesList}>
+                        <div className={styles.rulesList} style={{ padding: '0 1.5rem 1rem' }}>
                             {filteredRules.map(r => (
                                 <div
                                     key={r.id}
@@ -230,12 +398,23 @@ export default function TransactionsPage() {
                                 <div className={styles.emptyState}>No rules found</div>
                             )}
                         </div>
-                        <div className={styles.modalFooter}>
+                        <div className={styles.modalFooter} style={{ padding: '1rem 1.5rem 1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
                             <Button variant="secondary" onClick={() => setStep('TYPE')}>← Back</Button>
                             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>{t.common.cancel}</Button>
                         </div>
                     </>
                 )}
+            </Modal>
+
+            {/* History Modal */}
+            <Modal
+                isOpen={isHistoryOpen}
+                onClose={() => setIsHistoryOpen(false)}
+                title={historyMember ? `${t.members.historyTitle} — ${historyMember.name}` : t.members.historyTitle}
+            >
+                <div style={{ padding: '1.5rem' }}>
+                    <MemberHistoryContent memberLogs={historyLogs} t={t} users={users} />
+                </div>
             </Modal>
         </div>
     );
