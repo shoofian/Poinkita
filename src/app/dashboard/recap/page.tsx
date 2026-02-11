@@ -14,7 +14,8 @@ import * as XLSX from 'xlsx';
 import clsx from 'clsx';
 
 export default function RecapPage() {
-    const { members, createArchive } = useStore();
+    const { members, createArchive, currentUser } = useStore();
+    const isAdmin = currentUser?.role === 'ADMIN';
     const { t } = useLanguage();
     const { alert } = useDialog();
     const [filterDivision, setFilterDivision] = useState('');
@@ -91,15 +92,17 @@ export default function RecapPage() {
             }}>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{t.recap.title}</h1>
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
-                    <Button
-                        variant="secondary"
-                        onClick={() => setIsArchiveModalOpen(true)}
-                        className="flex items-center gap-2"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 auto', justifyContent: 'center', maxWidth: '180px' }}
-                    >
-                        <FaArchive />
-                        {t.common.archive}
-                    </Button>
+                    {isAdmin && (
+                        <Button
+                            variant="secondary"
+                            onClick={() => setIsArchiveModalOpen(true)}
+                            className="flex items-center gap-2"
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 auto', justifyContent: 'center', maxWidth: '180px' }}
+                        >
+                            <FaArchive />
+                            {t.common.archive}
+                        </Button>
+                    )}
                     <Button
                         onClick={handleExport}
                         variant="secondary"

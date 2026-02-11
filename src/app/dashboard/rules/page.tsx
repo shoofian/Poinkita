@@ -14,24 +14,27 @@ import { FaPlus, FaTrash } from 'react-icons/fa';
 import clsx from 'clsx';
 
 export default function RulesPage() {
-    const { rules, addRule, deleteRule, generateId } = useStore();
+    const { currentUser, rules, addRule, deleteRule, generateId } = useStore();
+    const isAdmin = currentUser?.role === 'ADMIN';
     const { t } = useLanguage();
     const { confirm } = useDialog();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newRule, setNewRule] = useState<Partial<Rule>>({ description: '', points: 0, type: 'VIOLATION' });
+    const [newRule, setNewRule] = useState({ description: '', points: '', type: 'VIOLATION' as 'ACHIEVEMENT' | 'VIOLATION' });
 
     const handleAddRule = () => {
-        if (!newRule.description || !newRule.points) return;
+        const pointsNum = Number(newRule.points);
+        if (!newRule.description || isNaN(pointsNum)) return;
 
         addRule({
-            id: generateId('RUL', newRule.points && newRule.points > 0 ? 'ACH' : 'VIO'),
+            id: generateId('RUL', pointsNum > 0 ? 'ACH' : 'VIO'),
             description: newRule.description,
-            points: Number(newRule.points),
-            type: newRule.points && newRule.points > 0 ? 'ACHIEVEMENT' : 'VIOLATION'
+            points: pointsNum,
+            type: pointsNum > 0 ? 'ACHIEVEMENT' : 'VIOLATION',
+            adminId: '' // Set by context
         } as Rule);
 
         setIsModalOpen(false);
-        setNewRule({ description: '', points: 0, type: 'VIOLATION' });
+        setNewRule({ description: '', points: '', type: 'VIOLATION' });
     };
 
     const handleDelete = async (id: string) => {
@@ -53,9 +56,11 @@ export default function RulesPage() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <CardTitle>{t.rules.title}</CardTitle>
-                    <Button onClick={() => setIsModalOpen(true)}>
-                        <FaPlus /> {t.rules.addRule}
-                    </Button>
+                    {isAdmin && (
+                        <Button onClick={() => setIsModalOpen(true)}>
+                            <FaPlus /> {t.rules.addRule}
+                        </Button>
+                    )}
                 </CardHeader>
                 <CardContent>
                     <Table>
@@ -65,7 +70,7 @@ export default function RulesPage() {
                                 <TableHead>{t.rules.description}</TableHead>
                                 <TableHead>{t.rules.type}</TableHead>
                                 <TableHead>{t.rules.points}</TableHead>
-                                <TableHead>{t.common.actions}</TableHead>
+                                {isAdmin && <TableHead>{t.common.actions}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -91,11 +96,13 @@ export default function RulesPage() {
                                         <TableCell style={{ fontWeight: 600, color: rule.points > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                                             {rule.points > 0 ? `+${rule.points}` : rule.points}
                                         </TableCell>
-                                        <TableCell>
-                                            <Button variant="ghost" className="p-2 text-danger" onClick={() => handleDelete(rule.id)}>
-                                                <FaTrash />
-                                            </Button>
-                                        </TableCell>
+                                        {isAdmin && (
+                                            <TableCell>
+                                                <Button variant="ghost" className="p-2 text-danger" onClick={() => handleDelete(rule.id)}>
+                                                    <FaTrash />
+                                                </Button>
+                                            </TableCell>
+                                        )}
                                     </TableRow>
                                 )
                             })}
@@ -124,10 +131,9 @@ export default function RulesPage() {
                     />
                     <Input
                         label={t.rules.typeLabel}
-                        type="number"
                         placeholder="e.g. -10 or 20"
                         value={newRule.points}
-                        onChange={(e) => setNewRule({ ...newRule, points: Number(e.target.value) })}
+                        onChange={(e) => setNewRule({ ...newRule, points: e.target.value })}
                     />
                 </div>
             </Modal>

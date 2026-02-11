@@ -8,6 +8,7 @@ export interface User {
   password?: string; // Optional for mock
   email?: string;
   phone?: string;
+  adminId?: string; // Creators ID for contributors
 }
 
 export interface Member {
@@ -15,6 +16,7 @@ export interface Member {
   name: string;
   division: string;
   totalPoints: number;
+  adminId: string;
 }
 
 export interface Rule {
@@ -22,6 +24,7 @@ export interface Rule {
   description: string;
   type: 'ACHIEVEMENT' | 'VIOLATION';
   points: number;
+  adminId: string;
 }
 
 export interface Transaction {
@@ -31,6 +34,7 @@ export interface Transaction {
   ruleId: string;
   timestamp: string;
   pointsSnapshot: number;
+  adminId: string;
 }
 
 export interface AuditLog {
@@ -41,6 +45,7 @@ export interface AuditLog {
   contributorId: string;
   details: string;
   points: number;
+  adminId: string;
 }
 
 export interface ArchiveMember {
@@ -55,21 +60,22 @@ export interface Archive {
   title: string;
   timestamp: string;
   memberSnapshots: ArchiveMember[];
+  adminId: string;
 }
 
 export const INITIAL_MEMBERS: Member[] = [
-  { id: 'MEM-20260210-001', name: 'Alice Smith', division: 'Class 10A', totalPoints: 10 },
-  { id: 'MEM-20260210-002', name: 'Bob Jones', division: 'Class 11B', totalPoints: -5 },
-  { id: 'MEM-20260210-003', name: 'Charlie Brown', division: 'Class 10A', totalPoints: 50 },
+  { id: 'MEM-20260210-001', name: 'Alice Smith', division: 'Class 10A', totalPoints: 10, adminId: 'USR-20260210-001' },
+  { id: 'MEM-20260210-002', name: 'Bob Jones', division: 'Class 11B', totalPoints: -5, adminId: 'USR-20260210-001' },
+  { id: 'MEM-20260210-003', name: 'Charlie Brown', division: 'Class 10A', totalPoints: 50, adminId: 'USR-20260210-001' },
 ];
 
 export const INITIAL_RULES: Rule[] = [
-  { id: 'RUL-ACH-20260210-001', description: 'Homework Completion', type: 'ACHIEVEMENT', points: 10 },
-  { id: 'RUL-VIO-20260210-002', description: 'Late Arrival', type: 'VIOLATION', points: -5 },
-  { id: 'RUL-ACH-20260210-003', description: 'Helping Others', type: 'ACHIEVEMENT', points: 5 },
+  { id: 'RUL-ACH-20260210-001', description: 'Homework Completion', type: 'ACHIEVEMENT', points: 10, adminId: 'USR-20260210-001' },
+  { id: 'RUL-VIO-20260210-002', description: 'Late Arrival', type: 'VIOLATION', points: -5, adminId: 'USR-20260210-001' },
+  { id: 'RUL-ACH-20260210-003', description: 'Helping Others', type: 'ACHIEVEMENT', points: 5, adminId: 'USR-20260210-001' },
 ];
 
 export const INITIAL_USERS: User[] = [
   { id: 'USR-20260210-001', name: 'Admin User', username: 'admin', role: 'ADMIN', password: 'admin123' },
-  { id: 'USR-20260210-002', name: 'Teacher 1', username: 'teacher', role: 'CONTRIBUTOR', password: 'teacher123' },
+  { id: 'USR-20260210-002', name: 'Teacher 1', username: 'teacher', role: 'CONTRIBUTOR', password: 'teacher123', adminId: 'USR-20260210-001' },
 ];

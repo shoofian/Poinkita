@@ -80,11 +80,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (storedUsers) {
                 const parsed = JSON.parse(storedUsers);
                 if (Array.isArray(parsed)) {
-                    // Merge with INITIAL_USERS to restore passwords for default accounts
+                    // Merge with INITIAL_USERS to restore critical fields for default accounts
                     const merged = parsed.map(user => {
                         const defaultUser = INITIAL_USERS.find(iu => iu.id === user.id || iu.username === user.username);
-                        if (defaultUser && !user.password) {
-                            return { ...user, password: defaultUser.password };
+                        if (defaultUser) {
+                            return {
+                                ...defaultUser,
+                                ...user,
+                                // Ensure adminId and role from initial data take precedence if not in storage
+                                adminId: user.adminId || defaultUser.adminId,
+                                role: user.role || defaultUser.role
+                            };
                         }
                         return user;
                     });
@@ -97,39 +103,51 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     // Migration: if it's a legacy ID (like 'u1'), map to new ID format from INITIAL_USERS
                     let migratedUser = parsed;
                     const defaultUser = INITIAL_USERS.find(iu => iu.username === parsed.username);
-                    if (defaultUser && parsed.id !== defaultUser.id) {
-                        migratedUser = { ...parsed, id: defaultUser.id };
+                    if (defaultUser) {
+                        // Ensure consistency with initial data for default accounts
+                        migratedUser = {
+                            ...defaultUser,
+                            ...parsed,
+                            id: defaultUser.id,
+                            adminId: parsed.adminId || defaultUser.adminId
+                        };
                     }
-
-                    // Also merge password for the current user if it's a default account
-                    if (defaultUser && !migratedUser.password) {
-                        setCurrentUser({ ...migratedUser, password: defaultUser.password });
-                    } else {
-                        setCurrentUser(migratedUser);
-                    }
+                    setCurrentUser(migratedUser);
                 }
             }
 
             // Post-load ID Migration for Consistency
-            // If we have legacy user IDs (u1, etc.) in transactions or audit logs,
-            // we should map them to the new IDs if the username is known.
+            const defaultAdminId = INITIAL_USERS[0].id; // USR-20260210-001
+
+            setMembers(prev => prev.map(m => ({ ...m, adminId: m.adminId || defaultAdminId })));
+            setRules(prev => prev.map(r => ({ ...r, adminId: r.adminId || defaultAdminId })));
+            setArchives(prev => prev.map(a => ({ ...a, adminId: a.adminId || defaultAdminId })));
+
             setUsers(currentUsers => {
                 const migratedUsers = currentUsers.map(u => {
                     const defaultUser = INITIAL_USERS.find(iu => iu.username === u.username);
                     return defaultUser && u.id !== defaultUser.id ? { ...u, id: defaultUser.id } : u;
                 });
 
-                // Update transactions and audit logs to match new IDs
+                // Update transactions and audit logs in tandem with users migration
                 setTransactions(prevTx => prevTx.map(tx => {
                     const user = migratedUsers.find(u => u.id === tx.contributorId) ||
-                        INITIAL_USERS.find(iu => iu.id === tx.contributorId || iu.username === tx.contributorId); // Fallback for 'admin' as ID
-                    return user ? { ...tx, contributorId: user.id } : tx;
+                        INITIAL_USERS.find(iu => iu.id === tx.contributorId || iu.username === tx.contributorId);
+                    return {
+                        ...tx,
+                        contributorId: user ? user.id : tx.contributorId,
+                        adminId: tx.adminId || defaultAdminId
+                    };
                 }));
 
                 setAuditLogs(prevLogs => prevLogs.map(log => {
                     const user = migratedUsers.find(u => u.id === log.contributorId) ||
                         INITIAL_USERS.find(iu => iu.id === log.contributorId || iu.username === log.contributorId);
-                    return user ? { ...log, contributorId: user.id } : log;
+                    return {
+                        ...log,
+                        contributorId: user ? user.id : log.contributorId,
+                        adminId: log.adminId || defaultAdminId
+                    };
                 }));
 
                 return migratedUsers;
@@ -138,9 +156,22 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setIsLoaded(true);
         } catch (error) {
             console.error('Failed to load storage:', error);
-            setIsLoaded(true); // Still set to true so we can save new data if load fails
+            setIsLoaded(true);
         }
-    }, []); // Only on mount to restore stale data once
+    }, []);
+
+    const effectiveAdminId = currentUser?.role === 'ADMIN' ? currentUser.id : currentUser?.adminId;
+
+    const filteredMembers = members.filter(m => m.adminId === effectiveAdminId);
+    const filteredRules = rules.filter(r => r.adminId === effectiveAdminId);
+    const filteredTransactions = transactions.filter(t => t.adminId === effectiveAdminId);
+    const filteredAuditLogs = auditLogs.filter(l => l.adminId === effectiveAdminId);
+    const filteredArchives = archives.filter(a => a.adminId === effectiveAdminId);
+    const filteredUsers = currentUser
+        ? (currentUser.role === 'ADMIN'
+            ? users.filter(u => u.id === currentUser.id || u.adminId === currentUser.id)
+            : users.filter(u => u.id === currentUser.id))
+        : users;
 
     // Save to localStorage on change - GUARDED BY isLoaded
     useEffect(() => { if (isLoaded) localStorage.setItem('members', JSON.stringify(members)); }, [members, isLoaded]);
@@ -191,9 +222,16 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return `${prefixWithDate}${nextSeq.toString().padStart(3, '0')}`;
     };
 
-    const addMember = (member: Member) => setMembers([...members, member]);
+    const addMember = (member: Member) => {
+        const adminId = effectiveAdminId || 'system';
+        setMembers([...members, { ...member, adminId }]);
+    };
 
-    const addMembers = (newMembers: Member[]) => setMembers(prev => [...prev, ...newMembers]);
+    const addMembers = (newMembers: Member[]) => {
+        const adminId = effectiveAdminId || 'system';
+        const membersWithAdmin = newMembers.map(m => ({ ...m, adminId: m.adminId || adminId }));
+        setMembers(prev => [...prev, ...membersWithAdmin]);
+    };
 
     const updateMemberPoints = (id: string, points: number) => {
         setMembers(prev => prev.map(m =>
@@ -205,12 +243,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const deleteMembers = (ids: string[]) => setMembers(prev => prev.filter(m => !ids.includes(m.id)));
 
-    const addRule = (rule: Rule) => setRules([...rules, rule]);
+    const addRule = (rule: Rule) => {
+        const adminId = effectiveAdminId || 'system';
+        setRules([...rules, { ...rule, adminId }]);
+    };
 
     const deleteRule = (id: string) => setRules(prev => prev.filter(r => r.id !== id));
 
     const addTransaction = (transaction: Transaction) => {
-        setTransactions(prev => [transaction, ...prev]);
+        const adminId = effectiveAdminId || 'system';
+        const transactionWithAdmin = { ...transaction, adminId };
+        setTransactions(prev => [transactionWithAdmin, ...prev]);
         updateMemberPoints(transaction.memberId, transaction.pointsSnapshot);
 
         const rule = rules.find(r => r.id === transaction.ruleId);
@@ -224,7 +267,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             memberId: transaction.memberId,
             contributorId: transaction.contributorId,
             details: rule ? rule.description : 'Unknown Rule',
-            points: transaction.pointsSnapshot
+            points: transaction.pointsSnapshot,
+            adminId
         };
         setAuditLogs(prev => [log, ...prev]);
     };
@@ -247,7 +291,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             memberId: transaction.memberId,
             contributorId: currentUser ? currentUser.id : 'unknown',
             details: `Deleted transaction: ${id}`,
-            points: -pointValue // Inverse of original to show reversion
+            points: -pointValue, // Inverse of original to show reversion
+            adminId: transaction.adminId
         };
         setAuditLogs(prev => [log, ...prev]);
 
@@ -255,19 +300,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setTransactions(prev => prev.filter(t => t.id !== id));
     };
 
-    const addAuditLogs = (newLogs: AuditLog[]) => setAuditLogs(prev => [...newLogs, ...prev]);
+    const addAuditLogs = (newLogs: AuditLog[]) => {
+        const adminId = effectiveAdminId || 'system';
+        const logsWithAdmin = newLogs.map(l => ({ ...l, adminId: l.adminId || adminId }));
+        setAuditLogs(prev => [...logsWithAdmin, ...prev]);
+    };
 
     const createArchive = (title: string) => {
         const id = generateId('ARC');
         const timestamp = new Date().toISOString();
-        const memberSnapshots: ArchiveMember[] = members.map(m => ({
+        const snapshotsWithAdmin = members.map(m => ({
             id: m.id,
             name: m.name,
             division: m.division,
             points: m.totalPoints
         }));
 
-        setArchives(prev => [{ id, title, timestamp, memberSnapshots }, ...prev]);
+        const adminId = effectiveAdminId || 'system';
+        setArchives(prev => [{ id, title, timestamp, memberSnapshots: snapshotsWithAdmin, adminId }, ...prev]);
     };
 
     const deleteArchive = (id: string) => {
@@ -275,11 +325,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     const registerUser = (user: User) => {
-        setUsers(prev => [...prev, user]);
+        const newUser = { ...user };
+        if (currentUser?.role === 'ADMIN') {
+            newUser.adminId = currentUser.id;
+        }
+        setUsers(prev => [...prev, newUser]);
     };
 
     const registerUsers = (newUsers: User[]) => {
-        setUsers(prev => [...prev, ...newUsers]);
+        const adminId = currentUser?.role === 'ADMIN' ? currentUser.id : undefined;
+        const usersWithAdmin = newUsers.map(u => ({ ...u, adminId: u.adminId || adminId }));
+        setUsers(prev => [...prev, ...usersWithAdmin]);
     };
 
     const updateUser = (id: string, updates: Partial<User>) => {
@@ -299,7 +355,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return (
         <StoreContext.Provider value={{
-            members, rules, transactions, auditLogs, archives, users, currentUser,
+            members: filteredMembers,
+            rules: filteredRules,
+            transactions: filteredTransactions,
+            auditLogs: filteredAuditLogs,
+            archives: filteredArchives,
+            users: filteredUsers,
+            currentUser,
             setCurrentUser,
             addMember, addMembers, updateMemberPoints, deleteMember, deleteMembers,
             addRule, deleteRule,

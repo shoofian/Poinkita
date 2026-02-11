@@ -21,7 +21,7 @@ export default function MembersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [divisionFilter, setDivisionFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newMember, setNewMember] = useState<Partial<Member & { initialPoints: number }>>({ name: '', division: '', initialPoints: 0 });
+    const [newMember, setNewMember] = useState({ name: '', division: '', initialPoints: '' });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Sorting state
@@ -62,6 +62,8 @@ export default function MembersPage() {
         return 0;
     });
 
+    const isAdmin = currentUser?.role === 'ADMIN';
+
     // Pagination logic
     const totalPages = Math.ceil(filteredMembers.length / pageSize);
     const paginatedMembers = filteredMembers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
@@ -99,7 +101,8 @@ export default function MembersPage() {
             id: memberId,
             name: newMember.name,
             division: newMember.division,
-            totalPoints: points
+            totalPoints: points,
+            adminId: '' // Will be set by context
         } as Member);
 
         // Add Audit Log if points > 0
@@ -112,12 +115,13 @@ export default function MembersPage() {
                 memberId: memberId,
                 contributorId: currentUser?.id || 'system',
                 details: t.members.initialPoints,
-                points: points
-            }]);
+                points: points,
+                adminId: '' // Will be set by context
+            } as AuditLog]);
         }
 
         setIsModalOpen(false);
-        setNewMember({ name: '', division: '', initialPoints: 0 });
+        setNewMember({ name: '', division: '', initialPoints: '' });
     };
 
     const handleExcelImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,8 +183,9 @@ export default function MembersPage() {
                         id,
                         name,
                         division: division || 'General',
-                        totalPoints: points
-                    });
+                        totalPoints: points,
+                        adminId: '' // Will be set by context
+                    } as Member);
 
                     if (points !== 0) {
                         currentMaxActSeq++;
@@ -192,8 +197,9 @@ export default function MembersPage() {
                             memberId: id,
                             contributorId: currentUser?.id || 'system',
                             details: t.members.initialPoints,
-                            points: points
-                        });
+                            points: points,
+                            adminId: '' // Will be set by context
+                        } as AuditLog);
                     }
                 });
 
@@ -368,33 +374,35 @@ export default function MembersPage() {
                     marginBottom: '1rem'
                 }}>
                     <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{t.members.title}</h1>
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
-                        <input
-                            type="file"
-                            accept=".xlsx, .xls"
-                            style={{ display: 'none' }}
-                            ref={fileInputRef}
-                            onChange={handleExcelImport}
-                        />
-                        <Button
-                            variant="secondary"
-                            onClick={downloadExcelTemplate}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
-                        >
-                            <FaDownload /> {t.common.downloadTemplate}
-                        </Button>
-                        <Button
-                            variant="secondary"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="flex items-center gap-2"
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
-                        >
-                            <FaFileExcel /> {t.common.importExcel || 'Import Excel'}
-                        </Button>
-                        <Button onClick={() => setIsModalOpen(true)}>
-                            <FaPlus /> {t.members.addMember}
-                        </Button>
-                    </div>
+                    {isAdmin && (
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
+                            <input
+                                type="file"
+                                accept=".xlsx, .xls"
+                                style={{ display: 'none' }}
+                                ref={fileInputRef}
+                                onChange={handleExcelImport}
+                            />
+                            <Button
+                                variant="secondary"
+                                onClick={downloadExcelTemplate}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
+                            >
+                                <FaDownload /> {t.common.downloadTemplate}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center gap-2"
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
+                            >
+                                <FaFileExcel /> {t.common.importExcel || 'Import Excel'}
+                            </Button>
+                            <Button onClick={() => setIsModalOpen(true)}>
+                                <FaPlus /> {t.members.addMember}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </Card>
             <Card>
@@ -433,7 +441,7 @@ export default function MembersPage() {
                             </select>
                         </div>
                         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                            {selectedIds.length > 0 && (
+                            {isAdmin && selectedIds.length > 0 && (
                                 <>
                                     <Button
                                         variant="secondary"
@@ -489,7 +497,7 @@ export default function MembersPage() {
                                         {t.members.points} {getSortIcon('totalPoints')}
                                     </div>
                                 </TableHead>
-                                <TableHead>{t.common.actions}</TableHead>
+                                {isAdmin && <TableHead>{t.common.actions}</TableHead>}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -509,19 +517,21 @@ export default function MembersPage() {
                                     <TableCell style={{ fontWeight: 600, color: member.totalPoints >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                                         {member.totalPoints}
                                     </TableCell>
-                                    <TableCell>
-                                        <div className="flex gap-2" style={{ display: 'flex', gap: '0.5rem' }}>
-                                            <Button variant="ghost" onClick={() => handleViewHistory(member)} title={t.members.history}>
-                                                <FaClipboardList />
-                                            </Button>
-                                            <Button variant="ghost" onClick={() => handleOpenEdit(member)}>
-                                                <FaEdit />
-                                            </Button>
-                                            <Button variant="ghost" className="p-2 text-danger" style={{ color: 'var(--color-danger)' }} onClick={() => handleDelete(member.id)}>
-                                                <FaTrash />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
+                                    {isAdmin && (
+                                        <TableCell>
+                                            <div className="flex gap-2" style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <Button variant="ghost" onClick={() => handleViewHistory(member)} title={t.members.history}>
+                                                    <FaClipboardList />
+                                                </Button>
+                                                <Button variant="ghost" onClick={() => handleOpenEdit(member)}>
+                                                    <FaEdit />
+                                                </Button>
+                                                <Button variant="ghost" className="p-2 text-danger" style={{ color: 'var(--color-danger)' }} onClick={() => handleDelete(member.id)}>
+                                                    <FaTrash />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -603,10 +613,9 @@ export default function MembersPage() {
                     />
                     <Input
                         label={t.members.initialPoints}
-                        type="number"
                         placeholder="0"
                         value={newMember.initialPoints}
-                        onChange={(e) => setNewMember({ ...newMember, initialPoints: Number(e.target.value) })}
+                        onChange={(e) => setNewMember({ ...newMember, initialPoints: e.target.value })}
                     />
                 </div>
             </Modal>
