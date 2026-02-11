@@ -19,10 +19,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
     useEffect(() => {
         // Simple client-side route protection
-        if (currentUser && currentUser.role === 'CONTRIBUTOR') {
+        if (!currentUser) {
+            router.replace('/login');
+            return;
+        }
+
+        if (currentUser.role === 'CONTRIBUTOR') {
             const restrictedPaths = ['/dashboard/members', '/dashboard/rules', '/dashboard/recap', '/dashboard/archive', '/dashboard'];
-            // Exactly '/dashboard' is restricted or just home? 
-            // Usually we want them on transactions if they can only do transactions.
             if (restrictedPaths.includes(pathname)) {
                 router.replace('/dashboard/transactions');
             }

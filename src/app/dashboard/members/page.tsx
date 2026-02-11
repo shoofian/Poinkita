@@ -15,10 +15,11 @@ import * as XLSX from 'xlsx';
 import clsx from 'clsx';
 
 export default function MembersPage() {
-    const { members, addMember, addMembers, updateMemberPoints, deleteMember, deleteMembers, addAuditLogs, auditLogs, users, currentUser, generateId } = useStore();
+    const { members, addMember, addMembers, updateMemberPoints, updateMembers, deleteMember, deleteMembers, addAuditLogs, auditLogs, users, currentUser, generateId } = useStore();
     const { t } = useLanguage();
     const { confirm, alert } = useDialog();
     const [searchTerm, setSearchTerm] = useState('');
+    const [divisionFilter, setDivisionFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newMember, setNewMember] = useState<Partial<Member & { initialPoints: number }>>({ name: '', division: '', initialPoints: 0 });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -39,10 +40,21 @@ export default function MembersPage() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [historyMember, setHistoryMember] = useState<Member | null>(null);
 
-    const filteredMembers = members.filter(m =>
-        m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        m.id.toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a, b) => {
+    // Bulk division modal state
+    const [isBulkDivisionModalOpen, setIsBulkDivisionModalOpen] = useState(false);
+    const [newBulkDivision, setNewBulkDivision] = useState('');
+
+    // Edit member state
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editingMember, setEditingMember] = useState<Member | null>(null);
+    const [editData, setEditData] = useState({ name: '', division: '' });
+
+    const filteredMembers = members.filter(m => {
+        const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            m.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesDivision = divisionFilter === '' || m.division === divisionFilter;
+        return matchesSearch && matchesDivision;
+    }).sort((a, b) => {
         if (!sortConfig) return 0;
         const { key, direction } = sortConfig;
         if (a[key] < b[key]) return direction === 'asc' ? -1 : 1;
@@ -57,6 +69,11 @@ export default function MembersPage() {
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
         setCurrentPage(1); // Reset to first page on search
+    };
+
+    const handleDivisionFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setDivisionFilter(e.target.value);
+        setCurrentPage(1);
     };
 
     const handlePageSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -278,6 +295,43 @@ export default function MembersPage() {
         }
     };
 
+    const handleBulkChangeDivision = () => {
+        if (!newBulkDivision.trim() || selectedIds.length === 0) return;
+
+        updateMembers(selectedIds, { division: newBulkDivision.trim() });
+        setIsBulkDivisionModalOpen(false);
+        setNewBulkDivision('');
+        setSelectedIds([]);
+        alert({
+            title: "Success",
+            message: t.members.divisionChanged.replace('{0}', selectedIds.length.toString()),
+            variant: 'info'
+        });
+    };
+
+    const handleOpenEdit = (member: Member) => {
+        setEditingMember(member);
+        setEditData({ name: member.name, division: member.division });
+        setIsEditModalOpen(true);
+    };
+
+    const handleEditMember = () => {
+        if (!editingMember || !editData.name || !editData.division) return;
+
+        updateMembers([editingMember.id], {
+            name: editData.name,
+            division: editData.division
+        });
+
+        setIsEditModalOpen(false);
+        setEditingMember(null);
+        alert({
+            title: "Success",
+            message: t.members.editSuccess,
+            variant: 'success'
+        });
+    };
+
     const handleDelete = async (id: string) => {
         const ok = await confirm({
             title: t.members.deleteConfirm,
@@ -357,15 +411,45 @@ export default function MembersPage() {
                             value={searchTerm}
                             onChange={handleSearchChange}
                         />
+                        <div className="flex flex-col gap-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>{t.members.filterByDivision}</label>
+                            <select
+                                value={divisionFilter}
+                                onChange={handleDivisionFilterChange}
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    border: '1px solid var(--color-border)',
+                                    background: 'var(--color-bg-card)',
+                                    fontSize: '0.875rem',
+                                    height: '38px',
+                                    color: 'var(--color-text)'
+                                }}
+                            >
+                                <option value="">{t.members.allDivisions}</option>
+                                {Array.from(new Set(members.map(m => m.division))).sort().map(div => (
+                                    <option key={div} value={div}>{div}</option>
+                                ))}
+                            </select>
+                        </div>
                         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                             {selectedIds.length > 0 && (
-                                <Button
-                                    variant="danger"
-                                    onClick={handleBulkDelete}
-                                    style={{ flex: '1 1 auto' }}
-                                >
-                                    <FaTrash /> {t.members.deleteSelected} ({selectedIds.length})
-                                </Button>
+                                <>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => setIsBulkDivisionModalOpen(true)}
+                                        style={{ flex: '1 1 auto' }}
+                                    >
+                                        <FaEdit /> {t.members.changeDivision} ({selectedIds.length})
+                                    </Button>
+                                    <Button
+                                        variant="danger"
+                                        onClick={handleBulkDelete}
+                                        style={{ flex: '1 1 auto' }}
+                                    >
+                                        <FaTrash /> {t.members.deleteSelected} ({selectedIds.length})
+                                    </Button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -430,14 +514,10 @@ export default function MembersPage() {
                                             <Button variant="ghost" onClick={() => handleViewHistory(member)} title={t.members.history}>
                                                 <FaClipboardList />
                                             </Button>
-                                            <Button variant="ghost" onClick={() => alert({
-                                                title: "Information",
-                                                message: "Edit feature coming soon!",
-                                                variant: 'info'
-                                            })}>
+                                            <Button variant="ghost" onClick={() => handleOpenEdit(member)}>
                                                 <FaEdit />
                                             </Button>
-                                            <Button variant="ghost" className="text-danger" style={{ color: 'var(--color-danger)' }} onClick={() => handleDelete(member.id)}>
+                                            <Button variant="ghost" className="p-2 text-danger" style={{ color: 'var(--color-danger)' }} onClick={() => handleDelete(member.id)}>
                                                 <FaTrash />
                                             </Button>
                                         </div>
@@ -555,7 +635,52 @@ export default function MembersPage() {
                 </div>
             </Modal>
 
-            {/* History Modal */}
+            {/* Edit Member Modal */}
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                title={t.members.editMember}
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>{t.common.cancel}</Button>
+                        <Button onClick={handleEditMember}>{t.common.save}</Button>
+                    </>
+                }
+            >
+                <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
+                    <Input
+                        label={t.auth.name}
+                        value={editData.name}
+                        onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                    />
+                    <Input
+                        label={t.members.division}
+                        value={editData.division}
+                        onChange={(e) => setEditData({ ...editData, division: e.target.value })}
+                    />
+                </div>
+            </Modal>
+            <Modal
+                isOpen={isBulkDivisionModalOpen}
+                onClose={() => setIsBulkDivisionModalOpen(false)}
+                title={t.members.changeDivision}
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsBulkDivisionModalOpen(false)}>{t.common.cancel}</Button>
+                        <Button onClick={handleBulkChangeDivision}>{t.common.save}</Button>
+                    </>
+                }
+            >
+                <div style={{ padding: '1.5rem' }}>
+                    <Input
+                        label={t.members.selectNewDivision}
+                        placeholder="e.g. Class 11A"
+                        value={newBulkDivision}
+                        onChange={(e) => setNewBulkDivision(e.target.value)}
+                        autoFocus
+                    />
+                </div>
+            </Modal>
             <Modal
                 isOpen={isHistoryOpen}
                 onClose={() => setIsHistoryOpen(false)}

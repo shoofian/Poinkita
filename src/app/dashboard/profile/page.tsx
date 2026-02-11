@@ -7,15 +7,17 @@ import { useDialog } from '@/components/ui/ConfirmDialog';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { FaUser, FaSave, FaCheckCircle, FaUserPlus, FaUsersCog, FaEnvelope, FaPhone } from 'react-icons/fa';
-import { UserRole } from '@/lib/store';
+import { Modal } from '@/components/ui/Modal';
+import { FaUser, FaSave, FaCheckCircle, FaUserPlus, FaUsersCog, FaEnvelope, FaPhone, FaEdit, FaTrash, FaFileExcel, FaDownload } from 'react-icons/fa';
+import * as XLSX from 'xlsx';
+import { User, UserRole } from '@/lib/store';
 
 export default function AccountSettingsPage() {
-    const { currentUser, updateUser, registerUser, users, generateId } = useStore();
+    const { currentUser, updateUser, deleteUser, registerUser, registerUsers, users, generateId } = useStore();
     const { t } = useLanguage();
-    const { alert } = useDialog();
+    const { alert, confirm } = useDialog();
 
-    const [activeTab, setActiveTab] = useState<'profile' | 'register'>('profile');
+    const [activeTab, setActiveTab] = useState<'profile' | 'register' | 'manage'>('profile');
 
     // Profile State
     const [profileData, setProfileData] = useState({
@@ -39,6 +41,24 @@ export default function AccountSettingsPage() {
         phone: ''
     });
     const [isRegisterLoading, setIsRegisterLoading] = useState(false);
+
+    const generateRandomPassword = () => {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        let password = "";
+        for (let i = 0; i < 10; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return password;
+    };
+
+    const handleGenerateRandomPassword = () => {
+        setRegisterData(prev => ({ ...prev, password: generateRandomPassword() }));
+    };
+
+    // Manage Users State
+    const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [editUserData, setEditUserData] = useState({ name: '', username: '', password: '', email: '', phone: '' });
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
         if (currentUser) {
@@ -108,7 +128,126 @@ export default function AccountSettingsPage() {
                 message: t.auth.accountCreated,
                 variant: 'success'
             });
+            setActiveTab('manage');
         }, 800);
+    };
+
+    const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary' });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const data = XLSX.utils.sheet_to_json(ws) as any[];
+
+                const importedUsers: User[] = [];
+                const importedCredentials: { name: string, username: string, password: string }[] = [];
+
+                data.forEach((row) => {
+                    const name = row.Name || row.Nama || row.name || row.nama;
+                    const username = row.Username || row["Nama Pengguna"] || row.username || row.nama_pengguna;
+                    const email = row.Email || row.email;
+                    const phone = row.Phone || row["Nomor Telepon"] || row.phone || row.no_telp;
+                    const role = (row.Role || row.Peran || 'CONTRIBUTOR').toUpperCase() as UserRole;
+
+                    if (!name || !username) return;
+                    if (users.some(u => u.username === username) || importedUsers.some(u => u.username === username)) return;
+
+                    const password = generateRandomPassword();
+                    const newUser: User = {
+                        id: generateId('USR'),
+                        name,
+                        username,
+                        password,
+                        role,
+                        email: email || '',
+                        phone: phone || ''
+                    };
+
+                    importedUsers.push(newUser);
+                    importedCredentials.push({ name, username, password });
+                });
+
+                if (importedUsers.length > 0) {
+                    registerUsers(importedUsers);
+                    alert({
+                        title: "Import Success",
+                        message: t.auth.importUserSuccess.replace('{0}', importedUsers.length.toString()),
+                        variant: 'success'
+                    });
+
+                    // Automatically download the credentials file
+                    const wsCreds = XLSX.utils.json_to_sheet(importedCredentials);
+                    const wbCreds = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wbCreds, wsCreds, "Credentials");
+                    XLSX.writeFile(wbCreds, `Poinkita_New_User_Credentials_${new Date().getTime()}.xlsx`);
+
+                    setActiveTab('manage');
+                } else {
+                    alert({
+                        title: "Import Failed",
+                        message: "No valid and unique user data found.",
+                        variant: 'danger'
+                    });
+                }
+            } catch (error) {
+                console.error("Excel Import Error:", error);
+                alert({ title: "Error", message: "Failed to process Excel file.", variant: 'danger' });
+            }
+            if (e.target) e.target.value = '';
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const downloadUserTemplate = () => {
+        const templateData = [
+            { Nama: "John Doe", Username: "johndoe", Email: "john@example.com", "Nomor Telepon": "081234567890", Peran: "CONTRIBUTOR" },
+            { Nama: "Jane Admin", Username: "janeadmin", Email: "jane@example.com", "Nomor Telepon": "081298765432", Peran: "ADMIN" },
+        ];
+        const ws = XLSX.utils.json_to_sheet(templateData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Users Template");
+        XLSX.writeFile(wb, "Poinkita_User_Template.xlsx");
+    };
+
+    const handleDeleteUser = async (user: User) => {
+        const ok = await confirm({
+            title: t.auth.deleteUserConfirm,
+            message: `Account: ${user.name} (${user.username})`,
+            variant: 'danger' as const,
+            confirmLabel: t.common.delete,
+            cancelLabel: t.common.cancel
+        });
+
+        if (ok) {
+            deleteUser(user.id);
+            alert({ title: "Success", message: t.auth.userDeleted, variant: 'success' });
+        }
+    };
+
+    const handleOpenEdit = (user: User) => {
+        setEditingUser(user);
+        setEditUserData({
+            name: user.name || '',
+            username: user.username || '',
+            password: user.password || '',
+            email: user.email || '',
+            phone: user.phone || ''
+        });
+        setIsEditModalOpen(true);
+    };
+
+    const handleSaveEditUser = () => {
+        if (!editingUser) return;
+        updateUser(editingUser.id, editUserData);
+        setIsEditModalOpen(false);
+        setEditingUser(null);
+        alert({ title: "Success", message: t.auth.editUserSuccess, variant: 'success' });
     };
 
     if (!currentUser) {
@@ -166,10 +305,24 @@ export default function AccountSettingsPage() {
                     >
                         {t.auth.registerTitle || 'Create New Account'}
                     </button>
+                    <button
+                        onClick={() => setActiveTab('manage')}
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            border: 'none',
+                            background: 'none',
+                            borderBottom: activeTab === 'manage' ? '2px solid var(--color-primary)' : '2px solid transparent',
+                            color: activeTab === 'manage' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                            fontWeight: activeTab === 'manage' ? 'bold' : 'normal',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        {t.auth.manageAccounts || 'Manage Accounts'}
+                    </button>
                 </div>
             )}
 
-            {activeTab === 'profile' ? (
+            {activeTab === 'profile' && (
                 <Card>
                     <CardHeader>
                         <CardTitle>{t.auth.name || 'Personal Information'}</CardTitle>
@@ -241,7 +394,9 @@ export default function AccountSettingsPage() {
                         </CardFooter>
                     </form>
                 </Card>
-            ) : (
+            )}
+
+            {activeTab === 'register' && (
                 <Card>
                     <CardHeader>
                         <CardTitle>{t.auth.registerTitle}</CardTitle>
@@ -312,8 +467,53 @@ export default function AccountSettingsPage() {
                                     </select>
                                 </div>
                             </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    onClick={handleGenerateRandomPassword}
+                                    style={{ fontSize: '0.8rem', padding: '0.5rem 0.75rem' }}
+                                >
+                                    {t.auth.generateRandomPassword}
+                                </Button>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                    {t.auth.randomPasswordDesc}
+                                </span>
+                            </div>
                         </CardContent>
-                        <CardFooter style={{ justifyContent: 'flex-end' }}>
+                        <CardFooter style={{ justifyContent: 'space-between', borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem' }}>
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <Button type="button" variant="secondary" onClick={downloadUserTemplate} className="flex items-center gap-2">
+                                    <FaDownload /> {t.auth.importUserTemplate}
+                                </Button>
+                                <label style={{ display: 'inline-block' }}>
+                                    <input
+                                        type="file"
+                                        accept=".xlsx, .xls"
+                                        onChange={handleImportExcel}
+                                        style={{ display: 'none' }}
+                                    />
+                                    <div style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.75rem 1rem',
+                                        borderRadius: 'var(--radius-md)',
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-surface)',
+                                        color: 'var(--color-text-main)',
+                                        fontSize: '0.875rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        height: '100%',
+                                        boxSizing: 'border-box'
+                                    }}>
+                                        <FaFileExcel style={{ color: '#107c10' }} />
+                                        {t.common.importExcel}
+                                    </div>
+                                </label>
+                            </div>
                             <Button type="submit" isLoading={isRegisterLoading} className="flex items-center gap-2">
                                 <FaUserPlus /> {t.auth.createAccount}
                             </Button>
@@ -321,6 +521,108 @@ export default function AccountSettingsPage() {
                     </form>
                 </Card>
             )}
+
+            {activeTab === 'manage' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{t.auth.userList}</CardTitle>
+                        <CardDescription>Manage contributor and admin accounts.</CardDescription>
+                    </CardHeader>
+                    <CardContent style={{ padding: 0 }}>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                                <thead style={{ background: 'var(--color-bg)', textAlign: 'left' }}>
+                                    <tr>
+                                        <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)' }}>{t.auth.name}</th>
+                                        <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)' }}>{t.auth.username}</th>
+                                        <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)' }}>{t.auth.role}</th>
+                                        <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)' }}>{t.common.actions}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users.filter(u => u.id !== currentUser.id).map(user => (
+                                        <tr key={user.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                                            <td style={{ padding: '0.75rem 1rem' }}>
+                                                <div style={{ fontWeight: 600 }}>{user.name}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{user.email || '-'}</div>
+                                            </td>
+                                            <td style={{ padding: '0.75rem 1rem' }}>{user.username}</td>
+                                            <td style={{ padding: '0.75rem 1rem' }}>
+                                                <span style={{
+                                                    padding: '0.25rem 0.5rem',
+                                                    borderRadius: '4px',
+                                                    background: user.role === 'ADMIN' ? 'var(--color-primary-bg)' : 'var(--color-surface)',
+                                                    color: user.role === 'ADMIN' ? 'var(--color-primary)' : 'inherit',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 'bold'
+                                                }}>
+                                                    {user.role}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '0.75rem 1rem' }}>
+                                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                    <Button variant="ghost" onClick={() => handleOpenEdit(user)} style={{ padding: '0.25rem' }}>
+                                                        <FaEdit />
+                                                    </Button>
+                                                    <Button variant="ghost" onClick={() => handleDeleteUser(user)} style={{ padding: '0.25rem', color: 'var(--color-danger)' }}>
+                                                        <FaTrash />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Edit User Modal */}
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                title={t.auth.editUser}
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsEditModalOpen(false)}>{t.common.cancel}</Button>
+                        <Button onClick={handleSaveEditUser}>{t.common.save}</Button>
+                    </>
+                }
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                        <Input
+                            label={t.auth.name}
+                            value={editUserData.name}
+                            onChange={(e) => setEditUserData({ ...editUserData, name: e.target.value })}
+                        />
+                        <Input
+                            label={t.auth.username}
+                            value={editUserData.username}
+                            onChange={(e) => setEditUserData({ ...editUserData, username: e.target.value })}
+                        />
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                        <Input
+                            label={t.auth.email}
+                            value={editUserData.email}
+                            onChange={(e) => setEditUserData({ ...editUserData, email: e.target.value })}
+                        />
+                        <Input
+                            label={t.auth.phone}
+                            value={editUserData.phone}
+                            onChange={(e) => setEditUserData({ ...editUserData, phone: e.target.value })}
+                        />
+                    </div>
+                    <Input
+                        label={t.auth.password}
+                        type="password"
+                        value={editUserData.password}
+                        onChange={(e) => setEditUserData({ ...editUserData, password: e.target.value })}
+                    />
+                </div>
+            </Modal>
         </div>
     );
 }

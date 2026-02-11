@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,12 +12,22 @@ import styles from './page.module.css';
 
 export default function LoginPage() {
     const router = useRouter();
-    const { users, setCurrentUser } = useStore();
+    const { users, currentUser, setCurrentUser } = useStore();
     const { t } = useLanguage();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        if (currentUser) {
+            if (currentUser.role === 'ADMIN') {
+                router.push('/dashboard');
+            } else {
+                router.push('/dashboard/transactions');
+            }
+        }
+    }, [currentUser, router]);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -25,9 +35,10 @@ export default function LoginPage() {
         setError('');
 
         setTimeout(() => {
-            const user = users.find(u => u.username === username);
+            const normalizedUsername = username.trim().toLowerCase();
+            const user = users.find(u => u.username.toLowerCase() === normalizedUsername);
 
-            if (user) {
+            if (user && user.password === password) {
                 setCurrentUser(user);
 
                 if (user.role === 'ADMIN') {
@@ -51,7 +62,7 @@ export default function LoginPage() {
                 </CardHeader>
                 <form onSubmit={handleLogin}>
                     <CardContent className={styles.formContent}>
-                        {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+                        {error && <div className={styles.errorMessage}>{error}</div>}
                         <Input
                             label={t.auth.username}
                             placeholder="e.g. admin"

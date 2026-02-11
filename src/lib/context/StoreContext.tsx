@@ -27,7 +27,10 @@ interface StoreContextType {
     createArchive: (title: string) => void;
     deleteArchive: (id: string) => void;
     registerUser: (user: User) => void;
+    registerUsers: (users: User[]) => void;
     updateUser: (id: string, updates: Partial<User>) => void;
+    deleteUser: (id: string) => void;
+    updateMembers: (ids: string[], updates: Partial<Member>) => void;
     generateId: (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC', type?: 'ACH' | 'VIO') => string;
 }
 
@@ -275,11 +278,23 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setUsers(prev => [...prev, user]);
     };
 
+    const registerUsers = (newUsers: User[]) => {
+        setUsers(prev => [...prev, ...newUsers]);
+    };
+
     const updateUser = (id: string, updates: Partial<User>) => {
         setUsers(prev => prev.map(u => u.id === id ? { ...u, ...updates } : u));
         if (currentUser?.id === id) {
             setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
         }
+    };
+
+    const deleteUser = (id: string) => {
+        setUsers(prev => prev.filter(u => u.id !== id));
+    };
+
+    const updateMembers = (ids: string[], updates: Partial<Member>) => {
+        setMembers(prev => prev.map(m => ids.includes(m.id) ? { ...m, ...updates } : m));
     };
 
     return (
@@ -290,7 +305,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             addRule, deleteRule,
             addTransaction, deleteTransaction,
             addAuditLogs, createArchive, deleteArchive,
-            registerUser, updateUser, generateId
+            registerUser, registerUsers, updateUser, deleteUser, updateMembers, generateId
         }}>
             {children}
         </StoreContext.Provider>
