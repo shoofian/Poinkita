@@ -6,10 +6,11 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
     error?: string;
+    icon?: React.ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-    ({ className, label, error, type, ...props }, ref) => {
+    ({ className, label, error, type, icon, ...props }, ref) => {
         const [showPassword, setShowPassword] = useState(false);
         const isPassword = type === 'password';
         const inputType = isPassword ? (showPassword ? 'text' : 'password') : type;
@@ -18,10 +19,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             <div className={styles.inputContainer}>
                 {label && <label className={styles.label}>{label}</label>}
                 <div className={styles.wrapper}>
+                    {icon && (
+                        <div className={styles.leadingIcon}>
+                            {icon}
+                        </div>
+                    )}
                     <input
                         ref={ref}
                         type={inputType}
-                        className={clsx(styles.input, className, isPassword && styles.inputWithIcon)}
+                        className={clsx(
+                            styles.input,
+                            className,
+                            icon && styles.inputWithLeadingIcon,
+                            isPassword && styles.inputWithToggle
+                        )}
                         {...props}
                     />
                     {isPassword && (
@@ -35,7 +46,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                         </button>
                     )}
                 </div>
-                {error && <span style={{ color: 'var(--color-danger)', fontSize: '0.75rem' }}>{error}</span>}
+                {error && <span className={styles.errorText}>{error}</span>}
             </div>
         );
     }

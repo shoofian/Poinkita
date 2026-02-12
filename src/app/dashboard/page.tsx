@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import styles from './page.module.css';
@@ -10,6 +9,19 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, AreaChart, Area, Legend
 } from 'recharts';
+
+import {
+    Users,
+    Zap,
+    Trophy,
+    TrendingUp,
+    TrendingDown,
+    Activity,
+    Target,
+    PieChart as PieChartIcon,
+    ArrowUpRight,
+    Search
+} from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -32,7 +44,7 @@ export default function DashboardPage() {
 
     const divisionData = Object.entries(divisionDataMap).map(([name, value]) => ({
         name,
-        value: Math.max(0, value) // Only show positive contributions in pie
+        value: Math.max(0, value)
     })).filter(d => d.value > 0);
 
     // 2. Top 5 Performers (Bar Chart)
@@ -65,72 +77,110 @@ export default function DashboardPage() {
         };
     });
 
-    // 4. Comparison: Achievements vs Violations (Bar/Pie)
+    // 4. Comparison: Achievements vs Violations
     const comparisonData = [
-        { name: 'Penambahan (Prestasi)', value: auditLogs.filter(log => log.points > 0).reduce((acc, log) => acc + log.points, 0) },
-        { name: 'Pengurangan (Pelanggaran)', value: Math.abs(auditLogs.filter(log => log.points < 0).reduce((acc, log) => acc + log.points, 0)) }
+        { name: 'Prestasi', value: auditLogs.filter(log => log.points > 0).reduce((acc, log) => acc + log.points, 0) },
+        { name: 'Pelanggaran', value: Math.abs(auditLogs.filter(log => log.points < 0).reduce((acc, log) => acc + log.points, 0)) }
     ];
 
-    // 5. Impact Analysis (Stacked Bar by Division)
-    const divisionImpactMap = members.reduce((acc, m) => {
-        if (!acc[m.division]) acc[m.division] = { name: m.division, positive: 0, negative: 0 };
-        const memberLogs = auditLogs.filter(log => log.memberId === m.id);
-        memberLogs.forEach(log => {
-            if (log.points > 0) acc[m.division].positive += log.points;
-            else acc[m.division].negative += Math.abs(log.points);
-        });
-        return acc;
-    }, {} as Record<string, { name: string, positive: number, negative: number }>);
-
-    const impactData = Object.values(divisionImpactMap);
+    // Trends (Simple mock comparison)
+    const activeToday = auditLogs.filter(log => {
+        const d = new Date(log.timestamp);
+        return d.toDateString() === new Date().toDateString();
+    }).length;
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.pageTitle}>{t.dashboard.overview}</h1>
-
-            <div className={styles.statsGrid}>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t.dashboard.totalMembers}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <span className={styles.statValue}>{members.length}</span>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t.dashboard.totalPoints}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <span className={styles.statValue}>{totalPoints}</span>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t.dashboard.topPerformer}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <span className={styles.statValue}>{topPerformer ? topPerformer.name : 'N/A'}</span>
-                    </CardContent>
-                </Card>
+            <div className={styles.header}>
+                <h1 className={styles.pageTitle}>{t.dashboard.overview}</h1>
+                <p className={styles.pageSubtitle}>Pantau kinerja dan aktivitas anggota secara real-time.</p>
             </div>
 
-            {/* Charts Section */}
-            <div className={styles.chartsGrid}>
-                {/* 1. Activity Trend */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Aktivitas 7 Hari Terakhir</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+            <div className={styles.bentoGrid}>
+                {/* Stat: Total Members */}
+                <div className={`${styles.bentoItem} ${styles.span3}`}>
+                    <div className={styles.statCard}>
+                        <div className={styles.statHeader}>
+                            <div className={styles.statIcon} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                                <Users size={24} />
+                            </div>
+                            <span className={`${styles.statTrend} ${styles.trendUp}`}>
+                                <TrendingUp size={14} /> +2%
+                            </span>
+                        </div>
+                        <div className={styles.statMeta}>
+                            <div className={styles.statValue}>{members.length}</div>
+                            <div className={styles.statLabel}>{t.dashboard.totalMembers}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stat: Total Points */}
+                <div className={`${styles.bentoItem} ${styles.span3}`}>
+                    <div className={styles.statCard}>
+                        <div className={styles.statHeader}>
+                            <div className={styles.statIcon} style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                                <Zap size={24} />
+                            </div>
+                            <span className={`${styles.statTrend} ${styles.trendUp}`}>
+                                <TrendingUp size={14} /> +12%
+                            </span>
+                        </div>
+                        <div className={styles.statMeta}>
+                            <div className={styles.statValue}>{totalPoints}</div>
+                            <div className={styles.statLabel}>{t.dashboard.totalPoints}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stat: Active Today */}
+                <div className={`${styles.bentoItem} ${styles.span3}`}>
+                    <div className={styles.statCard}>
+                        <div className={styles.statHeader}>
+                            <div className={styles.statIcon} style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
+                                <Activity size={24} />
+                            </div>
+                            <span className={`${styles.statTrend} ${activeToday > 0 ? styles.trendUp : styles.trendDown}`}>
+                                {activeToday > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                {activeToday} Aktivitas
+                            </span>
+                        </div>
+                        <div className={styles.statMeta}>
+                            <div className={styles.statValue}>{activeToday}</div>
+                            <div className={styles.statLabel}>Aktivitas Hari Ini</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Stat: Top Performer */}
+                <div className={`${styles.bentoItem} ${styles.span3}`}>
+                    <div className={styles.statCard}>
+                        <div className={styles.statHeader}>
+                            <div className={styles.statIcon} style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }}>
+                                <Trophy size={24} />
+                            </div>
+                            <ArrowUpRight size={18} style={{ color: 'var(--color-text-muted)' }} />
+                        </div>
+                        <div className={styles.statMeta}>
+                            <div className={styles.statValue} style={{ fontSize: '1.5rem', paddingTop: '0.25rem' }}>
+                                {topPerformer ? topPerformer.name.split(' ')[0] : 'N/A'}
+                            </div>
+                            <div className={styles.statLabel}>{t.dashboard.topPerformer}</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chart: Activity Trend (Large) */}
+                <div className={`${styles.bentoItem} ${styles.span8} ${styles.row2}`}>
+                    <div className={styles.chartCard}>
+                        <h2 className={styles.chartTitle}>Tren Aktivitas Mingguan</h2>
+                        <p className={styles.chartDesc}>Jumlah pencatatan poin selama 7 hari terakhir.</p>
                         <div className={styles.chartContainer}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={activityData}>
                                     <defs>
                                         <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1} />
+                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
                                             <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
@@ -138,29 +188,101 @@ export default function DashboardPage() {
                                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                                     <Tooltip
-                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                                     />
-                                    <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
+                                    <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                {/* 2. Point Comparison */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Penambahan vs Pengurangan</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={styles.chartContainer} style={{ height: '300px' }}>
+                {/* List: Recent Activity */}
+                <div className={`${styles.bentoItem} ${styles.span4} ${styles.row2}`}>
+                    <div className={styles.chartCard}>
+                        <h2 className={styles.chartTitle}>{t.dashboard.recentActivity}</h2>
+                        <p className={styles.chartDesc}>Riwayat perubahan poin terbaru.</p>
+                        <div className={styles.activityList}>
+                            {auditLogs.slice(0, 5).map((log, i) => {
+                                const member = members.find(m => m.id === log.memberId);
+                                const isPositive = log.points > 0;
+                                return (
+                                    <div key={log.id} className={styles.activityItem}>
+                                        <div
+                                            className={styles.activityIcon}
+                                            style={{ background: isPositive ? '#d1fae5' : '#fee2e2', color: isPositive ? '#059669' : '#dc2626' }}
+                                        >
+                                            {member?.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className={styles.activityContent}>
+                                            <div className={styles.activityTitle}>{member?.name || 'Unknown'}</div>
+                                            <div className={styles.activityTime}>{log.details}</div>
+                                        </div>
+                                        <div className={styles.activityPoints} style={{ color: isPositive ? '#059669' : '#dc2626' }}>
+                                            {isPositive ? '+' : ''}{log.points}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                            {auditLogs.length === 0 && (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
+                                    {t.dashboard.noActivity}
+                                </div>
+                            )}
+                            <a href="/dashboard/transactions" style={{
+                                marginTop: '1rem',
+                                textAlign: 'center',
+                                color: 'var(--color-primary)',
+                                textDecoration: 'none',
+                                fontSize: '0.875rem',
+                                fontWeight: 600,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem'
+                            }}>
+                                {t.dashboard.viewHistory} <ArrowUpRight size={14} />
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chart: Distribution (Small) */}
+                <div className={`${styles.bentoItem} ${styles.span4}`}>
+                    <div className={styles.chartCard}>
+                        <h2 className={styles.chartTitle}>Distribusi Poin</h2>
+                        <div className={styles.chartContainer} style={{ minHeight: '180px' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={divisionData}
+                                        innerRadius={50}
+                                        outerRadius={70}
+                                        paddingAngle={4}
+                                        dataKey="value"
+                                    >
+                                        {divisionData.map((_entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chart: Comparison (Small) */}
+                <div className={`${styles.bentoItem} ${styles.span4}`}>
+                    <div className={styles.chartCard}>
+                        <h2 className={styles.chartTitle}>Prestasi vs Pelanggaran</h2>
+                        <div className={styles.chartContainer} style={{ minHeight: '180px' }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={comparisonData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <YAxis axisLine={false} tickLine={false} hide />
-                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                    <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
+                                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                    <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={32}>
                                         {comparisonData.map((_entry, index) => (
                                             <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : '#ef4444'} />
                                         ))}
@@ -168,103 +290,29 @@ export default function DashboardPage() {
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
 
-                {/* 3. Impact by Division */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Dampak Per Divisi (Prestasi vs Pelanggaran)</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={styles.chartContainer}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={impactData} margin={{ bottom: 20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} angle={-15} textAnchor="end" />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                    <Legend />
-                                    <Bar dataKey="positive" name="Prestasi" fill="#10b981" radius={[2, 2, 0, 0]} />
-                                    <Bar dataKey="negative" name="Pelanggaran" fill="#ef4444" radius={[2, 2, 0, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                {/* Chart: Top Members (Small) */}
+                <div className={`${styles.bentoItem} ${styles.span4}`}>
+                    <div className={styles.chartCard} style={{ background: 'var(--color-primary)', color: 'white' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h2 className={styles.chartTitle} style={{ color: 'white' }}>Top Members</h2>
+                            <Trophy size={18} />
                         </div>
-                    </CardContent>
-                </Card>
-
-                {/* 4. Division Points (Pie) */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Distribusi Poin Divisi</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={styles.chartContainer}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={divisionData}
-                                        innerRadius={60}
-                                        outerRadius={80}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                    >
-                                        {divisionData.map((_entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                    <Legend />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* 5. Top Performers */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Top 5 Anggota Terbaik</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className={styles.chartContainer}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={top5Data} layout="vertical" margin={{ left: 20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#f1f5f9" />
-                                    <XAxis type="number" hide />
-                                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} width={80} />
-                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                    <Bar dataKey="points" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* 6. Recent Logs Link */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{t.dashboard.recentActivity}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {auditLogs.slice(0, 5).map(log => (
-                                <div key={log.id} style={{ fontSize: '0.875rem', padding: '0.5rem', background: 'rgba(0,0,0,0.02)', borderRadius: '4px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                                        <span style={{ fontWeight: 700, color: 'var(--color-primary)', fontSize: '0.75rem' }}>{log.id}</span>
-                                        <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{new Date(log.timestamp).toLocaleTimeString()}</span>
-                                    </div>
-                                    <span style={{ fontWeight: 600 }}>{members.find(m => m.id === log.memberId)?.name}</span>: {log.details}
+                            {top5Data.slice(0, 3).map((m, i) => (
+                                <div key={m.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.875rem', opacity: 0.9 }}>{i + 1}. {m.name}</span>
+                                    <span style={{ fontWeight: 800 }}>{m.points}</span>
                                 </div>
                             ))}
-                            <p style={{ marginTop: '0.5rem' }}>
-                                <a href="/dashboard/transactions" style={{ color: 'var(--color-primary)', textDecoration: 'none', fontSize: '0.875rem', fontWeight: 500 }}>
-                                    {t.dashboard.viewHistory} →
-                                </a>
-                            </p>
                         </div>
-                    </CardContent>
-                </Card>
+                        <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.75rem', opacity: 0.8 }}>
+                            Anggota dengan performa terbaik bulan ini.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

@@ -173,7 +173,8 @@ export default function TransactionsPage() {
                 contributorId: currentUser.id,
                 ruleId: rule.id,
                 timestamp: new Date().toISOString(),
-                pointsSnapshot: rule.points
+                pointsSnapshot: rule.points,
+                adminId: currentUser.adminId || currentUser.id // Provided by context but needed for type
             });
             setIsModalOpen(false);
         }

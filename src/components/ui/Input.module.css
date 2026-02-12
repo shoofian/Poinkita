@@ -1,13 +1,21 @@
-.inputGroup {
+.inputContainer {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-2);
+    width: 100%;
 }
 
 .label {
     font-size: 0.875rem;
     font-weight: 500;
-    color: var(--color-text);
+    color: var(--color-gray-700);
+    margin-bottom: 2px;
+}
+
+.wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
 }
 
 .input {
@@ -32,13 +40,22 @@
     box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
-.wrapper {
-    position: relative;
+.leadingIcon {
+    position: absolute;
+    left: 12px;
     display: flex;
     align-items: center;
+    justify-content: center;
+    color: var(--color-gray-400);
+    pointer-events: none;
+    z-index: 1;
 }
 
-.inputWithIcon {
+.inputWithLeadingIcon {
+    padding-left: 40px !important;
+}
+
+.inputWithToggle {
     padding-right: 42px !important;
 }
 
@@ -55,7 +72,7 @@
     padding: 6px;
     border-radius: 4px;
     transition: all 0.2s;
-    z-index: 1;
+    z-index: 2;
 }
 
 .toggleBtn:hover {
@@ -63,16 +80,8 @@
     background: var(--color-gray-100);
 }
 
-.error {
-    border-color: var(--color-danger);
-}
-
-.error:focus {
-    border-color: var(--color-danger);
-    box-shadow: 0 0 0 3px var(--color-danger-light);
-}
-
-.errorMessage {
+.errorText {
     font-size: 0.75rem;
     color: var(--color-danger);
+    margin-top: 4px;
 }

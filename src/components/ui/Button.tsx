@@ -4,12 +4,14 @@ import styles from './Button.module.css';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+    size?: 'sm' | 'md' | 'lg';
     isLoading?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({
     className,
     variant = 'primary',
+    size = 'md',
     isLoading,
     children,
     disabled,
@@ -17,7 +19,12 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
     return (
         <button
-            className={clsx(styles.button, styles[variant], className)}
+            className={clsx(
+                styles.button,
+                styles[variant],
+                styles[size],
+                className
+            )}
             disabled={disabled || isLoading}
             {...props}
         >

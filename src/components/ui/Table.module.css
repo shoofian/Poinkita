@@ -11,20 +11,20 @@
     font-size: 0.875rem;
 }
 
-.header {
+.thead {
     background: var(--color-gray-50);
 }
 
-.row {
+.tr {
     border-bottom: 1px solid var(--color-border);
     transition: background var(--transition);
 }
 
-.row:hover {
+.tr:hover {
     background: var(--color-gray-50);
 }
 
-.head {
+.th {
     padding: var(--spacing-3) var(--spacing-4);
     text-align: left;
     font-weight: 600;
@@ -34,11 +34,11 @@
     letter-spacing: 0.05em;
 }
 
-.cell {
+.td {
     padding: var(--spacing-4);
     color: var(--color-text);
 }
 
-.body .row:last-child {
+.tbody .tr:last-child {
     border-bottom: none;
 }

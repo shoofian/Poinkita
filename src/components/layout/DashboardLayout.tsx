@@ -23,13 +23,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             router.replace('/login');
             return;
         }
-
-        if (currentUser.role === 'CONTRIBUTOR') {
-            const restrictedPaths = ['/dashboard/members', '/dashboard/rules', '/dashboard/recap', '/dashboard/archive', '/dashboard'];
-            if (restrictedPaths.includes(pathname)) {
-                router.replace('/dashboard/transactions');
-            }
-        }
     }, [pathname, currentUser, router]);
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);

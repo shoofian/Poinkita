@@ -14,14 +14,14 @@ interface StoreContextType {
     users: User[];
     currentUser: User | null;
     setCurrentUser: (user: User | null) => void;
-    addMember: (member: Member) => void;
-    addMembers: (members: Member[]) => void;
+    addMember: (member: Omit<Member, 'adminId'> & { adminId?: string }) => void;
+    addMembers: (members: (Omit<Member, 'adminId'> & { adminId?: string })[]) => void;
     updateMemberPoints: (id: string, points: number) => void;
     deleteMember: (id: string) => void;
     deleteMembers: (ids: string[]) => void;
-    addRule: (rule: Rule) => void;
+    addRule: (rule: Omit<Rule, 'adminId'> & { adminId?: string }) => void;
     deleteRule: (id: string) => void;
-    addTransaction: (transaction: Transaction) => void;
+    addTransaction: (transaction: Omit<Transaction, 'adminId'> & { adminId?: string }) => void;
     deleteTransaction: (id: string) => void;
     addAuditLogs: (logs: AuditLog[]) => void;
     createArchive: (title: string) => void;
@@ -32,9 +32,13 @@ interface StoreContextType {
     deleteUser: (id: string) => void;
     updateMembers: (ids: string[], updates: Partial<Member>) => void;
     generateId: (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC', type?: 'ACH' | 'VIO') => string;
+    lookupMemberPublic: (id: string, division: string) => Member | null;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
+
+// Default Admin used for public registrations or as a fallback
+const DEFAULT_ADMIN_ID = 'USR-20260210-001';
 
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
@@ -48,120 +52,77 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Load from localStorage on mount
     useEffect(() => {
-        try {
-            const storedMembers = localStorage.getItem('members');
-            const storedRules = localStorage.getItem('rules');
-            const storedTransactions = localStorage.getItem('transactions');
-            const storedAuditLogs = localStorage.getItem('auditLogs');
-            const storedArchives = localStorage.getItem('archives');
-            const storedUsers = localStorage.getItem('users');
-            const storedCurrentUser = localStorage.getItem('currentUser');
+        const loadStore = () => {
+            try {
+                const storedMembers = localStorage.getItem('members');
+                const storedRules = localStorage.getItem('rules');
+                const storedTransactions = localStorage.getItem('transactions');
+                const storedAuditLogs = localStorage.getItem('auditLogs');
+                const storedArchives = localStorage.getItem('archives');
+                const storedUsers = localStorage.getItem('users');
+                const storedCurrentUser = localStorage.getItem('currentUser');
 
-            if (storedMembers) {
-                const parsed = JSON.parse(storedMembers);
-                if (Array.isArray(parsed)) setMembers(parsed);
-            }
-            if (storedRules) {
-                const parsed = JSON.parse(storedRules);
-                if (Array.isArray(parsed)) setRules(parsed);
-            }
-            if (storedTransactions) {
-                const parsed = JSON.parse(storedTransactions);
-                if (Array.isArray(parsed)) setTransactions(parsed);
-            }
-            if (storedAuditLogs) {
-                const parsed = JSON.parse(storedAuditLogs);
-                if (Array.isArray(parsed)) setAuditLogs(parsed);
-            }
-            if (storedArchives) {
-                const parsed = JSON.parse(storedArchives);
-                if (Array.isArray(parsed)) setArchives(parsed);
-            }
-            if (storedUsers) {
-                const parsed = JSON.parse(storedUsers);
-                if (Array.isArray(parsed)) {
-                    // Merge with INITIAL_USERS to restore critical fields for default accounts
-                    const merged = parsed.map(user => {
+                // Helper to safely parse and validate array
+                const parseSafe = (stored: string | null) => {
+                    if (!stored) return null;
+                    const parsed = JSON.parse(stored);
+                    return Array.isArray(parsed) ? parsed : null;
+                };
+
+                const membersData = parseSafe(storedMembers);
+                const rulesData = parseSafe(storedRules);
+                const transactionsData = parseSafe(storedTransactions);
+                const auditLogsData = parseSafe(storedAuditLogs);
+                const archivesData = parseSafe(storedArchives);
+                const usersData = parseSafe(storedUsers);
+
+                if (membersData) setMembers(membersData);
+                if (rulesData) setRules(rulesData);
+                if (transactionsData) setTransactions(transactionsData);
+                if (auditLogsData) setAuditLogs(auditLogsData);
+                if (archivesData) setArchives(archivesData);
+
+                if (usersData) {
+                    const merged = usersData.map(user => {
                         const defaultUser = INITIAL_USERS.find(iu => iu.id === user.id || iu.username === user.username);
                         if (defaultUser) {
-                            return {
-                                ...defaultUser,
-                                ...user,
-                                // Ensure adminId and role from initial data take precedence if not in storage
-                                adminId: user.adminId || defaultUser.adminId,
-                                role: user.role || defaultUser.role
-                            };
+                            return { ...defaultUser, ...user, adminId: user.adminId || defaultUser.adminId, role: user.role || defaultUser.role };
                         }
                         return user;
                     });
                     setUsers(merged);
                 }
-            }
-            if (storedCurrentUser) {
-                const parsed = JSON.parse(storedCurrentUser);
-                if (parsed && typeof parsed === 'object') {
-                    // Migration: if it's a legacy ID (like 'u1'), map to new ID format from INITIAL_USERS
-                    let migratedUser = parsed;
-                    const defaultUser = INITIAL_USERS.find(iu => iu.username === parsed.username);
-                    if (defaultUser) {
-                        // Ensure consistency with initial data for default accounts
-                        migratedUser = {
-                            ...defaultUser,
-                            ...parsed,
-                            id: defaultUser.id,
-                            adminId: parsed.adminId || defaultUser.adminId
-                        };
+
+                if (storedCurrentUser) {
+                    const parsed = JSON.parse(storedCurrentUser);
+                    if (parsed && typeof parsed === 'object') {
+                        let migratedUser = parsed;
+                        const defaultUser = INITIAL_USERS.find(iu => iu.username === parsed.username);
+                        if (defaultUser) {
+                            migratedUser = { ...defaultUser, ...parsed, id: defaultUser.id, adminId: parsed.adminId || defaultUser.adminId };
+                        }
+                        setCurrentUser(migratedUser);
                     }
-                    setCurrentUser(migratedUser);
                 }
+
+                // Data Consistency & "Query" normalization
+                setMembers(prev => prev.map(m => ({ ...m, adminId: m.adminId || DEFAULT_ADMIN_ID })));
+                setRules(prev => prev.map(r => ({ ...r, adminId: r.adminId || DEFAULT_ADMIN_ID })));
+                setArchives(prev => prev.map(a => ({ ...a, adminId: a.adminId || DEFAULT_ADMIN_ID })));
+
+            } catch (error) {
+                console.error('Failed to load store:', error);
+            } finally {
+                setIsLoaded(true);
             }
+        };
 
-            // Post-load ID Migration for Consistency
-            const defaultAdminId = INITIAL_USERS[0].id; // USR-20260210-001
-
-            setMembers(prev => prev.map(m => ({ ...m, adminId: m.adminId || defaultAdminId })));
-            setRules(prev => prev.map(r => ({ ...r, adminId: r.adminId || defaultAdminId })));
-            setArchives(prev => prev.map(a => ({ ...a, adminId: a.adminId || defaultAdminId })));
-
-            setUsers(currentUsers => {
-                const migratedUsers = currentUsers.map(u => {
-                    const defaultUser = INITIAL_USERS.find(iu => iu.username === u.username);
-                    return defaultUser && u.id !== defaultUser.id ? { ...u, id: defaultUser.id } : u;
-                });
-
-                // Update transactions and audit logs in tandem with users migration
-                setTransactions(prevTx => prevTx.map(tx => {
-                    const user = migratedUsers.find(u => u.id === tx.contributorId) ||
-                        INITIAL_USERS.find(iu => iu.id === tx.contributorId || iu.username === tx.contributorId);
-                    return {
-                        ...tx,
-                        contributorId: user ? user.id : tx.contributorId,
-                        adminId: tx.adminId || defaultAdminId
-                    };
-                }));
-
-                setAuditLogs(prevLogs => prevLogs.map(log => {
-                    const user = migratedUsers.find(u => u.id === log.contributorId) ||
-                        INITIAL_USERS.find(iu => iu.id === log.contributorId || iu.username === log.contributorId);
-                    return {
-                        ...log,
-                        contributorId: user ? user.id : log.contributorId,
-                        adminId: log.adminId || defaultAdminId
-                    };
-                }));
-
-                return migratedUsers;
-            });
-
-            setIsLoaded(true);
-        } catch (error) {
-            console.error('Failed to load storage:', error);
-            setIsLoaded(true);
-        }
+        loadStore();
     }, []);
 
     const effectiveAdminId = currentUser?.role === 'ADMIN' ? currentUser.id : currentUser?.adminId;
 
+    // Derived "Queries"
     const filteredMembers = members.filter(m => m.adminId === effectiveAdminId);
     const filteredRules = rules.filter(r => r.adminId === effectiveAdminId);
     const filteredTransactions = transactions.filter(t => t.adminId === effectiveAdminId);
@@ -173,18 +134,19 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             : users.filter(u => u.id === currentUser.id))
         : users;
 
-    // Save to localStorage on change - GUARDED BY isLoaded
-    useEffect(() => { if (isLoaded) localStorage.setItem('members', JSON.stringify(members)); }, [members, isLoaded]);
-    useEffect(() => { if (isLoaded) localStorage.setItem('rules', JSON.stringify(rules)); }, [rules, isLoaded]);
-    useEffect(() => { if (isLoaded) localStorage.setItem('transactions', JSON.stringify(transactions)); }, [transactions, isLoaded]);
-    useEffect(() => { if (isLoaded) localStorage.setItem('auditLogs', JSON.stringify(auditLogs)); }, [auditLogs, isLoaded]);
-    useEffect(() => { if (isLoaded) localStorage.setItem('archives', JSON.stringify(archives)); }, [archives, isLoaded]);
-    useEffect(() => { if (isLoaded) localStorage.setItem('users', JSON.stringify(users)); }, [users, isLoaded]);
+    // Persistence Effect
     useEffect(() => {
         if (!isLoaded) return;
-        if (currentUser) localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        else localStorage.removeItem('currentUser');
-    }, [currentUser, isLoaded]);
+        const state = { members, rules, transactions, auditLogs, archives, users, currentUser };
+        Object.entries(state).forEach(([key, value]) => {
+            if (key === 'currentUser') {
+                if (value) localStorage.setItem(key, JSON.stringify(value));
+                else localStorage.removeItem(key);
+            } else {
+                localStorage.setItem(key, JSON.stringify(value));
+            }
+        });
+    }, [members, rules, transactions, auditLogs, archives, users, currentUser, isLoaded]);
 
     const generateId = (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC', type?: 'ACH' | 'VIO'): string => {
         const date = new Date();
@@ -212,7 +174,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (relevantIds.length > 0) {
             const seqs = relevantIds.map(id => {
                 const parts = id.split('-');
-                return parseInt(parts[parts.length - 1], 10);
+                const seqStr = parts[parts.length - 1];
+                return parseInt(seqStr, 10);
             }).filter(s => !isNaN(s));
             if (seqs.length > 0) {
                 nextSeq = Math.max(...seqs) + 1;
@@ -222,13 +185,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return `${prefixWithDate}${nextSeq.toString().padStart(3, '0')}`;
     };
 
-    const addMember = (member: Member) => {
-        const adminId = effectiveAdminId || 'system';
-        setMembers([...members, { ...member, adminId }]);
+    const addMember = (member: Omit<Member, 'adminId'> & { adminId?: string }) => {
+        const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
+        setMembers(prev => [...prev, { ...member, adminId }]);
     };
 
-    const addMembers = (newMembers: Member[]) => {
-        const adminId = effectiveAdminId || 'system';
+    const addMembers = (newMembers: (Omit<Member, 'adminId'> & { adminId?: string })[]) => {
+        const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
         const membersWithAdmin = newMembers.map(m => ({ ...m, adminId: m.adminId || adminId }));
         setMembers(prev => [...prev, ...membersWithAdmin]);
     };
@@ -243,22 +206,21 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const deleteMembers = (ids: string[]) => setMembers(prev => prev.filter(m => !ids.includes(m.id)));
 
-    const addRule = (rule: Rule) => {
-        const adminId = effectiveAdminId || 'system';
-        setRules([...rules, { ...rule, adminId }]);
+    const addRule = (rule: Omit<Rule, 'adminId'> & { adminId?: string }) => {
+        const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
+        setRules(prev => [...prev, { ...rule, adminId }]);
     };
 
     const deleteRule = (id: string) => setRules(prev => prev.filter(r => r.id !== id));
 
-    const addTransaction = (transaction: Transaction) => {
-        const adminId = effectiveAdminId || 'system';
+    const addTransaction = (transaction: Omit<Transaction, 'adminId'> & { adminId?: string }) => {
+        const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
         const transactionWithAdmin = { ...transaction, adminId };
         setTransactions(prev => [transactionWithAdmin, ...prev]);
         updateMemberPoints(transaction.memberId, transaction.pointsSnapshot);
 
         const rule = rules.find(r => r.id === transaction.ruleId);
 
-        // Add Audit Log for Creation
         const nextLogId = generateId('ACT', rule?.type === 'ACHIEVEMENT' ? 'ACH' : 'VIO');
         const log: AuditLog = {
             id: nextLogId,
@@ -278,12 +240,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!transaction) return;
 
         const pointValue = transaction.pointsSnapshot;
-
-        // Revert points
         updateMemberPoints(transaction.memberId, -pointValue);
 
-        // Add Audit Log for Deletion
-        const nextLogId = generateId('ACT', pointValue > 0 ? 'VIO' : 'ACH'); // Reversion: if positive points deleted, it's a VIO (reduction)
+        const nextLogId = generateId('ACT', pointValue > 0 ? 'VIO' : 'ACH');
         const log: AuditLog = {
             id: nextLogId,
             timestamp: new Date().toISOString(),
@@ -291,17 +250,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             memberId: transaction.memberId,
             contributorId: currentUser ? currentUser.id : 'unknown',
             details: `Deleted transaction: ${id}`,
-            points: -pointValue, // Inverse of original to show reversion
+            points: -pointValue,
             adminId: transaction.adminId
         };
         setAuditLogs(prev => [log, ...prev]);
-
-        // Remove from active transactions
         setTransactions(prev => prev.filter(t => t.id !== id));
     };
 
     const addAuditLogs = (newLogs: AuditLog[]) => {
-        const adminId = effectiveAdminId || 'system';
+        const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
         const logsWithAdmin = newLogs.map(l => ({ ...l, adminId: l.adminId || adminId }));
         setAuditLogs(prev => [...logsWithAdmin, ...prev]);
     };
@@ -316,7 +273,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             points: m.totalPoints
         }));
 
-        const adminId = effectiveAdminId || 'system';
+        const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
         setArchives(prev => [{ id, title, timestamp, memberSnapshots: snapshotsWithAdmin, adminId }, ...prev]);
     };
 
@@ -328,12 +285,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const newUser = { ...user };
         if (currentUser?.role === 'ADMIN') {
             newUser.adminId = currentUser.id;
+        } else if (!newUser.adminId) {
+            newUser.adminId = DEFAULT_ADMIN_ID;
         }
         setUsers(prev => [...prev, newUser]);
     };
 
     const registerUsers = (newUsers: User[]) => {
-        const adminId = currentUser?.role === 'ADMIN' ? currentUser.id : undefined;
+        const adminId = currentUser?.role === 'ADMIN' ? currentUser.id : DEFAULT_ADMIN_ID;
         const usersWithAdmin = newUsers.map(u => ({ ...u, adminId: u.adminId || adminId }));
         setUsers(prev => [...prev, ...usersWithAdmin]);
     };
@@ -353,6 +312,15 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setMembers(prev => prev.map(m => ids.includes(m.id) ? { ...m, ...updates } : m));
     };
 
+    const lookupMemberPublic = (id: string, division: string): Member | null => {
+        const searchId = id.trim().toLowerCase();
+        const searchDivision = division.trim().toLowerCase();
+        return members.find(m =>
+            m.id.toLowerCase() === searchId &&
+            m.division.toLowerCase() === searchDivision
+        ) || null;
+    };
+
     return (
         <StoreContext.Provider value={{
             members: filteredMembers,
@@ -367,7 +335,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             addRule, deleteRule,
             addTransaction, deleteTransaction,
             addAuditLogs, createArchive, deleteArchive,
-            registerUser, registerUsers, updateUser, deleteUser, updateMembers, generateId
+            registerUser, registerUsers, updateUser, deleteUser, updateMembers, generateId, lookupMemberPublic
         }}>
             {children}
         </StoreContext.Provider>

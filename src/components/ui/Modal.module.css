@@ -1,7 +1,8 @@
 .overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -11,28 +12,33 @@
 
 .modal {
     background: var(--color-surface);
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-2xl);
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.05),
+        0 20px 25px -5px rgba(0, 0, 0, 0.1),
+        0 10px 10px -5px rgba(0, 0, 0, 0.04);
     width: 100%;
-    max-width: 32rem;
+    max-width: 30rem;
     max-height: 90vh;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 .header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--spacing-6);
+    padding: var(--spacing-6) var(--spacing-8);
     border-bottom: 1px solid var(--color-border);
 }
 
 .title {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--color-text);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    letter-spacing: -0.01em;
 }
 
 .closeButton {
@@ -40,14 +46,19 @@
     border: none;
     color: var(--color-gray-400);
     cursor: pointer;
-    padding: var(--spacing-2);
-    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
     transition: all var(--transition);
 }
 
 .closeButton:hover {
     background: var(--color-gray-100);
-    color: var(--color-text);
+    color: var(--color-gray-900);
+    transform: rotate(90deg);
 }
 
 .content {
@@ -56,7 +67,7 @@
 }
 
 .footer {
-    padding: var(--spacing-6);
+    padding: var(--spacing-6) var(--spacing-8);
     border-top: 1px solid var(--color-border);
     display: flex;
     gap: var(--spacing-3);

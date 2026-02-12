@@ -28,9 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: t.sidebar.archive, href: '/dashboard/archive', icon: FaArchive },
     ];
 
-    const MENU_ITEMS = currentUser?.role === 'ADMIN'
-        ? allMenuItems
-        : allMenuItems.filter(item => item.href === '/dashboard/transactions');
+    const MENU_ITEMS = allMenuItems;
 
     const toggleLanguage = () => {
         setLanguage(language === 'en' ? 'id' : 'en');
@@ -38,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
     const handleLogout = () => {
         setCurrentUser(null);
-        router.push('/login');
+        router.push('/');
     };
 
     return (

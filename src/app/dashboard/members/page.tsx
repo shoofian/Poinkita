@@ -364,49 +364,50 @@ export default function MembersPage() {
     return (
         <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             <Card>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: '1rem',
-                    flexWrap: 'wrap',
-                    marginBottom: '1rem'
-                }}>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{t.members.title}</h1>
-                    {isAdmin && (
-                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
-                            <input
-                                type="file"
-                                accept=".xlsx, .xls"
-                                style={{ display: 'none' }}
-                                ref={fileInputRef}
-                                onChange={handleExcelImport}
-                            />
-                            <Button
-                                variant="secondary"
-                                onClick={downloadExcelTemplate}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
-                            >
-                                <FaDownload /> {t.common.downloadTemplate}
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="flex items-center gap-2"
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
-                            >
-                                <FaFileExcel /> {t.common.importExcel || 'Import Excel'}
-                            </Button>
-                            <Button onClick={() => setIsModalOpen(true)}>
-                                <FaPlus /> {t.members.addMember}
-                            </Button>
-                        </div>
-                    )}
-                </div>
+                <CardContent style={{ padding: '1.5rem' }}>
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '1rem',
+                        flexWrap: 'wrap'
+                    }}>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{t.members.title}</h1>
+                        {isAdmin && (
+                            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
+                                <input
+                                    type="file"
+                                    accept=".xlsx, .xls"
+                                    style={{ display: 'none' }}
+                                    ref={fileInputRef}
+                                    onChange={handleExcelImport}
+                                />
+                                <Button
+                                    variant="secondary"
+                                    onClick={downloadExcelTemplate}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
+                                >
+                                    <FaDownload /> {t.common.downloadTemplate}
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="flex items-center gap-2"
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
+                                >
+                                    <FaFileExcel /> {t.common.importExcel || 'Import Excel'}
+                                </Button>
+                                <Button onClick={() => setIsModalOpen(true)}>
+                                    <FaPlus /> {t.members.addMember}
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
             </Card>
             <Card>
-                <CardContent style={{ padding: '1.25rem' }}>
+                <CardContent style={{ padding: '1.5rem' }}>
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',

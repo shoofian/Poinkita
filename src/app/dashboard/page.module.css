@@ -2,59 +2,245 @@
     display: flex;
     flex-direction: column;
     gap: 2rem;
+    padding-bottom: 2rem;
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .pageTitle {
-    font-size: 1.875rem;
-    font-weight: 700;
-    color: var(--color-text-main);
-}
-
-.statsGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-}
-
-.statValue {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 800;
-    color: var(--color-primary);
-}
-
-.section {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.sectionTitle {
-    font-size: 1.25rem;
-    font-weight: 600;
     color: var(--color-text-main);
+    letter-spacing: -0.025em;
+    margin: 0;
 }
 
-.chartsGrid {
+.pageSubtitle {
+    color: var(--color-text-muted);
+    font-size: 1rem;
+}
+
+/* Bento Grid System */
+.bentoGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(12, 1fr);
+    grid-auto-rows: minmax(160px, auto);
     gap: 1.5rem;
 }
 
-@media (max-width: 640px) {
-    .chartsGrid {
-        grid-template-columns: 1fr;
+.bentoItem {
+    grid-column: span 12;
+}
+
+@media (min-width: 1024px) {
+    .span3 {
+        grid-column: span 3;
+    }
+
+    .span4 {
+        grid-column: span 4;
+    }
+
+    .span6 {
+        grid-column: span 6;
+    }
+
+    .span8 {
+        grid-column: span 8;
+    }
+
+    .span9 {
+        grid-column: span 9;
+    }
+
+    .row2 {
+        grid-row: span 2;
     }
 }
 
+@media (max-width: 1023px) and (min-width: 641px) {
+
+    .span3,
+    .span4 {
+        grid-column: span 6;
+    }
+
+    .span6,
+    .span8,
+    .span9 {
+        grid-column: span 12;
+    }
+}
+
+/* Stat Cards */
+.statCard {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 1.5rem;
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+}
+
+.statCard:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.statHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.statIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+}
+
+.statMeta {
+    margin-top: 1rem;
+}
+
+.statValue {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--color-text-main);
+    line-height: 1;
+}
+
+.statLabel {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-top: 0.25rem;
+}
+
+.statTrend {
+    font-size: 0.75rem;
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.trendUp {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.trendDown {
+    color: var(--color-danger);
+    font-weight: 600;
+}
+
+/* Chart Containers */
+.chartCard {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1.5rem;
+    background: var(--color-white);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+}
+
 .chartContainer {
+    flex: 1;
+    min-height: 280px;
     width: 100%;
-    height: 300px;
     margin-top: 1rem;
 }
 
 .chartTitle {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-text-main);
+    margin: 0;
+}
+
+.chartDesc {
+    font-size: 0.875rem;
     color: var(--color-text-muted);
-    margin-bottom: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+/* Activity List */
+.activityList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.activityItem {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-alt);
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.activityItem:hover {
+    background: var(--color-white);
+    border-color: var(--color-border-light);
+    box-shadow: var(--shadow-sm);
+}
+
+.activityIcon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: white;
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.activityContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.activityTitle {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activityTime {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 0.125rem;
+}
+
+.activityPoints {
+    font-weight: 800;
+    font-size: 1rem;
+    margin-left: auto;
 }
