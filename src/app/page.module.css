@@ -14,7 +14,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 2rem;
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--color-navbar-bg);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
 }
@@ -349,6 +349,27 @@
 
 .formLinkBtn:hover {
   color: var(--color-primary-hover);
+}
+
+.helpSection {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.helpBtn {
+  font-size: 0.8rem !important;
+  color: var(--color-text-muted) !important;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: normal !important;
+}
+
+.helpBtn:hover {
+  text-decoration: underline;
+  color: var(--color-primary) !important;
+  background: transparent !important;
 }
 
 /* ─── Footer ─── */

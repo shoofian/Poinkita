@@ -63,6 +63,19 @@ export interface Archive {
   adminId: string;
 }
 
+export interface WarningRule {
+  id: string;
+  name: string;
+  threshold: number;
+  message: string;
+  action: string;
+  textColor: string;
+  backgroundColor: string;
+  adminId: string;
+}
+
+export const INITIAL_WARNING_RULES: WarningRule[] = [];
+
 export const INITIAL_MEMBERS: Member[] = [
   { id: 'MEM-20260210-001', name: 'Alice Smith', division: 'Class 10A', totalPoints: 10, adminId: 'USR-20260210-001' },
   { id: 'MEM-20260210-002', name: 'Bob Jones', division: 'Class 11B', totalPoints: -5, adminId: 'USR-20260210-001' },

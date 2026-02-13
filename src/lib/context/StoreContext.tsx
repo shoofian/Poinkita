@@ -1,13 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { INITIAL_MEMBERS, INITIAL_RULES, INITIAL_USERS, Member, Rule, Transaction, User, AuditLog, Archive, ArchiveMember } from '@/lib/store';
+import { INITIAL_MEMBERS, INITIAL_RULES, INITIAL_USERS, INITIAL_WARNING_RULES, Member, Rule, Transaction, User, AuditLog, Archive, ArchiveMember, WarningRule } from '@/lib/store';
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
 interface StoreContextType {
     members: Member[];
     rules: Rule[];
+    warningRules: WarningRule[];
     transactions: Transaction[];
     auditLogs: AuditLog[];
     archives: Archive[];
@@ -20,7 +21,11 @@ interface StoreContextType {
     deleteMember: (id: string) => void;
     deleteMembers: (ids: string[]) => void;
     addRule: (rule: Omit<Rule, 'adminId'> & { adminId?: string }) => void;
+    addRules: (rules: (Omit<Rule, 'adminId'> & { adminId?: string })[]) => void;
     deleteRule: (id: string) => void;
+    addWarningRule: (rule: Omit<WarningRule, 'adminId'> & { adminId?: string }) => void;
+    updateWarningRule: (id: string, updates: Partial<WarningRule>) => void;
+    deleteWarningRule: (id: string) => void;
     addTransaction: (transaction: Omit<Transaction, 'adminId'> & { adminId?: string }) => void;
     deleteTransaction: (id: string) => void;
     addAuditLogs: (logs: AuditLog[]) => void;
@@ -43,6 +48,7 @@ const DEFAULT_ADMIN_ID = 'USR-20260210-001';
 export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [members, setMembers] = useState<Member[]>(INITIAL_MEMBERS);
     const [rules, setRules] = useState<Rule[]>(INITIAL_RULES);
+    const [warningRules, setWarningRules] = useState<WarningRule[]>(INITIAL_WARNING_RULES);
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [archives, setArchives] = useState<Archive[]>([]);
@@ -56,6 +62,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             try {
                 const storedMembers = localStorage.getItem('members');
                 const storedRules = localStorage.getItem('rules');
+                const storedWarningRules = localStorage.getItem('warningRules');
                 const storedTransactions = localStorage.getItem('transactions');
                 const storedAuditLogs = localStorage.getItem('auditLogs');
                 const storedArchives = localStorage.getItem('archives');
@@ -71,6 +78,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
                 const membersData = parseSafe(storedMembers);
                 const rulesData = parseSafe(storedRules);
+                const warningRulesData = parseSafe(storedWarningRules);
                 const transactionsData = parseSafe(storedTransactions);
                 const auditLogsData = parseSafe(storedAuditLogs);
                 const archivesData = parseSafe(storedArchives);
@@ -78,6 +86,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
                 if (membersData) setMembers(membersData);
                 if (rulesData) setRules(rulesData);
+                if (warningRulesData) setWarningRules(warningRulesData);
                 if (transactionsData) setTransactions(transactionsData);
                 if (auditLogsData) setAuditLogs(auditLogsData);
                 if (archivesData) setArchives(archivesData);
@@ -108,6 +117,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 // Data Consistency & "Query" normalization
                 setMembers(prev => prev.map(m => ({ ...m, adminId: m.adminId || DEFAULT_ADMIN_ID })));
                 setRules(prev => prev.map(r => ({ ...r, adminId: r.adminId || DEFAULT_ADMIN_ID })));
+                setWarningRules(prev => prev.map(r => ({ ...r, adminId: r.adminId || DEFAULT_ADMIN_ID })));
                 setArchives(prev => prev.map(a => ({ ...a, adminId: a.adminId || DEFAULT_ADMIN_ID })));
 
             } catch (error) {
@@ -125,6 +135,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Derived "Queries"
     const filteredMembers = members.filter(m => m.adminId === effectiveAdminId);
     const filteredRules = rules.filter(r => r.adminId === effectiveAdminId);
+    const filteredWarningRules = warningRules.filter(r => r.adminId === effectiveAdminId);
     const filteredTransactions = transactions.filter(t => t.adminId === effectiveAdminId);
     const filteredAuditLogs = auditLogs.filter(l => l.adminId === effectiveAdminId);
     const filteredArchives = archives.filter(a => a.adminId === effectiveAdminId);
@@ -137,7 +148,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Persistence Effect
     useEffect(() => {
         if (!isLoaded) return;
-        const state = { members, rules, transactions, auditLogs, archives, users, currentUser };
+        const state = { members, rules, warningRules, transactions, auditLogs, archives, users, currentUser };
         Object.entries(state).forEach(([key, value]) => {
             if (key === 'currentUser') {
                 if (value) localStorage.setItem(key, JSON.stringify(value));
@@ -146,9 +157,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 localStorage.setItem(key, JSON.stringify(value));
             }
         });
-    }, [members, rules, transactions, auditLogs, archives, users, currentUser, isLoaded]);
+    }, [members, rules, warningRules, transactions, auditLogs, archives, users, currentUser, isLoaded]);
 
-    const generateId = (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC', type?: 'ACH' | 'VIO'): string => {
+    const generateId = (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN', type?: 'ACH' | 'VIO'): string => {
         const date = new Date();
         const yyyymmdd = date.getFullYear().toString() +
             (date.getMonth() + 1).toString().padStart(2, '0') +
@@ -159,6 +170,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             case 'USR': targetList = users; break;
             case 'MEM': targetList = members; break;
             case 'RUL': targetList = rules; break;
+            case 'WRN': targetList = warningRules; break;
             case 'TX': targetList = transactions; break;
             case 'ACT': targetList = auditLogs; break;
             case 'ARC': targetList = archives; break;
@@ -211,7 +223,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setRules(prev => [...prev, { ...rule, adminId }]);
     };
 
+    const addRules = (newRules: (Omit<Rule, 'adminId'> & { adminId?: string })[]) => {
+        const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
+        const rulesWithAdmin = newRules.map(r => ({ ...r, adminId: r.adminId || adminId }));
+        setRules(prev => [...prev, ...rulesWithAdmin]);
+    };
+
     const deleteRule = (id: string) => setRules(prev => prev.filter(r => r.id !== id));
+
+    const addWarningRule = (rule: Omit<WarningRule, 'adminId'> & { adminId?: string }) => {
+        const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
+        setWarningRules(prev => [...prev, { ...rule, adminId }]);
+    };
+
+    const updateWarningRule = (id: string, updates: Partial<WarningRule>) => {
+        setWarningRules(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+    };
+
+    const deleteWarningRule = (id: string) => setWarningRules(prev => prev.filter(r => r.id !== id));
 
     const addTransaction = (transaction: Omit<Transaction, 'adminId'> & { adminId?: string }) => {
         const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
@@ -325,6 +354,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         <StoreContext.Provider value={{
             members: filteredMembers,
             rules: filteredRules,
+            warningRules: filteredWarningRules,
             transactions: filteredTransactions,
             auditLogs: filteredAuditLogs,
             archives: filteredArchives,
@@ -332,7 +362,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             currentUser,
             setCurrentUser,
             addMember, addMembers, updateMemberPoints, deleteMember, deleteMembers,
-            addRule, deleteRule,
+            addRule, addRules, deleteRule, addWarningRule, updateWarningRule, deleteWarningRule,
             addTransaction, deleteTransaction,
             addAuditLogs, createArchive, deleteArchive,
             registerUser, registerUsers, updateUser, deleteUser, updateMembers, generateId, lookupMemberPublic

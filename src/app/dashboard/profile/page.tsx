@@ -8,14 +8,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
-import { FaUser, FaSave, FaCheckCircle, FaUserPlus, FaUsersCog, FaEnvelope, FaPhone, FaEdit, FaTrash, FaFileExcel, FaDownload } from 'react-icons/fa';
+import { FaUser, FaSave, FaCheckCircle, FaUserPlus, FaUsersCog, FaEnvelope, FaPhone, FaEdit, FaTrash, FaFileExcel, FaDownload, FaMoon, FaSun } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import { User, UserRole } from '@/lib/store';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 export default function AccountSettingsPage() {
     const { currentUser, updateUser, deleteUser, registerUser, registerUsers, users, generateId } = useStore();
     const { t } = useLanguage();
     const { alert, confirm } = useDialog();
+    const { theme, toggleTheme } = useTheme();
 
     const [activeTab, setActiveTab] = useState<'profile' | 'register' | 'manage'>('profile');
 
@@ -380,6 +382,22 @@ export default function AccountSettingsPage() {
                                         required
                                     />
                                 </div>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div>
+                                    <h4 className="font-semibold text-lg">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</h4>
+                                    <p className="text-sm text-gray-500">Switch between light and dark themes.</p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={toggleTheme}
+                                    variant="secondary"
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
+                                    {theme === 'light' ? <FaMoon /> : <FaSun />}
+                                    {theme === 'light' ? 'Enable Dark Mode' : 'Enable Light Mode'}
+                                </Button>
                             </div>
                         </CardContent>
                         <CardFooter style={{ justifyContent: 'flex-end', gap: '1rem' }}>

@@ -17,16 +17,24 @@ import {
   UserPlus,
   LogIn,
   Languages,
+  CircleHelp,
+  Moon,
+  Sun,
   Zap,
   Lock,
   Mail
 } from 'lucide-react';
 import styles from './page.module.css';
+import { useTheme } from '@/lib/context/ThemeContext';
 
 function LandingContent() {
   const router = useRouter();
+  // ... (omitting unchanged lines for brevity in thought process, but tool needs exact content for block)
+  // I will use multi_replace to be precise.
+
   const searchParams = useSearchParams();
   const { t, language, setLanguage } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
   const {
     users,
     currentUser,
@@ -179,6 +187,9 @@ function LandingContent() {
           <Button variant="ghost" className={styles.langBtn} onClick={toggleLanguage}>
             <Languages size={18} />
             {language.toUpperCase()}
+          </Button>
+          <Button variant="ghost" className={styles.langBtn} onClick={toggleTheme}>
+            {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
           <Button variant="secondary" onClick={() => { setActiveModal('LOGIN'); setLoginError(''); }}>
             {t.landing.loginBtn}
@@ -385,6 +396,15 @@ function LandingContent() {
             {t.auth.alreadyHaveAccount ? "" : t.landing.registerBtn}
             <button type="button" className={styles.formLinkBtn} onClick={() => setActiveModal('REGISTER')}>
               {t.auth.createAccount}
+            </button>
+          </div>
+          <div className={styles.helpSection}>
+            <button
+              type="button"
+              className={styles.helpBtn}
+              onClick={() => window.open('https://api.whatsapp.com/send?phone=6285157544004', '_blank')}
+            >
+              <CircleHelp size={14} /> {t.auth.needHelp}
             </button>
           </div>
         </form>

@@ -1,8 +1,8 @@
 .sidebar {
     width: 260px;
     height: 100vh;
-    background: #ffffff;
-    border-right: 1px solid #e5e7eb;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -14,7 +14,7 @@
 
 .logo {
     padding: 24px;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--color-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -23,7 +23,7 @@
 .logoText {
     font-size: 22px;
     font-weight: 700;
-    color: #3b82f6;
+    color: var(--color-primary);
     letter-spacing: -0.5px;
 }
 
@@ -31,7 +31,7 @@
     display: none;
     background: none;
     border: none;
-    color: #6b7280;
+    color: var(--color-text-muted);
     font-size: 18px;
     cursor: pointer;
     padding: 4px;
@@ -51,7 +51,7 @@
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    color: #6b7280;
+    color: var(--color-text-muted);
     text-decoration: none;
     border-radius: 8px;
     font-size: 14px;
@@ -60,17 +60,17 @@
 }
 
 .navLink:hover {
-    background: #f3f4f6;
-    color: #111827;
+    background: var(--color-gray-100);
+    color: var(--color-text);
 }
 
 .navLinkActive {
-    background: #eff6ff;
-    color: #3b82f6;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
 }
 
 .navLinkActive:hover {
-    background: #dbeafe;
+    background: var(--color-primary-light);
 }
 
 .navIcon {
@@ -81,8 +81,8 @@
 
 .footer {
     padding: 16px;
-    border-top: 1px solid #e5e7eb;
-    background: #f9fafb;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-background);
 }
 
 .userCardLink {
@@ -95,8 +95,8 @@
     align-items: center;
     gap: 12px;
     padding: 12px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     margin-bottom: 12px;
     cursor: pointer;
@@ -104,9 +104,9 @@
 }
 
 .userCard:hover {
-    background: #f8fafc;
-    border-color: #3b82f633;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background: var(--color-gray-50);
+    border-color: var(--color-primary-light);
+    box-shadow: var(--shadow-sm);
     transform: translateY(-1px);
 }
 
@@ -114,7 +114,7 @@
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -132,7 +132,7 @@
 
 .userName {
     font-weight: 600;
-    color: #111827;
+    color: var(--color-text);
     font-size: 14px;
     white-space: nowrap;
     overflow: hidden;
@@ -141,7 +141,7 @@
 
 .userRole {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--color-text-muted);
 }
 
 .actions {
@@ -156,25 +156,25 @@
     justify-content: center;
     gap: 6px;
     padding: 10px 12px;
-    border: 1px solid #e5e7eb;
-    background: #ffffff;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
     border-radius: 8px;
     cursor: pointer;
     font-size: 13px;
     font-weight: 500;
-    color: #6b7280;
+    color: var(--color-text-muted);
     transition: all 0.15s ease;
 }
 
 .actionBtn:hover {
-    background: #f3f4f6;
-    color: #111827;
+    background: var(--color-gray-100);
+    color: var(--color-text);
 }
 
 .logoutBtn:hover {
-    background: #fef2f2;
-    border-color: #fecaca;
-    color: #ef4444;
+    background: var(--color-danger-light);
+    border-color: var(--color-danger-light);
+    color: var(--color-danger);
 }
 
 @media (max-width: 768px) {

@@ -51,6 +51,7 @@ export const translations = {
             importUserSuccess: "Successfully imported {0} contributor accounts.",
             generateRandomPassword: "Generate Random Password",
             randomPasswordDesc: "Password will be automatically generated for imported users.",
+            needHelp: "Need Help?",
         },
         sidebar: {
             dashboard: "Dashboard",
@@ -124,6 +125,8 @@ export const translations = {
             violation: "Violation",
             typeLabel: "Points (Positive for Achievement, Negative for Violation)",
             deleteConfirm: "Delete this rule?",
+            importRulesTemplate: "Download Rules Template",
+            importRulesSuccess: "Successfully imported {0} rules.",
         },
         transactions: {
             selectMember: "1. Select Member",
@@ -228,6 +231,7 @@ export const translations = {
             importUserSuccess: "{0} akun kontributor berhasil diimpor.",
             generateRandomPassword: "Generate Password Acak",
             randomPasswordDesc: "Password akan dibuat otomatis secara acak untuk akun yang diimpor.",
+            needHelp: "Butuh Bantuan ?",
         },
         sidebar: {
             dashboard: "Beranda",
@@ -301,6 +305,8 @@ export const translations = {
             violation: "Pelanggaran",
             typeLabel: "Poin (Positif untuk Pencapaian, Negatif untuk Pelanggaran)",
             deleteConfirm: "Hapus aturan ini?",
+            importRulesTemplate: "Unduh Format Aturan",
+            importRulesSuccess: "Berhasil mengimpor {0} aturan.",
         },
         transactions: {
             selectMember: "1. Pilih Anggota",

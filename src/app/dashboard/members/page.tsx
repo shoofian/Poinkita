@@ -502,8 +502,8 @@ export default function MembersPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {paginatedMembers.map((member) => (
-                                <TableRow key={member.id}>
+                            {paginatedMembers.map((member, index) => (
+                                <TableRow key={`${member.id}-${index}`}>
                                     <TableCell>
                                         <input
                                             type="checkbox"

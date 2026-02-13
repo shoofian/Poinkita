@@ -3,9 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe, FaTimes, FaArchive } from 'react-icons/fa';
+import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe, FaTimes, FaArchive, FaMoon, FaSun } from 'react-icons/fa';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useStore } from '@/lib/context/StoreContext';
+import { useTheme } from '@/lib/context/ThemeContext';
 import styles from './Sidebar.module.css';
 
 interface SidebarProps {
@@ -17,6 +18,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const pathname = usePathname();
     const router = useRouter();
     const { t, language, setLanguage } = useLanguage();
+    const { theme, toggleTheme } = useTheme();
     const { currentUser, setCurrentUser } = useStore();
 
     const allMenuItems = [
@@ -84,12 +86,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         <FaGlobe />
                         <span>{language === 'en' ? 'ID' : 'EN'}</span>
                     </button>
+                    <button onClick={toggleTheme} className={styles.actionBtn}>
+                        {theme === 'light' ? <FaMoon /> : <FaSun />}
+                        <span>{theme === 'light' ? 'Dark' : 'Light'}</span>
+                    </button>
                     <button onClick={handleLogout} className={`${styles.actionBtn} ${styles.logoutBtn}`}>
                         <FaSignOutAlt />
                         <span>{t.common.logout}</span>
                     </button>
                 </div>
             </div>
-        </aside>
+        </aside >
     );
 };

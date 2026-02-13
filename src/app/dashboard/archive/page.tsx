@@ -9,7 +9,7 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useDialog } from '@/components/ui/ConfirmDialog';
 import { Archive } from '@/lib/store';
-import { FaTrash, FaEye, FaChevronLeft } from 'react-icons/fa';
+import { FaTrash, FaEye, FaChevronLeft, FaArchive } from 'react-icons/fa';
 
 export default function ArchivePage() {
     const { archives, deleteArchive, currentUser } = useStore();
@@ -67,8 +67,8 @@ export default function ArchivePage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {selectedArchive.memberSnapshots.map((member) => (
-                                    <TableRow key={member.id}>
+                                {selectedArchive.memberSnapshots.map((member, index) => (
+                                    <TableRow key={`${member.id}-${index}`}>
                                         <TableCell style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{member.id}</TableCell>
                                         <TableCell style={{ fontWeight: 500 }}>{member.name}</TableCell>
                                         <TableCell>{member.division}</TableCell>
@@ -148,4 +148,4 @@ export default function ArchivePage() {
     );
 }
 
-import { FaArchive } from 'react-icons/fa';
+
