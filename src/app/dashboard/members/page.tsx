@@ -10,12 +10,12 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useDialog } from '@/components/ui/ConfirmDialog';
 import { Member, Rule, AuditLog } from '@/lib/store';
-import { FaPlus, FaSearch, FaTrash, FaEdit, FaClipboardList, FaFileExcel, FaDownload, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaTrash, FaEdit, FaClipboardList, FaFileExcel, FaDownload, FaSort, FaSortUp, FaSortDown, FaExclamationTriangle } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import clsx from 'clsx';
 
 export default function MembersPage() {
-    const { members, addMember, addMembers, updateMemberPoints, updateMembers, deleteMember, deleteMembers, addAuditLogs, auditLogs, users, currentUser, generateId } = useStore();
+    const { members, addMember, addMembers, updateMemberPoints, updateMembers, deleteMember, deleteMembers, addAuditLogs, auditLogs, users, currentUser, generateId, warningRules } = useStore();
     const { t } = useLanguage();
     const { confirm, alert } = useDialog();
     const [searchTerm, setSearchTerm] = useState('');
@@ -517,6 +517,14 @@ export default function MembersPage() {
                                     <TableCell>{member.division}</TableCell>
                                     <TableCell style={{ fontWeight: 600, color: member.totalPoints >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                                         {member.totalPoints}
+                                        {warningRules.some(w => member.totalPoints <= w.threshold) && (
+                                            <span
+                                                title={warningRules.filter(w => member.totalPoints <= w.threshold).map(w => w.message).join('\n')}
+                                                style={{ marginLeft: '0.5rem', color: '#ef4444', verticalAlign: 'middle', display: 'inline-block', cursor: 'help' }}
+                                            >
+                                                <FaExclamationTriangle />
+                                            </span>
+                                        )}
                                     </TableCell>
                                     {isAdmin && (
                                         <TableCell>

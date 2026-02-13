@@ -56,72 +56,84 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Load from localStorage on mount
+    // Load from Server (API) on mount
     useEffect(() => {
-        const loadStore = () => {
+        const loadStore = async () => {
             try {
-                const storedMembers = localStorage.getItem('members');
-                const storedRules = localStorage.getItem('rules');
-                const storedWarningRules = localStorage.getItem('warningRules');
-                const storedTransactions = localStorage.getItem('transactions');
-                const storedAuditLogs = localStorage.getItem('auditLogs');
-                const storedArchives = localStorage.getItem('archives');
-                const storedUsers = localStorage.getItem('users');
+                // 1. Fetch data from Server ID
+                const response = await fetch('/api/data');
+                if (!response.ok) throw new Error('Failed to fetch data');
+                const serverData: {
+                    members: Member[], rules: Rule[], warningRules: WarningRule[],
+                    transactions: Transaction[], auditLogs: AuditLog[], archives: Archive[], users: User[]
+                } = await response.json();
+
+                // 2. Check LocalStorage for migration/session
                 const storedCurrentUser = localStorage.getItem('currentUser');
+                const storedMembers = localStorage.getItem('members');
+                const storedTransactions = localStorage.getItem('transactions');
 
-                // Helper to safely parse and validate array
-                const parseSafe = (stored: string | null) => {
-                    if (!stored) return null;
-                    const parsed = JSON.parse(stored);
-                    return Array.isArray(parsed) ? parsed : null;
-                };
+                // Helper to check if we should migrate: 
+                // If Server has no transactions but LocalStorage does, likely we need to push LocalStorage to Server.
+                // Or if Server members are just default but LocalStorage has more.
+                let dataToUse = serverData;
+                let shoudMigrate = false;
 
-                const membersData = parseSafe(storedMembers);
-                const rulesData = parseSafe(storedRules);
-                const warningRulesData = parseSafe(storedWarningRules);
-                const transactionsData = parseSafe(storedTransactions);
-                const auditLogsData = parseSafe(storedAuditLogs);
-                const archivesData = parseSafe(storedArchives);
-                const usersData = parseSafe(storedUsers);
-
-                if (membersData) setMembers(membersData);
-                if (rulesData) setRules(rulesData);
-                if (warningRulesData) setWarningRules(warningRulesData);
-                if (transactionsData) setTransactions(transactionsData);
-                if (auditLogsData) setAuditLogs(auditLogsData);
-                if (archivesData) setArchives(archivesData);
-
-                if (usersData) {
-                    const merged = usersData.map(user => {
-                        const defaultUser = INITIAL_USERS.find(iu => iu.id === user.id || iu.username === user.username);
-                        if (defaultUser) {
-                            return { ...defaultUser, ...user, adminId: user.adminId || defaultUser.adminId, role: user.role || defaultUser.role };
-                        }
-                        return user;
-                    });
-                    setUsers(merged);
+                // Simple heuristic: If server transactions are empty AND local transactions exist, use local and push.
+                if (serverData.transactions.length === 0 && storedTransactions) {
+                    const localTx = JSON.parse(storedTransactions);
+                    if (Array.isArray(localTx) && localTx.length > 0) {
+                        shoudMigrate = true;
+                    }
                 }
 
+                if (shoudMigrate) {
+                    console.log('Migrating LocalStorage to Server...');
+                    const parse = (key: string) => {
+                        const item = localStorage.getItem(key);
+                        return item ? JSON.parse(item) : undefined;
+                    };
+
+                    dataToUse = {
+                        members: parse('members') || serverData.members,
+                        rules: parse('rules') || serverData.rules,
+                        warningRules: parse('warningRules') || serverData.warningRules,
+                        transactions: parse('transactions') || serverData.transactions,
+                        auditLogs: parse('auditLogs') || serverData.auditLogs,
+                        archives: parse('archives') || serverData.archives,
+                        users: parse('users') || serverData.users,
+                    };
+
+                    // Push to server immediately
+                    await fetch('/api/data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dataToUse),
+                    });
+                }
+
+                setMembers(dataToUse.members || []);
+                setRules(dataToUse.rules || []);
+                setWarningRules(dataToUse.warningRules || []);
+                setTransactions(dataToUse.transactions || []);
+                setAuditLogs(dataToUse.auditLogs || []);
+                setArchives(dataToUse.archives || []);
+                setUsers(dataToUse.users || []);
+
+                // Load User Session (Local only)
                 if (storedCurrentUser) {
                     const parsed = JSON.parse(storedCurrentUser);
                     if (parsed && typeof parsed === 'object') {
                         let migratedUser = parsed;
-                        const defaultUser = INITIAL_USERS.find(iu => iu.username === parsed.username);
-                        if (defaultUser) {
-                            migratedUser = { ...defaultUser, ...parsed, id: defaultUser.id, adminId: parsed.adminId || defaultUser.adminId };
-                        }
+                        // Ensure user exists in the (now global) user list, otherwise might be stale session
+                        // But for now trust local session or re-validate against loaded users?
+                        // Let's just restore it.
                         setCurrentUser(migratedUser);
                     }
                 }
 
-                // Data Consistency & "Query" normalization
-                setMembers(prev => prev.map(m => ({ ...m, adminId: m.adminId || DEFAULT_ADMIN_ID })));
-                setRules(prev => prev.map(r => ({ ...r, adminId: r.adminId || DEFAULT_ADMIN_ID })));
-                setWarningRules(prev => prev.map(r => ({ ...r, adminId: r.adminId || DEFAULT_ADMIN_ID })));
-                setArchives(prev => prev.map(a => ({ ...a, adminId: a.adminId || DEFAULT_ADMIN_ID })));
-
             } catch (error) {
-                console.error('Failed to load store:', error);
+                console.error('Failed to load store from API:', error);
             } finally {
                 setIsLoaded(true);
             }
@@ -145,18 +157,42 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             : users.filter(u => u.id === currentUser.id))
         : users;
 
-    // Persistence Effect
+    // Persistence Effect (Sync to Server)
     useEffect(() => {
         if (!isLoaded) return;
-        const state = { members, rules, warningRules, transactions, auditLogs, archives, users, currentUser };
-        Object.entries(state).forEach(([key, value]) => {
-            if (key === 'currentUser') {
-                if (value) localStorage.setItem(key, JSON.stringify(value));
-                else localStorage.removeItem(key);
-            } else {
-                localStorage.setItem(key, JSON.stringify(value));
+
+        // Persist Session Locally
+        if (currentUser) {
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+        } else {
+            localStorage.removeItem('currentUser');
+        }
+
+        // Persist Data Globally (Debounce or just push)
+        const saveData = async () => {
+            try {
+                await fetch('/api/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        members,
+                        rules,
+                        warningRules,
+                        transactions,
+                        auditLogs,
+                        archives,
+                        users
+                    })
+                });
+            } catch (err) {
+                console.error('Failed to sync to server', err);
             }
-        });
+        };
+
+        // Simple debounce could be added here if needed, but for now direct sync
+        const timeout = setTimeout(saveData, 500); // 500ms debounce
+        return () => clearTimeout(timeout);
+
     }, [members, rules, warningRules, transactions, auditLogs, archives, users, currentUser, isLoaded]);
 
     const generateId = (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN', type?: 'ACH' | 'VIO'): string => {

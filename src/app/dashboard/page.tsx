@@ -20,13 +20,14 @@ import {
     Target,
     PieChart as PieChartIcon,
     ArrowUpRight,
-    Search
+    Search,
+    AlertTriangle
 } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function DashboardPage() {
-    const { members, auditLogs } = useStore();
+    const { members, auditLogs, warningRules } = useStore();
     const { t } = useLanguage();
 
     const totalPoints = members.reduce((acc, m) => acc + m.totalPoints, 0);
@@ -35,6 +36,18 @@ export default function DashboardPage() {
         : null;
 
     // --- Data Aggregation for Charts ---
+
+    // Warning Aggregation
+    const membersWithWarnings = members.map(m => {
+        const activeWarnings = warningRules
+            .filter(w => m.totalPoints <= w.threshold)
+            .sort((a, b) => a.threshold - b.threshold); // Lowest threshold (most severe) first? Or highest? 
+        // Usually if < 50 is bad and < 30 is worse. 20 triggers both. 
+        // We might want to show the most severe (lowest threshold) or all.
+        // Let's show the "active" ones.
+        return { member: m, warnings: activeWarnings };
+    }).filter(item => item.warnings.length > 0);
+
 
     // 1. Division Distribution (Pie Chart)
     const divisionDataMap = members.reduce((acc, m) => {
@@ -170,7 +183,56 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Chart: Activity Trend (Large) */}
+                {/* Alert: Members with Warnings */}
+                {membersWithWarnings.length > 0 && (
+                    <div className={`${styles.bentoItem} ${styles.span12}`}>
+                        <div className={styles.chartCard} style={{ borderLeft: '4px solid #ef4444', background: '#fff5f5' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <div style={{ padding: '0.5rem', borderRadius: '50%', background: '#fee2e2', color: '#ef4444' }}>
+                                    <AlertTriangle size={24} />
+                                </div>
+                                <div>
+                                    <h2 className={styles.chartTitle} style={{ color: '#ef4444', marginBottom: '0.25rem' }}>Perlu Perhatian ({membersWithWarnings.length})</h2>
+                                    <p className={styles.chartDesc} style={{ margin: 0 }}>Anggota berikut telah mencapai batas peringatan poin.</p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin' }}>
+                                {membersWithWarnings.map(({ member, warnings }) => (
+                                    <div key={member.id} style={{
+                                        flex: '0 0 220px',
+                                        padding: '1rem',
+                                        borderRadius: '12px',
+                                        border: '1px solid #fecaca',
+                                        background: '#fff',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: '0.25rem',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                    }}>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1f2937' }}>{member.name}</div>
+                                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{member.division}</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', margin: '0.5rem 0' }}>{member.totalPoints} <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#991b1b' }}>Poin</span></div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: 'auto' }}>
+                                            {warnings.map(w => (
+                                                <span key={w.id} style={{
+                                                    fontSize: '0.7rem',
+                                                    fontWeight: 600,
+                                                    padding: '0.25rem 0.5rem',
+                                                    borderRadius: '9999px',
+                                                    background: w.backgroundColor,
+                                                    color: w.textColor,
+                                                    border: `1px solid ${w.textColor}40`
+                                                }}>
+                                                    {w.message}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className={`${styles.bentoItem} ${styles.span8} ${styles.row2}`}>
                     <div className={styles.chartCard}>
                         <h2 className={styles.chartTitle}>Tren Aktivitas Mingguan</h2>
