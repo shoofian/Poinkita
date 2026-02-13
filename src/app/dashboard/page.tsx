@@ -4,6 +4,7 @@ import React from 'react';
 import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import styles from './page.module.css';
+import Link from 'next/link';
 
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -291,7 +292,7 @@ export default function DashboardPage() {
                                     {t.dashboard.noActivity}
                                 </div>
                             )}
-                            <a href="/dashboard/transactions" style={{
+                            <Link href="/dashboard/transactions" style={{
                                 marginTop: '1rem',
                                 textAlign: 'center',
                                 color: 'var(--color-primary)',
@@ -304,7 +305,7 @@ export default function DashboardPage() {
                                 gap: '0.5rem'
                             }}>
                                 {t.dashboard.viewHistory} <ArrowUpRight size={14} />
-                            </a>
+                            </Link>
                         </div>
                     </div>
                 </div>
