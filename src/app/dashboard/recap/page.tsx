@@ -203,33 +203,31 @@ export default function RecapPage() {
                 isOpen={isArchiveModalOpen}
                 onClose={() => setIsArchiveModalOpen(false)}
                 title={t.archive.createTitle}
-            >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.5rem 0 0.5rem 0' }}>
-                    <p style={{ fontSize: '0.925rem', color: 'var(--color-text-muted)', lineHeight: '1.5' }}>
-                        {t.archive.archiveSnapshot}
-                    </p>
-                    <div style={{ marginBottom: '0.5rem' }}>
-                        <Input
-                            label={t.archive.archiveName}
-                            placeholder="e.g. Kondisi Poin Februari 2026"
-                            value={archiveTitle}
-                            onChange={(e) => setArchiveTitle(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem', paddingTop: '1.25rem', borderTop: '1px solid var(--color-border)' }}>
-                        <Button variant="secondary" onClick={() => setIsArchiveModalOpen(false)} style={{ minWidth: '100px' }}>
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsArchiveModalOpen(false)}>
                             {t.common.cancel}
                         </Button>
                         <Button
-                            variant="primary"
                             onClick={handleConfirmArchive}
                             disabled={!archiveTitle.trim()}
-                            style={{ minWidth: '100px' }}
                         >
                             {t.common.save}
                         </Button>
-                    </div>
+                    </>
+                }
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
+                    <p style={{ fontSize: '0.925rem', color: 'var(--color-text-muted)', lineHeight: '1.5', margin: 0 }}>
+                        {t.archive.archiveSnapshot}
+                    </p>
+                    <Input
+                        label={t.archive.archiveName}
+                        placeholder="e.g. Kondisi Poin Februari 2026"
+                        value={archiveTitle}
+                        onChange={(e) => setArchiveTitle(e.target.value)}
+                        autoFocus
+                    />
                 </div>
             </Modal>
         </div>

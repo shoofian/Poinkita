@@ -152,9 +152,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const filteredAuditLogs = auditLogs.filter(l => l.adminId === effectiveAdminId);
     const filteredArchives = archives.filter(a => a.adminId === effectiveAdminId);
     const filteredUsers = currentUser
-        ? (currentUser.role === 'ADMIN'
-            ? users.filter(u => u.id === currentUser.id || u.adminId === currentUser.id)
-            : users.filter(u => u.id === currentUser.id))
+        ? users.filter(u => u.id === effectiveAdminId || u.adminId === effectiveAdminId)
         : users;
 
     // Persistence Effect (Sync to Server)

@@ -14,25 +14,25 @@
 }
 
 .panel {
-    background: white;
+    background: var(--color-bg-card);
     border-radius: 12px;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-border);
 }
 
 .panelHeader {
     padding: 20px 24px;
-    border-bottom: 1px solid #e5e7eb;
-    background: #f9fafb;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg-subtle);
 }
 
 .panelTitle {
     font-size: 18px;
     font-weight: 600;
-    color: #111827;
+    color: var(--color-text-main);
     margin: 0;
     display: flex;
     align-items: center;
@@ -49,22 +49,23 @@
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #9ca3af;
+    color: var(--color-text-muted);
 }
 
 .searchInput {
     width: 100%;
     padding: 12px 12px 12px 42px;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     font-size: 14px;
-    background: white;
+    background: var(--color-bg-card);
+    color: var(--color-text-main);
 }
 
 .searchInput:focus {
     outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .panelContent {
@@ -77,13 +78,13 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 24px;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--color-border);
     cursor: pointer;
     transition: background 0.15s;
 }
 
 .memberItem:hover {
-    background: #f9fafb;
+    background: var(--color-bg-hover);
 }
 
 .memberInfo {
@@ -96,7 +97,7 @@
     width: 42px;
     height: 42px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -107,13 +108,13 @@
 
 .memberName {
     font-weight: 600;
-    color: #111827;
+    color: var(--color-text-main);
     font-size: 15px;
 }
 
 .memberMeta {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--color-text-muted);
     margin-top: 2px;
 }
 
@@ -123,11 +124,11 @@
 }
 
 .pointsPositive {
-    color: #10b981;
+    color: var(--color-success);
 }
 
 .pointsNegative {
-    color: #ef4444;
+    color: var(--color-danger);
 }
 
 /* History Table */
@@ -141,11 +142,11 @@
     grid-template-columns: 2fr 3fr 1fr 50px;
     gap: 12px;
     padding: 12px 24px;
-    background: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
+    background: var(--color-bg-subtle);
+    border-bottom: 1px solid var(--color-border);
     font-size: 12px;
     font-weight: 600;
-    color: #6b7280;
+    color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -155,37 +156,37 @@
     grid-template-columns: 2fr 3fr 1fr 50px;
     gap: 12px;
     padding: 14px 24px;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--color-border);
     align-items: center;
 }
 
 .historyRow:hover {
-    background: #fafafa;
+    background: var(--color-bg-hover);
 }
 
 .historyRowDeleted {
     opacity: 0.5;
-    background: #fef2f2;
+    background: var(--color-danger-bg);
 }
 
 .historyMember {
     font-weight: 500;
-    color: #111827;
+    color: var(--color-text-main);
 }
 
 .historyTime {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--color-text-muted);
 }
 
 .historyDesc {
-    color: #374151;
+    color: var(--color-text-secondary);
 }
 
 .deleteBtn {
     background: none;
     border: none;
-    color: #d1d5db;
+    color: var(--color-text-muted);
     cursor: pointer;
     padding: 6px;
     border-radius: 6px;
@@ -193,14 +194,14 @@
 }
 
 .deleteBtn:hover {
-    background: #fee2e2;
-    color: #ef4444;
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
 }
 
 .emptyState {
     padding: 48px 24px;
     text-align: center;
-    color: #9ca3af;
+    color: var(--color-text-muted);
 }
 
 /* Modal Styles */
@@ -221,23 +222,23 @@
 }
 
 .typeCardAchievement {
-    background: #ecfdf5;
-    border-color: #a7f3d0;
+    background: var(--color-success-bg);
+    border-color: rgba(16, 185, 129, 0.2);
 }
 
 .typeCardAchievement:hover {
-    border-color: #10b981;
-    background: #d1fae5;
+    border-color: var(--color-success);
+    background: var(--color-success-bg);
 }
 
 .typeCardViolation {
-    background: #fef2f2;
-    border-color: #fecaca;
+    background: var(--color-danger-bg);
+    border-color: rgba(239, 68, 68, 0.2);
 }
 
 .typeCardViolation:hover {
-    border-color: #ef4444;
-    background: #fee2e2;
+    border-color: var(--color-danger);
+    background: var(--color-danger-bg);
 }
 
 .typeIcon {
@@ -248,6 +249,7 @@
 .typeLabel {
     font-size: 16px;
     font-weight: 600;
+    color: var(--color-text-main);
 }
 
 .rulesList {
@@ -260,31 +262,31 @@
     align-items: center;
     justify-content: space-between;
     padding: 16px 24px;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid var(--color-border);
     cursor: pointer;
     transition: background 0.15s;
 }
 
 .ruleItem:hover {
-    background: #f9fafb;
+    background: var(--color-bg-hover);
 }
 
 .ruleItemAchievement:hover {
-    background: #ecfdf5;
+    background: var(--color-success-bg);
 }
 
 .ruleItemViolation:hover {
-    background: #fef2f2;
+    background: var(--color-danger-bg);
 }
 
 .ruleName {
     font-weight: 500;
-    color: #111827;
+    color: var(--color-text-main);
 }
 
 .ruleCode {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--color-text-muted);
     margin-top: 2px;
 }
 
@@ -295,7 +297,7 @@
 
 .modalFooter {
     padding: 16px 24px;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--color-border);
     display: flex;
     gap: 12px;
 }
