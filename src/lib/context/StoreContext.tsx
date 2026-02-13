@@ -36,7 +36,7 @@ interface StoreContextType {
     updateUser: (id: string, updates: Partial<User>) => void;
     deleteUser: (id: string) => void;
     updateMembers: (ids: string[], updates: Partial<Member>) => void;
-    generateId: (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC', type?: 'ACH' | 'VIO') => string;
+    generateId: (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN', type?: 'ACH' | 'VIO') => string;
     lookupMemberPublic: (id: string, division: string) => Member | null;
 }
 
