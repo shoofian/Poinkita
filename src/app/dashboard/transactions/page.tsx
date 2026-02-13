@@ -109,7 +109,7 @@ function MemberHistoryContent({ memberLogs, t, users }: { memberLogs: { id: stri
 }
 
 export default function TransactionsPage() {
-    const { members, rules, transactions, auditLogs, addTransaction, deleteTransaction, currentUser, users, generateId } = useStore();
+    const { members, rules, transactions, auditLogs, addTransaction, deleteTransaction, currentUser, users, generateId, lookupUser } = useStore();
     const { t } = useLanguage();
     const { confirm, alert } = useDialog();
 
@@ -174,7 +174,7 @@ export default function TransactionsPage() {
                 ruleId: rule.id,
                 timestamp: new Date().toISOString(),
                 pointsSnapshot: rule.points,
-                adminId: currentUser.adminId || currentUser.id // Provided by context but needed for type
+                adminId: currentUser.adminId || currentUser.id // Admin Scope Owner
             });
             setIsModalOpen(false);
         }
@@ -291,7 +291,7 @@ export default function TransactionsPage() {
                                             {member?.name || log.memberId}
                                         </div>
                                         <div className={styles.historyTime}>
-                                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {t.members.changedBy} {users.find(u => u.id === log.contributorId)?.name || log.contributorId}
+                                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {t.members.changedBy} {lookupUser(log.contributorId)?.name || log.contributorId}
                                         </div>
                                     </div>
                                     <div className={styles.historyDesc}>

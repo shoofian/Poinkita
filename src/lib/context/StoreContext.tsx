@@ -38,6 +38,7 @@ interface StoreContextType {
     updateMembers: (ids: string[], updates: Partial<Member>) => void;
     generateId: (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN', type?: 'ACH' | 'VIO') => string;
     lookupMemberPublic: (id: string, division: string) => Member | null;
+    lookupUser: (id: string) => User | undefined;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -384,6 +385,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ) || null;
     };
 
+    const lookupUser = (id: string): User | undefined => {
+        return users.find(u => u.id === id);
+    };
+
     return (
         <StoreContext.Provider value={{
             members: filteredMembers,
@@ -399,7 +404,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             addRule, addRules, deleteRule, addWarningRule, updateWarningRule, deleteWarningRule,
             addTransaction, deleteTransaction,
             addAuditLogs, createArchive, deleteArchive,
-            registerUser, registerUsers, updateUser, deleteUser, updateMembers, generateId, lookupMemberPublic
+            registerUser, registerUsers, updateUser, deleteUser, updateMembers, generateId,
+            lookupMemberPublic, lookupUser
         }}>
             {children}
         </StoreContext.Provider>
