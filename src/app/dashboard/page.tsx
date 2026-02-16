@@ -187,32 +187,32 @@ export default function DashboardPage() {
                 {/* Alert: Members with Warnings */}
                 {membersWithWarnings.length > 0 && (
                     <div className={`${styles.bentoItem} ${styles.span12}`}>
-                        <div className={styles.chartCard} style={{ borderLeft: '4px solid #ef4444', background: '#fff5f5' }}>
+                        <div className={styles.chartCard} style={{ borderLeft: '4px solid var(--color-danger)', background: 'var(--color-danger-light)', opacity: 0.9 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                                <div style={{ padding: '0.5rem', borderRadius: '50%', background: '#fee2e2', color: '#ef4444' }}>
+                                <div style={{ padding: '0.5rem', borderRadius: '50%', background: 'var(--color-white)', color: 'var(--color-danger)' }}>
                                     <AlertTriangle size={24} />
                                 </div>
-                                <div>
-                                    <h2 className={styles.chartTitle} style={{ color: '#ef4444', marginBottom: '0.25rem' }}>Perlu Perhatian ({membersWithWarnings.length})</h2>
-                                    <p className={styles.chartDesc} style={{ margin: 0 }}>Anggota berikut telah mencapai batas peringatan poin.</p>
+                                <div style={{ flex: 1 }}>
+                                    <h2 className={styles.chartTitle} style={{ color: 'var(--color-danger)', marginBottom: '0.25rem' }}>Perlu Perhatian ({membersWithWarnings.length})</h2>
+                                    <p className={styles.chartDesc} style={{ margin: 0, color: 'var(--color-text)' }}>Anggota berikut telah mencapai batas peringatan poin.</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin' }}>
+                            <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin', width: '100%' }}>
                                 {membersWithWarnings.map(({ member, warnings }) => (
                                     <div key={member.id} style={{
-                                        flex: '0 0 220px',
+                                        flex: '0 0 min(250px, 80%)',
                                         padding: '1rem',
                                         borderRadius: '12px',
-                                        border: '1px solid #fecaca',
-                                        background: '#fff',
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-surface)',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         gap: '0.25rem',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                                        boxShadow: 'var(--shadow-sm)'
                                     }}>
-                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1f2937' }}>{member.name}</div>
-                                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{member.division}</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444', margin: '0.5rem 0' }}>{member.totalPoints} <span style={{ fontSize: '0.875rem', fontWeight: 500, color: '#991b1b' }}>Poin</span></div>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)' }}>{member.name}</div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{member.division}</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-danger)', margin: '0.5rem 0' }}>{member.totalPoints} <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Poin</span></div>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: 'auto' }}>
                                             {warnings.map(w => (
                                                 <span key={w.id} style={{
@@ -251,7 +251,14 @@ export default function DashboardPage() {
                                     <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
                                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
                                     <Tooltip
-                                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                                        contentStyle={{
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            boxShadow: 'var(--shadow-lg)',
+                                            background: 'var(--color-surface)',
+                                            color: 'var(--color-text)'
+                                        }}
+                                        itemStyle={{ color: 'var(--color-primary)' }}
                                     />
                                     <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
                                 </AreaChart>
@@ -277,9 +284,9 @@ export default function DashboardPage() {
                                         >
                                             {member?.name.charAt(0).toUpperCase()}
                                         </div>
-                                        <div className={styles.activityContent}>
+                                        <div className={styles.activityContent} style={{ minWidth: 0 }}>
                                             <div className={styles.activityTitle}>{member?.name || 'Unknown'}</div>
-                                            <div className={styles.activityTime}>{log.details}</div>
+                                            <div className={styles.activityTime} title={log.details}>{log.details}</div>
                                         </div>
                                         <div className={styles.activityPoints} style={{ color: isPositive ? '#059669' : '#dc2626' }}>
                                             {isPositive ? '+' : ''}{log.points}
@@ -328,7 +335,15 @@ export default function DashboardPage() {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                    <Tooltip
+                                        contentStyle={{
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            boxShadow: 'var(--shadow-lg)',
+                                            background: 'var(--color-surface)',
+                                            color: 'var(--color-text)'
+                                        }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
@@ -344,7 +359,16 @@ export default function DashboardPage() {
                                 <BarChart data={comparisonData}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
-                                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                    <Tooltip
+                                        cursor={{ fill: 'transparent' }}
+                                        contentStyle={{
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            boxShadow: 'var(--shadow-lg)',
+                                            background: 'var(--color-surface)',
+                                            color: 'var(--color-text)'
+                                        }}
+                                    />
                                     <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={32}>
                                         {comparisonData.map((_entry, index) => (
                                             <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : '#ef4444'} />

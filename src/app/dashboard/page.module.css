@@ -76,8 +76,8 @@
     }
 }
 
-/* Mobile: all items full width */
-@media (max-width: 640px) {
+/* Tablet & Mobile: stack bento items */
+@media (max-width: 768px) {
     .bentoGrid {
         grid-template-columns: 1fr;
         grid-auto-rows: auto;
@@ -263,18 +263,14 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--color-text-main);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    word-break: break-word;
 }
 
 .activityTime {
     font-size: 0.75rem;
     color: var(--color-text-muted);
     margin-top: 0.125rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    word-break: break-word;
 }
 
 .activityPoints {
@@ -285,7 +281,8 @@
 }
 
 /* ─── Mobile Responsive ─── */
-@media (max-width: 640px) {
+/* ─── Mobile Responsive Additional ─── */
+@media (max-width: 768px) {
     .statCard {
         padding: 1.25rem;
     }
@@ -300,15 +297,19 @@
     }
 
     .statLabel {
+        padding-right: 0;
         font-size: 0.8rem;
     }
 
     .chartCard {
         padding: 1rem;
+        width: 100%;
+        overflow: hidden;
     }
 
     .chartContainer {
         min-height: 200px;
+        width: 100% !important;
     }
 
     .chartTitle {
