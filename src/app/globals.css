@@ -15,6 +15,25 @@ body {
   color: var(--color-text);
   min-height: 100vh;
   line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Smooth scrolling for all containers */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  /* Ensure touch-friendly tap targets */
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 36px;
+  }
 }
 
 /* Simple fade-in animation */

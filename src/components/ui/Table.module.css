@@ -32,6 +32,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    white-space: nowrap;
 }
 
 .td {
@@ -41,4 +42,21 @@
 
 .tbody .tr:last-child {
     border-bottom: none;
+}
+
+/* ─── Mobile Responsive ─── */
+@media (max-width: 640px) {
+    .table {
+        min-width: 500px;
+        font-size: 0.8rem;
+    }
+
+    .th {
+        padding: var(--spacing-2) var(--spacing-3);
+        font-size: 0.7rem;
+    }
+
+    .td {
+        padding: var(--spacing-3);
+    }
 }

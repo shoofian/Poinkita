@@ -39,4 +39,24 @@
     border-top: 1px solid var(--color-border);
     display: flex;
     gap: var(--spacing-3);
+    flex-wrap: wrap;
+}
+
+/* ─── Mobile Responsive ─── */
+@media (max-width: 640px) {
+    .header {
+        padding: var(--spacing-4);
+    }
+
+    .content {
+        padding: var(--spacing-4);
+    }
+
+    .footer {
+        padding: var(--spacing-4);
+    }
+
+    .title {
+        font-size: 1.1rem;
+    }
 }

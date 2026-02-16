@@ -72,3 +72,19 @@
         transform: translateY(0);
     }
 }
+
+/* ─── Mobile Responsive ─── */
+@media (max-width: 480px) {
+    .container {
+        padding: 1rem;
+    }
+
+    .loginCard {
+        max-width: 100%;
+    }
+
+    .backgroundBlur {
+        width: 300px;
+        height: 300px;
+    }
+}

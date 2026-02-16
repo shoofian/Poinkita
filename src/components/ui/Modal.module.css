@@ -73,4 +73,31 @@
     gap: var(--spacing-3);
     justify-content: flex-end;
     background: var(--color-gray-50);
+    flex-wrap: wrap;
+}
+
+/* ─── Mobile Responsive ─── */
+@media (max-width: 640px) {
+    .overlay {
+        padding: var(--spacing-3);
+        align-items: flex-end;
+    }
+
+    .modal {
+        max-width: 100%;
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        max-height: 85vh;
+    }
+
+    .header {
+        padding: var(--spacing-4) var(--spacing-5);
+    }
+
+    .title {
+        font-size: 1.1rem;
+    }
+
+    .footer {
+        padding: var(--spacing-4) var(--spacing-5);
+    }
 }

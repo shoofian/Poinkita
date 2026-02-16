@@ -362,7 +362,7 @@ export default function MembersPage() {
         : [];
 
     return (
-        <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', overflow: 'hidden' }}>
             <Card>
                 <CardContent style={{ padding: '1.5rem' }}>
                     <div style={{
@@ -547,8 +547,8 @@ export default function MembersPage() {
                     </Table>
 
                     {/* Pagination Controls */}
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)' }}>
-                        <div className="flex items-center gap-4" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid var(--color-border)', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div className="flex items-center gap-4" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                             <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
                                 {t.common.rowsPerPage}
                             </span>

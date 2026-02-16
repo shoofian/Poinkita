@@ -227,10 +227,10 @@ export default function RulesPage() {
 
             {activeTab === 'rules' ? (
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                         <CardTitle>{t.rules.title}</CardTitle>
                         {isAdmin && (
-                            <div className="flex gap-2" style={{ display: 'flex', gap: '0.75rem' }}>
+                            <div className="flex gap-2" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                                 <input
                                     type="file"
                                     accept=".xlsx, .xls"
@@ -308,7 +308,7 @@ export default function RulesPage() {
                 </Card>
             ) : (
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                         <div>
                             <CardTitle>Warning Thresholds</CardTitle>
                             <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>

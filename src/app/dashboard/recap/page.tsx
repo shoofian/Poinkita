@@ -91,13 +91,13 @@ export default function RecapPage() {
                 marginBottom: '1rem'
             }}>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{t.recap.title}</h1>
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     {isAdmin && (
                         <Button
                             variant="secondary"
                             onClick={() => setIsArchiveModalOpen(true)}
                             className="flex items-center gap-2"
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 auto', justifyContent: 'center', maxWidth: '180px' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
                         >
                             <FaArchive />
                             {t.common.archive}
@@ -106,7 +106,7 @@ export default function RecapPage() {
                     <Button
                         onClick={handleExport}
                         variant="secondary"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 auto', justifyContent: 'center', maxWidth: '180px' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
                     >
                         <FaDownload /> {t.common.export}
                     </Button>

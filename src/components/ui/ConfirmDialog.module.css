@@ -146,3 +146,32 @@
 .btnOk:hover {
     background: var(--color-primary-hover);
 }
+
+/* ─── Mobile Responsive ─── */
+@media (max-width: 480px) {
+    .dialog {
+        max-width: calc(100% - 1rem);
+    }
+
+    .body {
+        padding: 1.25rem 1rem 0.75rem;
+    }
+
+    .title {
+        font-size: 1rem;
+    }
+
+    .message {
+        font-size: 0.825rem;
+    }
+
+    .footer {
+        padding: 0.75rem 1rem 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        flex: 1;
+        min-width: 0;
+    }
+}

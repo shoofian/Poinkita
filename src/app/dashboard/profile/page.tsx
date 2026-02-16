@@ -259,8 +259,8 @@ export default function AccountSettingsPage() {
     const isAdmin = currentUser.role === 'ADMIN';
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem' }}>
-            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '1rem', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <div style={{
                     width: '40px',
                     height: '40px',
@@ -278,11 +278,13 @@ export default function AccountSettingsPage() {
             </div>
 
             {isAdmin && (
-                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
                     <button
                         onClick={() => setActiveTab('profile')}
                         style={{
-                            padding: '0.75rem 1.5rem',
+                            padding: '0.6rem 0.75rem',
+                            whiteSpace: 'nowrap' as const,
+                            fontSize: '0.85rem',
                             border: 'none',
                             background: 'none',
                             borderBottom: activeTab === 'profile' ? '2px solid var(--color-primary)' : '2px solid transparent',
@@ -296,7 +298,9 @@ export default function AccountSettingsPage() {
                     <button
                         onClick={() => setActiveTab('register')}
                         style={{
-                            padding: '0.75rem 1.5rem',
+                            padding: '0.6rem 0.75rem',
+                            whiteSpace: 'nowrap' as const,
+                            fontSize: '0.85rem',
                             border: 'none',
                             background: 'none',
                             borderBottom: activeTab === 'register' ? '2px solid var(--color-primary)' : '2px solid transparent',
@@ -310,7 +314,9 @@ export default function AccountSettingsPage() {
                     <button
                         onClick={() => setActiveTab('manage')}
                         style={{
-                            padding: '0.75rem 1.5rem',
+                            padding: '0.6rem 0.75rem',
+                            whiteSpace: 'nowrap' as const,
+                            fontSize: '0.85rem',
                             border: 'none',
                             background: 'none',
                             borderBottom: activeTab === 'manage' ? '2px solid var(--color-primary)' : '2px solid transparent',
@@ -332,7 +338,7 @@ export default function AccountSettingsPage() {
                     </CardHeader>
                     <form onSubmit={handleSaveProfile}>
                         <CardContent style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(250px, 100%), 1fr))', gap: '1.25rem' }}>
                                 <Input
                                     label={t.auth.name || 'Full Name'}
                                     value={profileData.name}
@@ -347,7 +353,7 @@ export default function AccountSettingsPage() {
                                 />
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(250px, 100%), 1fr))', gap: '1.25rem' }}>
                                 <Input
                                     label={t.auth.email || 'Email Address'}
                                     type="email"
@@ -366,7 +372,7 @@ export default function AccountSettingsPage() {
 
                             <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0', paddingTop: '1rem' }}>
                                 <CardDescription style={{ marginBottom: '1rem' }}>Change your password below if needed.</CardDescription>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(250px, 100%), 1fr))', gap: '1.25rem' }}>
                                     <Input
                                         label={t.auth.password || 'New Password'}
                                         type="password"
@@ -384,7 +390,7 @@ export default function AccountSettingsPage() {
                                 </div>
                             </div>
 
-                            <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                                 <div>
                                     <h4 className="font-semibold text-lg">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</h4>
                                     <p className="text-sm text-gray-500">Switch between light and dark themes.</p>
@@ -400,7 +406,7 @@ export default function AccountSettingsPage() {
                                 </Button>
                             </div>
                         </CardContent>
-                        <CardFooter style={{ justifyContent: 'flex-end', gap: '1rem' }}>
+                        <CardFooter style={{ justifyContent: 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
                             {isProfileSuccess && (
                                 <span style={{ color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
                                     <FaCheckCircle /> Saved!
@@ -422,7 +428,7 @@ export default function AccountSettingsPage() {
                     </CardHeader>
                     <form onSubmit={handleRegister}>
                         <CardContent style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(250px, 100%), 1fr))', gap: '1.25rem' }}>
                                 <Input
                                     label={t.auth.name}
                                     placeholder="e.g. John Doe"
@@ -439,7 +445,7 @@ export default function AccountSettingsPage() {
                                 />
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(250px, 100%), 1fr))', gap: '1.25rem' }}>
                                 <Input
                                     label={t.auth.email}
                                     type="email"
@@ -456,7 +462,7 @@ export default function AccountSettingsPage() {
                                 />
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(250px, 100%), 1fr))', gap: '1.25rem' }}>
                                 <Input
                                     label={t.auth.password}
                                     type="password"
@@ -500,8 +506,8 @@ export default function AccountSettingsPage() {
                                 </span>
                             </div>
                         </CardContent>
-                        <CardFooter style={{ justifyContent: 'space-between', borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem' }}>
-                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                        <CardFooter style={{ justifyContent: 'space-between', borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                                 <Button type="button" variant="secondary" onClick={downloadUserTemplate} className="flex items-center gap-2">
                                     <FaDownload /> {t.auth.importUserTemplate}
                                 </Button>
@@ -547,8 +553,8 @@ export default function AccountSettingsPage() {
                         <CardDescription>Manage contributor and admin accounts.</CardDescription>
                     </CardHeader>
                     <CardContent style={{ padding: 0 }}>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '500px' }}>
                                 <thead style={{ background: 'var(--color-bg)', textAlign: 'left' }}>
                                     <tr>
                                         <th style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)' }}>{t.auth.name}</th>
@@ -609,7 +615,7 @@ export default function AccountSettingsPage() {
                 }
             >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '1.25rem' }}>
                         <Input
                             label={t.auth.name}
                             value={editUserData.name}
@@ -621,7 +627,7 @@ export default function AccountSettingsPage() {
                             onChange={(e) => setEditUserData({ ...editUserData, username: e.target.value })}
                         />
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(200px, 100%), 1fr))', gap: '1.25rem' }}>
                         <Input
                             label={t.auth.email}
                             value={editUserData.email}
