@@ -28,7 +28,7 @@ import {
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function DashboardPage() {
-    const { members, auditLogs, warningRules } = useStore();
+    const { members, auditLogs, warningRules, users } = useStore();
     const { t } = useLanguage();
 
     const totalPoints = members.reduce((acc, m) => acc + m.totalPoints, 0);
@@ -97,11 +97,32 @@ export default function DashboardPage() {
         { name: 'Pelanggaran', value: Math.abs(auditLogs.filter(log => log.points < 0).reduce((acc, log) => acc + log.points, 0)) }
     ];
 
-    // Trends (Simple mock comparison)
     const activeToday = auditLogs.filter(log => {
         const d = new Date(log.timestamp);
         return d.toDateString() === new Date().toDateString();
     }).length;
+
+    const top10High = [...members]
+        .sort((a, b) => b.totalPoints - a.totalPoints)
+        .slice(0, 10);
+
+    const top10Low = [...members]
+        .sort((a, b) => a.totalPoints - b.totalPoints)
+        .slice(0, 10);
+
+    // 5. Active Contributors (Admins/Contributors)
+    const contributorActivityMap = auditLogs.reduce((acc, log) => {
+        acc[log.contributorId] = (acc[log.contributorId] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const contributorData = Object.entries(contributorActivityMap)
+        .map(([id, count]) => ({
+            name: users.find(u => u.id === id)?.name || id.split('-')[0],
+            count
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
 
     return (
         <div className={styles.container}>
@@ -112,7 +133,7 @@ export default function DashboardPage() {
 
             <div className={styles.bentoGrid}>
                 {/* Stat: Total Members */}
-                <div className={`${styles.bentoItem} ${styles.span3}`}>
+                <div className={`${styles.bentoItem} ${styles.span6}`}>
                     <div className={styles.statCard}>
                         <div className={styles.statHeader}>
                             <div className={styles.statIcon} style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
@@ -129,26 +150,8 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Stat: Total Points */}
-                <div className={`${styles.bentoItem} ${styles.span3}`}>
-                    <div className={styles.statCard}>
-                        <div className={styles.statHeader}>
-                            <div className={styles.statIcon} style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
-                                <Zap size={24} />
-                            </div>
-                            <span className={`${styles.statTrend} ${styles.trendUp}`}>
-                                <TrendingUp size={14} /> +12%
-                            </span>
-                        </div>
-                        <div className={styles.statMeta}>
-                            <div className={styles.statValue}>{totalPoints}</div>
-                            <div className={styles.statLabel}>{t.dashboard.totalPoints}</div>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Stat: Active Today */}
-                <div className={`${styles.bentoItem} ${styles.span3}`}>
+                <div className={`${styles.bentoItem} ${styles.span6}`}>
                     <div className={styles.statCard}>
                         <div className={styles.statHeader}>
                             <div className={styles.statIcon} style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b' }}>
@@ -162,24 +165,6 @@ export default function DashboardPage() {
                         <div className={styles.statMeta}>
                             <div className={styles.statValue}>{activeToday}</div>
                             <div className={styles.statLabel}>Aktivitas Hari Ini</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Stat: Top Performer */}
-                <div className={`${styles.bentoItem} ${styles.span3}`}>
-                    <div className={styles.statCard}>
-                        <div className={styles.statHeader}>
-                            <div className={styles.statIcon} style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6' }}>
-                                <Trophy size={24} />
-                            </div>
-                            <ArrowUpRight size={18} style={{ color: 'var(--color-text-muted)' }} />
-                        </div>
-                        <div className={styles.statMeta}>
-                            <div className={styles.statValue} style={{ fontSize: '1.5rem', paddingTop: '0.25rem' }}>
-                                {topPerformer ? topPerformer.name.split(' ')[0] : 'N/A'}
-                            </div>
-                            <div className={styles.statLabel}>{t.dashboard.topPerformer}</div>
                         </div>
                     </div>
                 </div>
@@ -350,17 +335,26 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Chart: Comparison (Small) */}
+                {/* Chart: Active Contributors (Small) */}
                 <div className={`${styles.bentoItem} ${styles.span4}`}>
                     <div className={styles.chartCard}>
-                        <h2 className={styles.chartTitle}>Prestasi vs Pelanggaran</h2>
+                        <h2 className={styles.chartTitle}>Kontributor Teraktif</h2>
+                        <p className={styles.chartDesc}>Admin/Petugas dengan jumlah aksi terbanyak.</p>
                         <div className={styles.chartContainer} style={{ minHeight: '180px' }}>
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={comparisonData}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} />
+                                <BarChart data={contributorData} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                    <XAxis type="number" hide />
+                                    <YAxis
+                                        dataKey="name"
+                                        type="category"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fontSize: 11, fill: '#64748b' }}
+                                        width={80}
+                                    />
                                     <Tooltip
-                                        cursor={{ fill: 'transparent' }}
+                                        cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
                                         contentStyle={{
                                             borderRadius: '12px',
                                             border: 'none',
@@ -369,34 +363,67 @@ export default function DashboardPage() {
                                             color: 'var(--color-text)'
                                         }}
                                     />
-                                    <Bar dataKey="value" radius={[6, 6, 0, 0]} barSize={32}>
-                                        {comparisonData.map((_entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={index === 0 ? '#10b981' : '#ef4444'} />
-                                        ))}
-                                    </Bar>
+                                    <Bar dataKey="count" fill="var(--color-primary)" radius={[0, 4, 4, 0]} barSize={20} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
                 </div>
 
-                {/* Chart: Top Members (Small) */}
-                <div className={`${styles.bentoItem} ${styles.span4}`}>
-                    <div className={styles.chartCard} style={{ background: 'var(--color-primary)', color: 'white' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h2 className={styles.chartTitle} style={{ color: 'white' }}>Top Members</h2>
-                            <Trophy size={18} />
+                {/* Top 10 Highest Points */}
+                <div className={`${styles.bentoItem} ${styles.span6}`}>
+                    <div className={styles.chartCard} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h2 className={styles.chartTitle} style={{ color: 'white' }}>10 Poin Tertinggi</h2>
+                            <Trophy size={24} />
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {top5Data.slice(0, 3).map((m, i) => (
-                                <div key={m.name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '0.875rem', opacity: 0.9 }}>{i + 1}. {m.name}</span>
-                                    <span style={{ fontWeight: 800 }}>{m.points}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {top10High.map((m, i) => (
+                                <div key={m.id} style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '0.5rem 0.75rem',
+                                    borderRadius: '8px',
+                                    background: 'rgba(255, 255, 255, 0.1)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <span style={{ fontWeight: 800, fontSize: '0.75rem', opacity: 0.8 }}>{String(i + 1).padStart(2, '0')}</span>
+                                        <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{m.name}</span>
+                                    </div>
+                                    <span style={{ fontWeight: 800, background: 'rgba(255,255,255,0.2)', padding: '0.125rem 0.5rem', borderRadius: '4px' }}>{m.totalPoints}</span>
                                 </div>
                             ))}
+                            {top10High.length === 0 && <div style={{ fontSize: '0.875rem', opacity: 0.7, textAlign: 'center', padding: '1rem' }}>Belum ada data.</div>}
                         </div>
-                        <div style={{ marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.75rem', opacity: 0.8 }}>
-                            Anggota dengan performa terbaik bulan ini.
+                    </div>
+                </div>
+
+                {/* Top 10 Lowest Points */}
+                <div className={`${styles.bentoItem} ${styles.span6}`}>
+                    <div className={styles.chartCard} style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white', border: 'none' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <h2 className={styles.chartTitle} style={{ color: 'white' }}>10 Poin Terendah</h2>
+                            <TrendingDown size={24} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {top10Low.map((m, i) => (
+                                <div key={m.id} style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    padding: '0.5rem 0.75rem',
+                                    borderRadius: '8px',
+                                    background: 'rgba(255, 255, 255, 0.1)'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        <span style={{ fontWeight: 800, fontSize: '0.75rem', opacity: 0.8 }}>{String(i + 1).padStart(2, '0')}</span>
+                                        <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>{m.name}</span>
+                                    </div>
+                                    <span style={{ fontWeight: 800, background: 'rgba(255,255,255,0.2)', padding: '0.125rem 0.5rem', borderRadius: '4px' }}>{m.totalPoints}</span>
+                                </div>
+                            ))}
+                            {top10Low.length === 0 && <div style={{ fontSize: '0.875rem', opacity: 0.7, textAlign: 'center', padding: '1rem' }}>Belum ada data.</div>}
                         </div>
                     </div>
                 </div>

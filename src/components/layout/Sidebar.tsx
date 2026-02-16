@@ -26,7 +26,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: t.sidebar.transactions, href: '/dashboard/transactions', icon: FaChartBar },
         { label: t.sidebar.members, href: '/dashboard/members', icon: FaUsers },
         { label: t.sidebar.rules, href: '/dashboard/rules', icon: FaUserCog },
-        { label: t.sidebar.recap, href: '/dashboard/recap', icon: FaClipboardList },
         { label: t.sidebar.archive, href: '/dashboard/archive', icon: FaArchive },
     ];
 

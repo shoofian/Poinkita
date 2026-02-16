@@ -25,6 +25,7 @@ interface StoreContextType {
     addRule: (rule: Omit<Rule, 'adminId'> & { adminId?: string }) => void;
     addRules: (rules: (Omit<Rule, 'adminId'> & { adminId?: string })[]) => void;
     deleteRule: (id: string) => void;
+    deleteRules: (ids: string[]) => void;
     addWarningRule: (rule: Omit<WarningRule, 'adminId'> & { adminId?: string }) => void;
     updateWarningRule: (id: string, updates: Partial<WarningRule>) => void;
     deleteWarningRule: (id: string) => void;
@@ -255,9 +256,17 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         ));
     };
 
-    const deleteMember = (id: string) => setMembers(prev => prev.filter(m => m.id !== id));
+    const deleteMember = (id: string) => {
+        setMembers(prev => prev.filter(m => m.id !== id));
+        setTransactions(prev => prev.filter(t => t.memberId !== id));
+        setAuditLogs(prev => prev.filter(l => l.memberId !== id));
+    };
 
-    const deleteMembers = (ids: string[]) => setMembers(prev => prev.filter(m => !ids.includes(m.id)));
+    const deleteMembers = (ids: string[]) => {
+        setMembers(prev => prev.filter(m => !ids.includes(m.id)));
+        setTransactions(prev => prev.filter(t => !ids.includes(t.memberId)));
+        setAuditLogs(prev => prev.filter(l => !ids.includes(l.memberId)));
+    };
 
     const addRule = (rule: Omit<Rule, 'adminId'> & { adminId?: string }) => {
         const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
@@ -271,6 +280,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     const deleteRule = (id: string) => setRules(prev => prev.filter(r => r.id !== id));
+    const deleteRules = (ids: string[]) => setRules(prev => prev.filter(r => !ids.includes(r.id)));
 
     const addWarningRule = (rule: Omit<WarningRule, 'adminId'> & { adminId?: string }) => {
         const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
@@ -427,7 +437,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setCurrentUser,
             loginUser,
             addMember, addMembers, updateMemberPoints, deleteMember, deleteMembers,
-            addRule, addRules, deleteRule, addWarningRule, updateWarningRule, deleteWarningRule,
+            addRule, addRules, deleteRule, deleteRules, addWarningRule, updateWarningRule, deleteWarningRule,
             addTransaction, deleteTransaction,
             addAuditLogs, createArchive, deleteArchive,
             registerUser, registerUsers, updateUser, deleteUser, updateMembers, generateId,

@@ -8,22 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { Button } from '@/components/ui/Button';
-import { Modal } from '@/components/ui/Modal';
-import { FaDownload, FaArchive } from 'react-icons/fa';
-import * as XLSX from 'xlsx';
 import clsx from 'clsx';
 
 export default function RecapPage() {
-    const { members, createArchive, currentUser } = useStore();
+    const { members, currentUser } = useStore();
     const isAdmin = currentUser?.role === 'ADMIN';
     const { t } = useLanguage();
-    const { alert } = useDialog();
     const [filterDivision, setFilterDivision] = useState('');
     const [searchName, setSearchName] = useState('');
-
-    // Archive state
-    const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
-    const [archiveTitle, setArchiveTitle] = useState('');
 
     const filteredMembers = members.filter(m => {
         const matchDivision = filterDivision ? m.division.toLowerCase().includes(filterDivision.toLowerCase()) : true;
@@ -33,51 +25,7 @@ export default function RecapPage() {
 
     const uniqueDivisions = Array.from(new Set(members.map(m => m.division)));
 
-    const handleExport = () => {
-        try {
-            const exportData = filteredMembers
-                .sort((a, b) => b.totalPoints - a.totalPoints)
-                .map((m, index) => ({
-                    [t.recap.rank]: `#${index + 1}`,
-                    [t.auth.name]: m.name,
-                    [t.members.division]: m.division,
-                    [t.dashboard.totalPoints]: m.totalPoints,
-                    [t.members.status]: m.totalPoints > 50 ? t.members.excellent : m.totalPoints >= 0 ? t.members.good : t.members.needsImprovement
-                }));
 
-            const ws = XLSX.utils.json_to_sheet(exportData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Recap Data");
-
-            const dateStr = new Date().toISOString().split('T')[0];
-            XLSX.writeFile(wb, `Poinkita_Recap_${dateStr}.xlsx`);
-
-            alert({
-                title: "Export Success",
-                message: "Recap data has been exported to Excel.",
-                variant: 'success'
-            });
-        } catch (error) {
-            console.error("Export Error:", error);
-            alert({
-                title: "Export Error",
-                message: "Failed to export data. Please try again.",
-                variant: 'danger'
-            });
-        }
-    };
-
-    const handleConfirmArchive = () => {
-        if (!archiveTitle.trim()) return;
-        createArchive(archiveTitle);
-        setArchiveTitle('');
-        setIsArchiveModalOpen(false);
-        alert({
-            title: t.archive.archiveSuccess,
-            message: "Snapshot saved successfully.",
-            variant: 'success'
-        });
-    };
 
     return (
         <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -92,24 +40,6 @@ export default function RecapPage() {
             }}>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{t.recap.title}</h1>
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    {isAdmin && (
-                        <Button
-                            variant="secondary"
-                            onClick={() => setIsArchiveModalOpen(true)}
-                            className="flex items-center gap-2"
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
-                        >
-                            <FaArchive />
-                            {t.common.archive}
-                        </Button>
-                    )}
-                    <Button
-                        onClick={handleExport}
-                        variant="secondary"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
-                    >
-                        <FaDownload /> {t.common.export}
-                    </Button>
                 </div>
             </div>
 
@@ -198,38 +128,7 @@ export default function RecapPage() {
                 </CardContent>
             </Card>
 
-            {/* Archive Modal */}
-            <Modal
-                isOpen={isArchiveModalOpen}
-                onClose={() => setIsArchiveModalOpen(false)}
-                title={t.archive.createTitle}
-                footer={
-                    <>
-                        <Button variant="secondary" onClick={() => setIsArchiveModalOpen(false)}>
-                            {t.common.cancel}
-                        </Button>
-                        <Button
-                            onClick={handleConfirmArchive}
-                            disabled={!archiveTitle.trim()}
-                        >
-                            {t.common.save}
-                        </Button>
-                    </>
-                }
-            >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
-                    <p style={{ fontSize: '0.925rem', color: 'var(--color-text-muted)', lineHeight: '1.5', margin: 0 }}>
-                        {t.archive.archiveSnapshot}
-                    </p>
-                    <Input
-                        label={t.archive.archiveName}
-                        placeholder="e.g. Kondisi Poin Februari 2026"
-                        value={archiveTitle}
-                        onChange={(e) => setArchiveTitle(e.target.value)}
-                        autoFocus
-                    />
-                </div>
-            </Modal>
+
         </div>
     );
 }

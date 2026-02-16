@@ -29,8 +29,18 @@
   --color-surface: var(--color-white);
   --color-border: var(--color-gray-200);
   --color-text: var(--color-gray-900);
+  --color-text-main: var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-600);
   --color-text-light: var(--color-gray-600);
   --color-text-muted: var(--color-gray-500);
+  --color-placeholder: var(--color-gray-400);
+
+  --color-bg-card: var(--color-white);
+  --color-bg-subtle: var(--color-gray-50);
+  --color-bg-hover: var(--color-gray-100);
+
+  --color-success-bg: var(--color-success-light);
+  --color-danger-bg: var(--color-danger-light);
 
   /* Shadows - Subtle */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -100,8 +110,18 @@
   /* Slightly lighter slate for cards */
   --color-border: #334155;
   --color-text: #f1f5f9;
+  --color-text-main: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
   --color-text-light: #cbd5e1;
   --color-text-muted: #94a3b8;
+  --color-placeholder: #4b5563;
+
+  --color-bg-card: #1e293b;
+  --color-bg-subtle: #0f172a;
+  --color-bg-hover: #334155;
+
+  --color-success-bg: #064e3b;
+  --color-danger-bg: #7f1d1d;
 
   /* Shadows - Adjusted for dark mode (subtle glow) */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);

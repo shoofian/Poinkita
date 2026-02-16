@@ -10,12 +10,12 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useDialog } from '@/components/ui/ConfirmDialog';
 import { Rule, WarningRule } from '@/lib/store';
-import { FaPlus, FaTrash, FaDownload, FaFileExcel, FaExclamationTriangle } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaDownload, FaFileExcel, FaExclamationTriangle, FaEllipsisV } from 'react-icons/fa';
 import clsx from 'clsx';
 import * as XLSX from 'xlsx';
 
 export default function RulesPage() {
-    const { currentUser, rules, warningRules, addRule, addRules, deleteRule, addWarningRule, deleteWarningRule, generateId } = useStore();
+    const { currentUser, rules, warningRules, addRule, addRules, deleteRule, deleteRules, addWarningRule, deleteWarningRule, generateId } = useStore();
     const isAdmin = currentUser?.role === 'ADMIN';
     const { t } = useLanguage();
     const { confirm, alert } = useDialog();
@@ -37,6 +37,42 @@ export default function RulesPage() {
         textColor: '#ffffff',
         backgroundColor: '#ef4444' // Default red
     });
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+    const [selectedRuleIds, setSelectedRuleIds] = useState<string[]>([]);
+
+    const toggleSelectAll = () => {
+        if (selectedRuleIds.length === rules.length) {
+            setSelectedRuleIds([]);
+        } else {
+            setSelectedRuleIds(rules.map(r => r.id));
+        }
+    };
+
+    const toggleSelect = (id: string) => {
+        setSelectedRuleIds(prev =>
+            prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = async () => {
+        const ok = await confirm({
+            title: `Hapus ${selectedRuleIds.length} Aturan`,
+            message: "Apakah Anda yakin ingin menghapus semua aturan yang dipilih? Tindakan ini tidak dapat dibatalkan.",
+            variant: 'danger',
+            confirmLabel: t.common.delete,
+            cancelLabel: t.common.cancel
+        });
+
+        if (ok) {
+            deleteRules(selectedRuleIds);
+            setSelectedRuleIds([]);
+            alert({
+                title: "Berhasil",
+                message: `${selectedRuleIds.length} aturan telah dihapus.`,
+                variant: 'success'
+            });
+        }
+    };
 
     const handleAddRule = () => {
         const pointsNum = Number(newRule.points);
@@ -226,11 +262,108 @@ export default function RulesPage() {
             </div>
 
             {activeTab === 'rules' ? (
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-                        <CardTitle>{t.rules.title}</CardTitle>
+                <Card style={{ overflow: 'visible' }}>
+                    <CardHeader style={{
+                        padding: '1.5rem',
+                        display: 'flex',
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '1rem'
+                    }}>
+                        <div>
+                            <CardTitle style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>
+                                {t.rules.title}
+                            </CardTitle>
+                            <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                                {rules.length} {t.rules.title.toLowerCase()}
+                            </p>
+                        </div>
+
                         {isAdmin && (
-                            <div className="flex gap-2" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+                                <Button onClick={() => setIsRuleModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FaPlus /> {t.rules.addRule}
+                                </Button>
+
+                                <div style={{ position: 'relative' }}>
+                                    <Button
+                                        variant="secondary"
+                                        onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                                        style={{ padding: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                    >
+                                        <FaEllipsisV />
+                                    </Button>
+
+                                    {isMoreMenuOpen && (
+                                        <>
+                                            <div
+                                                style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                                                onClick={() => setIsMoreMenuOpen(false)}
+                                            />
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: 'calc(100% + 8px)',
+                                                right: 0,
+                                                background: 'var(--color-white)',
+                                                border: '1px solid var(--color-border)',
+                                                borderRadius: 'var(--radius-md)',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                zIndex: 50,
+                                                minWidth: '220px',
+                                                padding: '0.5rem',
+                                                overflow: 'hidden'
+                                            }}>
+                                                <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    {t.common.actions}
+                                                </div>
+                                                <button
+                                                    onClick={() => { handleDownloadTemplate(); setIsMoreMenuOpen(false); }}
+                                                    style={{
+                                                        width: '100%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.75rem',
+                                                        padding: '0.75rem 1rem',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.875rem',
+                                                        color: 'var(--color-text)',
+                                                        borderRadius: 'var(--radius-sm)',
+                                                        textAlign: 'left'
+                                                    }}
+                                                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                                                    onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                                                >
+                                                    <FaDownload /> {t.common.downloadTemplate}
+                                                </button>
+                                                <button
+                                                    onClick={() => { fileInputRef.current?.click(); setIsMoreMenuOpen(false); }}
+                                                    style={{
+                                                        width: '100%',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.75rem',
+                                                        padding: '0.75rem 1rem',
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        fontSize: '0.875rem',
+                                                        color: 'var(--color-text)',
+                                                        borderRadius: 'var(--radius-sm)',
+                                                        textAlign: 'left'
+                                                    }}
+                                                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                                                    onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                                                >
+                                                    <FaFileExcel style={{ color: '#107c41' }} /> {t.common.importExcel}
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                                 <input
                                     type="file"
                                     accept=".xlsx, .xls"
@@ -238,23 +371,19 @@ export default function RulesPage() {
                                     ref={fileInputRef}
                                     onChange={handleExcelImport}
                                 />
-                                <Button
-                                    variant="secondary"
-                                    onClick={handleDownloadTemplate}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                >
-                                    <FaDownload /> <span className="hidden sm:inline">{t.rules.importRulesTemplate}</span>
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                >
-                                    <FaFileExcel /> <span className="hidden sm:inline">{t.common.importExcel}</span>
-                                </Button>
-                                <Button onClick={() => setIsRuleModalOpen(true)}>
-                                    <FaPlus /> {t.rules.addRule}
-                                </Button>
+
+                                {selectedRuleIds.length > 0 && isAdmin && (
+                                    <Button
+                                        variant="danger"
+                                        onClick={handleBulkDelete}
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    >
+                                        <FaTrash />
+                                        <span style={{ display: 'inline' }}>
+                                            {t.common.delete} ({selectedRuleIds.length})
+                                        </span>
+                                    </Button>
+                                )}
                             </div>
                         )}
                     </CardHeader>
@@ -262,6 +391,16 @@ export default function RulesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    {isAdmin && (
+                                        <TableHead style={{ width: '40px' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={rules.length > 0 && selectedRuleIds.length === rules.length}
+                                                onChange={toggleSelectAll}
+                                                style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                            />
+                                        </TableHead>
+                                    )}
                                     <TableHead>{t.rules.code}</TableHead>
                                     <TableHead>{t.rules.description}</TableHead>
                                     <TableHead>{t.rules.type}</TableHead>
@@ -273,7 +412,17 @@ export default function RulesPage() {
                                 {rules.map((rule) => {
                                     const typeLabel = rule.type === 'ACHIEVEMENT' ? t.rules.achievement : t.rules.violation;
                                     return (
-                                        <TableRow key={rule.id}>
+                                        <TableRow key={rule.id} style={{ background: selectedRuleIds.includes(rule.id) ? 'var(--color-primary-light)' : 'transparent' }}>
+                                            {isAdmin && (
+                                                <TableCell>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedRuleIds.includes(rule.id)}
+                                                        onChange={() => toggleSelect(rule.id)}
+                                                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                                    />
+                                                </TableCell>
+                                            )}
                                             <TableCell className="font-medium">{rule.id}</TableCell>
                                             <TableCell>{rule.description}</TableCell>
                                             <TableCell>

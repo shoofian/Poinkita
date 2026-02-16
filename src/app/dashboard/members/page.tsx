@@ -10,12 +10,12 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useDialog } from '@/components/ui/ConfirmDialog';
 import { Member, Rule, AuditLog } from '@/lib/store';
-import { FaPlus, FaSearch, FaTrash, FaEdit, FaClipboardList, FaFileExcel, FaDownload, FaSort, FaSortUp, FaSortDown, FaExclamationTriangle } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaTrash, FaEdit, FaClipboardList, FaFileExcel, FaDownload, FaSort, FaSortUp, FaSortDown, FaExclamationTriangle, FaArchive, FaEllipsisV, FaFileWord } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import clsx from 'clsx';
 
 export default function MembersPage() {
-    const { members, addMember, addMembers, updateMemberPoints, updateMembers, deleteMember, deleteMembers, addAuditLogs, auditLogs, users, currentUser, generateId, warningRules } = useStore();
+    const { members, addMember, addMembers, updateMemberPoints, updateMembers, deleteMember, deleteMembers, addAuditLogs, auditLogs, users, currentUser, generateId, warningRules, createArchive } = useStore();
     const { t } = useLanguage();
     const { confirm, alert } = useDialog();
     const [searchTerm, setSearchTerm] = useState('');
@@ -49,9 +49,17 @@ export default function MembersPage() {
     const [editingMember, setEditingMember] = useState<Member | null>(null);
     const [editData, setEditData] = useState({ name: '', division: '' });
 
+    // Archive state
+    const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
+    const [archiveTitle, setArchiveTitle] = useState('');
+    const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
     const filteredMembers = members.filter(m => {
-        const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            m.id.toLowerCase().includes(searchTerm.toLowerCase());
+        const search = searchTerm.toLowerCase().trim();
+        const matchesSearch =
+            m.name.toLowerCase().includes(search) ||
+            m.id.toLowerCase().includes(search) ||
+            m.division.toLowerCase().includes(search);
         const matchesDivision = divisionFilter === '' || m.division === divisionFilter;
         return matchesSearch && matchesDivision;
     }).sort((a, b) => {
@@ -122,6 +130,52 @@ export default function MembersPage() {
 
         setIsModalOpen(false);
         setNewMember({ name: '', division: '', initialPoints: '' });
+    };
+
+    const handleExportData = () => {
+        try {
+            const exportData = filteredMembers
+                .sort((a, b) => b.totalPoints - a.totalPoints)
+                .map((m, index) => ({
+                    [t.recap.rank]: `#${index + 1}`,
+                    [t.auth.name]: m.name,
+                    [t.members.division]: m.division,
+                    [t.dashboard.totalPoints]: m.totalPoints,
+                    [t.members.status]: m.totalPoints > 50 ? t.members.excellent : m.totalPoints >= 0 ? t.members.good : t.members.needsImprovement
+                }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Members Data");
+
+            const dateStr = new Date().toISOString().split('T')[0];
+            XLSX.writeFile(wb, `Poinkita_Members_${dateStr}.xlsx`);
+
+            alert({
+                title: "Export Success",
+                message: "Member data has been exported to Excel.",
+                variant: 'success'
+            });
+        } catch (error) {
+            console.error("Export Error:", error);
+            alert({
+                title: "Export Error",
+                message: "Failed to export data. Please try again.",
+                variant: 'danger'
+            });
+        }
+    };
+
+    const handleConfirmArchive = () => {
+        if (!archiveTitle.trim()) return;
+        createArchive(archiveTitle);
+        setArchiveTitle('');
+        setIsArchiveModalOpen(false);
+        alert({
+            title: t.archive.archiveSuccess,
+            message: "Snapshot saved successfully.",
+            variant: 'success'
+        });
     };
 
     const handleExcelImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -357,81 +411,430 @@ export default function MembersPage() {
         setIsHistoryOpen(true);
     };
 
+    const handleExportMemberHistory = (member: Member) => {
+        try {
+            const logs = auditLogs.filter(log => log.memberId === member.id);
+            const exportData = logs.map(log => ({
+                [t.members.date]: new Date(log.timestamp).toLocaleString(),
+                [t.members.details]: log.details,
+                [t.members.points]: log.points,
+                [t.members.action]: log.action === 'CREATE' ? t.members.added : t.members.reverted,
+                [t.members.changedBy]: users.find(u => u.id === log.contributorId)?.name || log.contributorId
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "History");
+
+            XLSX.writeFile(wb, `History_${member.name}_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+            alert({
+                title: "Export Berhasil",
+                message: `Rekapan poin untuk ${member.name} telah diunduh.`,
+                variant: 'success'
+            });
+        } catch (error) {
+            console.error("Export member history error:", error);
+            alert({
+                title: "Export Gagal",
+                message: "Gagal mengunduh rekapan poin.",
+                variant: 'danger'
+            });
+        }
+    };
+
+    const handleExportMemberHistoryWord = async (member: Member) => {
+        const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, AlignmentType, HeadingLevel, BorderStyle } = await import('docx');
+        const { saveAs } = await import('file-saver');
+
+        try {
+            const logs = auditLogs.filter(log => log.memberId === member.id);
+            const dateStr = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            const doc = new Document({
+                sections: [{
+                    properties: {},
+                    children: [
+                        // Header Title
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: t.report.title.toUpperCase(),
+                                    bold: true,
+                                    size: 28,
+                                }),
+                            ],
+                            alignment: AlignmentType.CENTER,
+                            spacing: { after: 400 },
+                        }),
+
+                        // Intro Paragraph
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: t.report.intro.replace('{0}', dateStr),
+                                    size: 22,
+                                }),
+                            ],
+                            spacing: { after: 300 },
+                            alignment: AlignmentType.JUSTIFIED,
+                        }),
+
+                        // Member Info Section
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: t.report.memberInfo,
+                                    bold: true,
+                                    size: 24,
+                                    underline: {},
+                                }),
+                            ],
+                            spacing: { before: 200, after: 200 },
+                        }),
+
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            borders: {
+                                top: { style: BorderStyle.NONE },
+                                bottom: { style: BorderStyle.NONE },
+                                left: { style: BorderStyle.NONE },
+                                right: { style: BorderStyle.NONE },
+                                insideHorizontal: { style: BorderStyle.NONE },
+                                insideVertical: { style: BorderStyle.NONE },
+                            },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({ width: { size: 30, type: WidthType.PERCENTAGE }, children: [new Paragraph({ children: [new TextRun({ text: `${t.members.memberId} :`, bold: true })] })] }),
+                                        new TableCell({ width: { size: 70, type: WidthType.PERCENTAGE }, children: [new Paragraph({ text: member.id })] }),
+                                    ],
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${t.auth.name} :`, bold: true })] })] }),
+                                        new TableCell({ children: [new Paragraph({ text: member.name })] }),
+                                    ],
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${t.members.division} :`, bold: true })] })] }),
+                                        new TableCell({ children: [new Paragraph({ text: member.division })] }),
+                                    ],
+                                }),
+                                new TableRow({
+                                    children: [
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${t.members.points} :`, bold: true })] })] }),
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${member.totalPoints} Poin`, bold: true, color: member.totalPoints >= 0 ? "10b981" : "ef4444" })] })] }),
+                                    ],
+                                }),
+                            ],
+                        }),
+
+                        // History Table Section
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: t.report.historyTable,
+                                    bold: true,
+                                    size: 24,
+                                    underline: {},
+                                }),
+                            ],
+                            spacing: { before: 400, after: 200 },
+                        }),
+
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: t.members.date, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "f3f4f6" } }),
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: t.members.details, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "f3f4f6" } }),
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: t.members.action, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "f3f4f6" } }),
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: t.members.points, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "f3f4f6" } }),
+                                        new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: t.transactions.contributor, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "f3f4f6" } }),
+                                    ],
+                                }),
+                                ...logs.map(log => new TableRow({
+                                    children: [
+                                        new TableCell({ children: [new Paragraph({ text: new Date(log.timestamp).toLocaleString('id-ID'), alignment: AlignmentType.CENTER })] }),
+                                        new TableCell({ children: [new Paragraph({ text: log.details })] }),
+                                        new TableCell({ children: [new Paragraph({ text: log.action === 'CREATE' ? t.members.added : t.members.reverted, alignment: AlignmentType.CENTER })] }),
+                                        new TableCell({ children: [new Paragraph({ text: (log.points > 0 ? "+" : "") + log.points.toString(), alignment: AlignmentType.CENTER })] }),
+                                        new TableCell({ children: [new Paragraph({ text: users.find(u => u.id === log.contributorId)?.name || log.contributorId, alignment: AlignmentType.CENTER })] }),
+                                    ],
+                                })),
+                            ],
+                        }),
+
+                        // Signature Section
+                        new Paragraph({ text: "", spacing: { before: 800 } }),
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            borders: {
+                                top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE },
+                                left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE },
+                                insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE },
+                            },
+                            rows: [
+                                new TableRow({
+                                    children: [
+                                        new TableCell({ width: { size: 60, type: WidthType.PERCENTAGE }, children: [] }),
+                                        new TableCell({
+                                            width: { size: 40, type: WidthType.PERCENTAGE },
+                                            children: [
+                                                new Paragraph({ text: t.report.signatureTitle, alignment: AlignmentType.CENTER }),
+                                                new Paragraph({ text: "", spacing: { after: 1000 } }),
+                                                new Paragraph({ children: [new TextRun({ text: "( ____________________ )", bold: true })], alignment: AlignmentType.CENTER }),
+                                                new Paragraph({ text: t.report.signatureRole, alignment: AlignmentType.CENTER }),
+                                            ],
+                                        }),
+                                    ],
+                                }),
+                            ],
+                        }),
+
+                        new Paragraph({
+                            children: [
+                                new TextRun({
+                                    text: `${t.report.generatedAt} ${new Date().toLocaleString('id-ID')}`,
+                                    italics: true,
+                                    size: 16,
+                                }),
+                            ],
+                            alignment: AlignmentType.RIGHT,
+                            spacing: { before: 400 },
+                        }),
+                    ],
+                }],
+            });
+
+            const blob = await Packer.toBlob(doc);
+            saveAs(blob, `Report_${member.name}_${new Date().toISOString().split('T')[0]}.docx`);
+
+            alert({
+                title: "Export Berhasil",
+                message: `Laporan Word untuk ${member.name} telah diunduh.`,
+                variant: 'success'
+            });
+        } catch (error) {
+            console.error("Export Word error:", error);
+            alert({
+                title: "Export Gagal",
+                message: "Gagal mengunduh laporan Word.",
+                variant: 'danger'
+            });
+        }
+    };
+
     const memberLogs = historyMember
         ? auditLogs.filter(log => log.memberId === historyMember.id)
         : [];
 
     return (
         <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', overflow: 'hidden' }}>
-            <Card>
+            <Card style={{ overflow: 'visible' }}>
                 <CardContent style={{ padding: '1.5rem' }}>
-                    <div style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '1rem',
-                        flexWrap: 'wrap'
-                    }}>
-                        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>{t.members.title}</h1>
-                        {isAdmin && (
-                            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
-                                <input
-                                    type="file"
-                                    accept=".xlsx, .xls"
-                                    style={{ display: 'none' }}
-                                    ref={fileInputRef}
-                                    onChange={handleExcelImport}
-                                />
-                                <Button
-                                    variant="secondary"
-                                    onClick={downloadExcelTemplate}
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
-                                >
-                                    <FaDownload /> {t.common.downloadTemplate}
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="flex items-center gap-2"
-                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center' }}
-                                >
-                                    <FaFileExcel /> {t.common.importExcel || 'Import Excel'}
-                                </Button>
-                                <Button onClick={() => setIsModalOpen(true)}>
-                                    <FaPlus /> {t.members.addMember}
-                                </Button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {/* Top Section: Title & Actions */}
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: '1rem'
+                        }}>
+                            <div>
+                                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>
+                                    {t.members.title}
+                                </h1>
+                                <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                                    {members.length} {t.dashboard.totalMembers.toLowerCase()}
+                                </p>
                             </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardContent style={{ padding: '1.5rem' }}>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                        gap: '1rem',
-                        alignItems: 'flex-end'
-                    }}>
-                        <Input
-                            label={t.common.search}
-                            placeholder={t.common.search}
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                        />
-                        <div className="flex flex-col gap-2" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <label style={{ fontSize: '0.875rem', fontWeight: 500 }}>{t.members.filterByDivision}</label>
+
+                            {isAdmin && (
+                                <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
+                                    <Button onClick={() => setIsModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <FaPlus /> {t.members.addMember}
+                                    </Button>
+
+                                    <div style={{ position: 'relative' }}>
+                                        <Button
+                                            variant="secondary"
+                                            onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)}
+                                            style={{ padding: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                        >
+                                            <FaEllipsisV />
+                                        </Button>
+
+                                        {isMoreMenuOpen && (
+                                            <>
+                                                <div
+                                                    style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                                                    onClick={() => setIsMoreMenuOpen(false)}
+                                                />
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: 'calc(100% + 8px)',
+                                                    right: 0,
+                                                    background: 'var(--color-white)',
+                                                    border: '1px solid var(--color-border)',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    boxShadow: 'var(--shadow-lg)',
+                                                    zIndex: 50,
+                                                    minWidth: '220px',
+                                                    padding: '0.5rem',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                        {t.common.actions}
+                                                    </div>
+                                                    <button
+                                                        onClick={() => { downloadExcelTemplate(); setIsMoreMenuOpen(false); }}
+                                                        style={{
+                                                            width: '100%',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.75rem',
+                                                            padding: '0.75rem 1rem',
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.875rem',
+                                                            color: 'var(--color-text)',
+                                                            borderRadius: 'var(--radius-sm)',
+                                                            textAlign: 'left'
+                                                        }}
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                                                        onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                                                    >
+                                                        <FaDownload /> {t.common.downloadTemplate}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { fileInputRef.current?.click(); setIsMoreMenuOpen(false); }}
+                                                        style={{
+                                                            width: '100%',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.75rem',
+                                                            padding: '0.75rem 1rem',
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.875rem',
+                                                            color: 'var(--color-text)',
+                                                            borderRadius: 'var(--radius-sm)',
+                                                            textAlign: 'left'
+                                                        }}
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                                                        onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                                                    >
+                                                        <FaFileExcel style={{ color: '#107c41' }} /> {t.common.importExcel}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => { handleExportData(); setIsMoreMenuOpen(false); }}
+                                                        style={{
+                                                            width: '100%',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.75rem',
+                                                            padding: '0.75rem 1rem',
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.875rem',
+                                                            color: 'var(--color-text)',
+                                                            borderRadius: 'var(--radius-sm)',
+                                                            textAlign: 'left'
+                                                        }}
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                                                        onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                                                    >
+                                                        <FaDownload /> {t.common.export}
+                                                    </button>
+                                                    <div style={{ height: '1px', background: 'var(--color-border)', margin: '0.25rem 0.5rem' }} />
+                                                    <button
+                                                        onClick={() => { setIsArchiveModalOpen(true); setIsMoreMenuOpen(false); }}
+                                                        style={{
+                                                            width: '100%',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '0.75rem',
+                                                            padding: '0.75rem 1rem',
+                                                            background: 'none',
+                                                            border: 'none',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.875rem',
+                                                            color: 'var(--color-text)',
+                                                            borderRadius: 'var(--radius-sm)',
+                                                            textAlign: 'left'
+                                                        }}
+                                                        onMouseOver={(e) => e.currentTarget.style.background = 'var(--color-gray-100)'}
+                                                        onMouseOut={(e) => e.currentTarget.style.background = 'none'}
+                                                    >
+                                                        <FaArchive /> {t.common.archive}
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <input
+                                        type="file"
+                                        accept=".xlsx, .xls"
+                                        style={{ display: 'none' }}
+                                        ref={fileInputRef}
+                                        onChange={handleExcelImport}
+                                    />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bottom Section: Search & Filters */}
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'row',
+                            gap: '0.75rem',
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                            background: 'rgba(0,0,0,0.03)',
+                            padding: '0.75rem',
+                            borderRadius: 'var(--radius-lg)',
+                            border: '1px solid var(--color-border)'
+                        }}>
+                            <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+                                <FaSearch style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)', fontSize: '0.875rem' }} />
+                                <input
+                                    placeholder={t.common.search}
+                                    value={searchTerm}
+                                    onChange={handleSearchChange}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.625rem 1rem 0.625rem 2.5rem',
+                                        borderRadius: 'var(--radius-md)',
+                                        border: '1px solid var(--color-border)',
+                                        background: 'var(--color-bg-subtle)',
+                                        color: 'var(--color-text)',
+                                        fontSize: '0.875rem',
+                                        transition: 'border-color 0.2s',
+                                        outline: 'none'
+                                    }}
+                                />
+                            </div>
+
                             <select
                                 value={divisionFilter}
                                 onChange={handleDivisionFilterChange}
                                 style={{
-                                    padding: '0.5rem',
+                                    padding: '0.625rem 1rem',
                                     borderRadius: 'var(--radius-md)',
                                     border: '1px solid var(--color-border)',
-                                    background: 'var(--color-bg-card)',
+                                    background: 'var(--color-bg-subtle)',
                                     fontSize: '0.875rem',
-                                    height: '38px',
+                                    minWidth: '160px',
+                                    outline: 'none',
                                     color: 'var(--color-text)'
                                 }}
                             >
@@ -440,25 +843,24 @@ export default function MembersPage() {
                                     <option key={div} value={div}>{div}</option>
                                 ))}
                             </select>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+
                             {isAdmin && selectedIds.length > 0 && (
-                                <>
+                                <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
                                     <Button
                                         variant="secondary"
                                         onClick={() => setIsBulkDivisionModalOpen(true)}
-                                        style={{ flex: '1 1 auto' }}
+                                        style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                     >
-                                        <FaEdit /> {t.members.changeDivision} ({selectedIds.length})
+                                        <FaEdit /> {selectedIds.length}
                                     </Button>
                                     <Button
                                         variant="danger"
                                         onClick={handleBulkDelete}
-                                        style={{ flex: '1 1 auto' }}
+                                        style={{ padding: '0.625rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                     >
-                                        <FaTrash /> {t.members.deleteSelected} ({selectedIds.length})
+                                        <FaTrash />
                                     </Button>
-                                </>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -513,7 +915,22 @@ export default function MembersPage() {
                                         />
                                     </TableCell>
                                     <TableCell className="font-medium">{member.id}</TableCell>
-                                    <TableCell>{member.name}</TableCell>
+                                    <TableCell>
+                                        <span
+                                            onClick={() => handleViewHistory(member)}
+                                            style={{
+                                                cursor: 'pointer',
+                                                color: 'var(--color-primary)',
+                                                fontWeight: 600,
+                                                textDecoration: 'underline',
+                                                textUnderlineOffset: '2px'
+                                            }}
+                                            onMouseOver={(e) => e.currentTarget.style.color = 'var(--color-primary-dark)'}
+                                            onMouseOut={(e) => e.currentTarget.style.color = 'var(--color-primary)'}
+                                        >
+                                            {member.name}
+                                        </span>
+                                    </TableCell>
                                     <TableCell>{member.division}</TableCell>
                                     <TableCell style={{ fontWeight: 600, color: member.totalPoints >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                                         {member.totalPoints}
@@ -703,6 +1120,18 @@ export default function MembersPage() {
                 isOpen={isHistoryOpen}
                 onClose={() => setIsHistoryOpen(false)}
                 title={historyMember ? `${t.members.historyTitle} — ${historyMember.name}` : t.members.historyTitle}
+                footer={
+                    historyMember && (
+                        <div style={{ display: 'flex', gap: '0.75rem', width: '100%', justifyContent: 'flex-end' }}>
+                            <Button variant="secondary" onClick={() => setIsHistoryOpen(false)}>
+                                {t.common.cancel}
+                            </Button>
+                            <Button onClick={() => handleExportMemberHistoryWord(historyMember)}>
+                                <FaFileWord style={{ marginRight: '0.5rem' }} /> {t.members.exportWord}
+                            </Button>
+                        </div>
+                    )
+                }
             >
                 <div style={{ padding: '1.5rem' }}>
                     {memberLogs.length === 0 ? (
@@ -799,6 +1228,38 @@ export default function MembersPage() {
                             })}
                         </div>
                     )}
+                </div>
+            </Modal>
+            {/* Archive Modal */}
+            <Modal
+                isOpen={isArchiveModalOpen}
+                onClose={() => setIsArchiveModalOpen(false)}
+                title={t.archive.createTitle}
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsArchiveModalOpen(false)}>
+                            {t.common.cancel}
+                        </Button>
+                        <Button
+                            onClick={handleConfirmArchive}
+                            disabled={!archiveTitle.trim()}
+                        >
+                            {t.common.save}
+                        </Button>
+                    </>
+                }
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
+                    <p style={{ fontSize: '0.925rem', color: 'var(--color-text-muted)', lineHeight: '1.5', margin: 0 }}>
+                        {t.archive.archiveSnapshot}
+                    </p>
+                    <Input
+                        label={t.archive.archiveName}
+                        placeholder="e.g. Kondisi Poin Februari 2026"
+                        value={archiveTitle}
+                        onChange={(e) => setArchiveTitle(e.target.value)}
+                        autoFocus
+                    />
                 </div>
             </Modal>
         </div>
