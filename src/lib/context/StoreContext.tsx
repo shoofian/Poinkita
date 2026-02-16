@@ -169,29 +169,33 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             localStorage.removeItem('currentUser');
         }
 
-        // Persist Data Globally (Debounce or just push)
+        // Persist Data Globally
         const saveData = async () => {
             try {
-                await fetch('/api/data', {
+                // SANGAT PENTING: Kirim 'users' asli, bukan 'filteredUsers'
+                const payload = {
+                    members,
+                    rules,
+                    warningRules,
+                    transactions,
+                    auditLogs,
+                    archives,
+                    users // Ini daftar lengkap semua user
+                };
+
+                const res = await fetch('/api/data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        members,
-                        rules,
-                        warningRules,
-                        transactions,
-                        auditLogs,
-                        archives,
-                        users
-                    })
+                    body: JSON.stringify(payload)
                 });
+
+                if (!res.ok) console.error('Sync failed with status:', res.status);
             } catch (err) {
                 console.error('Failed to sync to server', err);
             }
         };
 
-        // Simple debounce could be added here if needed, but for now direct sync
-        const timeout = setTimeout(saveData, 500); // 500ms debounce
+        const timeout = setTimeout(saveData, 1000);
         return () => clearTimeout(timeout);
 
     }, [members, rules, warningRules, transactions, auditLogs, archives, users, currentUser, isLoaded]);
