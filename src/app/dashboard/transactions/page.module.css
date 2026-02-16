@@ -11,6 +11,11 @@
         grid-template-columns: 1fr;
         height: auto;
     }
+
+    .panel {
+        height: 450px;
+        /* Membatasi tinggi agar Riwayat cepat terlihat */
+    }
 }
 
 @media (max-width: 640px) {
