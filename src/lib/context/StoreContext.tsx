@@ -14,7 +14,9 @@ interface StoreContextType {
     archives: Archive[];
     users: User[];
     currentUser: User | null;
+    isLoaded: boolean;
     setCurrentUser: (user: User | null) => void;
+    loginUser: (username: string, password: string) => { success: boolean; error?: string; user?: User };
     addMember: (member: Omit<Member, 'adminId'> & { adminId?: string }) => void;
     addMembers: (members: (Omit<Member, 'adminId'> & { adminId?: string })[]) => void;
     updateMemberPoints: (id: string, points: number) => void;
@@ -389,6 +391,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return users.find(u => u.id === id);
     };
 
+    // Login function that validates against the FULL (unfiltered) user list
+    const loginUser = (username: string, password: string): { success: boolean; error?: string; user?: User } => {
+        if (!isLoaded) {
+            return { success: false, error: 'DATA_NOT_LOADED' };
+        }
+
+        const normalizedUsername = username.trim().toLowerCase();
+        // Search in the FULL users array, not the filtered one
+        const user = users.find(u => u.username.toLowerCase() === normalizedUsername);
+
+        if (user && user.password === password) {
+            setCurrentUser(user);
+            return { success: true, user };
+        }
+
+        return { success: false, error: 'INVALID_CREDENTIALS' };
+    };
+
     return (
         <StoreContext.Provider value={{
             members: filteredMembers,
@@ -399,7 +419,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             archives: filteredArchives,
             users: filteredUsers,
             currentUser,
+            isLoaded,
             setCurrentUser,
+            loginUser,
             addMember, addMembers, updateMemberPoints, deleteMember, deleteMembers,
             addRule, addRules, deleteRule, addWarningRule, updateWarningRule, deleteWarningRule,
             addTransaction, deleteTransaction,

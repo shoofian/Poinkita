@@ -52,6 +52,7 @@ export const translations = {
             generateRandomPassword: "Generate Random Password",
             randomPasswordDesc: "Password will be automatically generated for imported users.",
             needHelp: "Need Help?",
+            dataLoading: "Data is loading, please wait...",
         },
         sidebar: {
             dashboard: "Dashboard",
@@ -232,6 +233,7 @@ export const translations = {
             generateRandomPassword: "Generate Password Acak",
             randomPasswordDesc: "Password akan dibuat otomatis secara acak untuk akun yang diimpor.",
             needHelp: "Butuh Bantuan ?",
+            dataLoading: "Data sedang dimuat, mohon tunggu...",
         },
         sidebar: {
             dashboard: "Beranda",

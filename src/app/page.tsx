@@ -39,6 +39,8 @@ function LandingContent() {
     users,
     currentUser,
     setCurrentUser,
+    loginUser,
+    isLoaded,
     registerUser,
     lookupMemberPublic,
     generateId
@@ -97,15 +99,19 @@ function LandingContent() {
     setLoginError('');
 
     setTimeout(() => {
-      const normalizedUsername = loginUsername.trim().toLowerCase();
-      const user = users.find(u => u.username.toLowerCase() === normalizedUsername);
+      const result = loginUser(loginUsername, loginPassword);
 
-      if (user && user.password === loginPassword) {
-        setCurrentUser(user);
+      if (result.success) {
+        // setCurrentUser is already called inside loginUser
+        return;
+      }
+
+      if (result.error === 'DATA_NOT_LOADED') {
+        setLoginError(t.auth.dataLoading || 'Data is still loading, please wait a moment and try again.');
       } else {
         setLoginError(t.auth.invalidCredentials);
-        setIsLoginLoading(false);
       }
+      setIsLoginLoading(false);
     }, 800);
   };
 
@@ -389,8 +395,8 @@ function LandingContent() {
             onChange={(e) => setLoginPassword(e.target.value)}
             icon={<Lock size={18} />}
           />
-          <Button type="submit" variant="primary" isLoading={isLoginLoading} className="w-full">
-            <LogIn size={18} /> {t.auth.signIn}
+          <Button type="submit" variant="primary" isLoading={isLoginLoading} disabled={!isLoaded} className="w-full">
+            <LogIn size={18} /> {!isLoaded ? (t.auth.dataLoading || 'Loading...') : t.auth.signIn}
           </Button>
           <div className={styles.formLink}>
             {t.auth.alreadyHaveAccount ? "" : t.landing.registerBtn}
@@ -468,8 +474,8 @@ function LandingContent() {
             disabled={regSuccess}
             icon={<Lock size={18} />}
           />
-          <Button type="submit" variant="primary" isLoading={isRegLoading} disabled={regSuccess} className="w-full">
-            <UserPlus size={18} /> {t.auth.createAccount}
+          <Button type="submit" variant="primary" isLoading={isRegLoading} disabled={regSuccess || !isLoaded} className="w-full">
+            <UserPlus size={18} /> {!isLoaded ? (t.auth.dataLoading || 'Loading...') : t.auth.createAccount}
           </Button>
           <div className={styles.formLink}>
             {t.auth.alreadyHaveAccount}
