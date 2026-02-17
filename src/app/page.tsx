@@ -127,6 +127,7 @@ function LandingContent() {
       const assertion = await navigator.credentials.get({
         publicKey: {
           challenge,
+          rpId: window.location.hostname,
           timeout: 60000,
           userVerification: "required"
         }
@@ -144,11 +145,16 @@ function LandingContent() {
           setActiveModal('LOGIN');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Biometric login error:", err);
-      // If it's a real error (not cancellation), show feedback
-      if ((err as any).name !== 'NotAllowedError') {
+      // If it's a real failure (not cancellation), show feedback
+      if (err.name === 'SecurityError') {
+        setLoginError("Biometrics require a secure connection (HTTPS or localhost).");
+      } else if (err.name !== 'NotAllowedError') {
         setLoginError(t.auth.biometricFailed);
+      }
+
+      if (err.name !== 'NotAllowedError') {
         setActiveModal('LOGIN');
       }
     }

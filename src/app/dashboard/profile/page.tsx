@@ -268,29 +268,52 @@ export default function AccountSettingsPage() {
             const challenge = new Uint8Array(32);
             window.crypto.getRandomValues(challenge);
 
+            // RP ID must match the domain exactly. Defaulting to window.location.hostname
+            const rpId = window.location.hostname;
+
             const credential = await navigator.credentials.create({
                 publicKey: {
                     challenge,
-                    rp: { name: "Poinkita" },
+                    rp: {
+                        name: "Poinkita",
+                        id: rpId
+                    },
                     user: {
                         id: Uint8Array.from(currentUser?.id || 'user', c => c.charCodeAt(0)),
                         name: currentUser?.username || 'user',
                         displayName: currentUser?.name || 'User'
                     },
-                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
-                    authenticatorSelection: { userVerification: "required" },
+                    pubKeyCredParams: [
+                        { alg: -7, type: "public-key" }, // ES256
+                        { alg: -257, type: "public-key" } // RS256
+                    ],
+                    authenticatorSelection: {
+                        userVerification: "required",
+                        residentKey: "required",
+                        requireResidentKey: true
+                    },
                     timeout: 60000
                 }
-            });
+            }) as PublicKeyCredential;
 
             if (credential) {
-                updateUser(currentUser!.id, { biometricEnabled: true, biometricId: credential.id });
+                updateUser(currentUser!.id, {
+                    biometricEnabled: true,
+                    biometricId: credential.id
+                });
                 alert({ title: "Success", message: t.auth.biometricSuccess, variant: 'success' });
             }
         } catch (err) {
             console.error("Biometric registration error:", err);
-            alert({ title: "Cancelled", message: t.auth.biometricFailed, variant: 'info' });
+            if ((err as any).name !== 'NotAllowedError') {
+                alert({ title: "Error", message: t.auth.biometricFailed, variant: 'danger' });
+            }
         }
+    };
+
+    const handleDisableBiometric = () => {
+        updateUser(currentUser!.id, { biometricEnabled: false });
+        alert({ title: "Removed", message: "Biometric login disabled.", variant: 'info' });
     };
 
     if (!currentUser) {
@@ -456,12 +479,12 @@ export default function AccountSettingsPage() {
                                 </div>
                                 <Button
                                     type="button"
-                                    onClick={handleEnableBiometric}
+                                    onClick={currentUser.biometricEnabled ? handleDisableBiometric : handleEnableBiometric}
                                     variant={currentUser.biometricEnabled ? "secondary" : "primary"}
                                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                 >
                                     {currentUser.biometricEnabled ? <FaCheckCircle /> : <FaFingerprint />}
-                                    {currentUser.biometricEnabled ? t.common.save : t.auth.enableBiometric}
+                                    {currentUser.biometricEnabled ? t.auth.biometricSuccess.split(' ')[0] : t.auth.enableBiometric}
                                 </Button>
                             </div>
                         </CardContent>

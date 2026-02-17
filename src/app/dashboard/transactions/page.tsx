@@ -243,7 +243,7 @@ export default function TransactionsPage() {
                                 <div className={styles.memberAvatar}>
                                     {m.name.charAt(0).toUpperCase()}
                                 </div>
-                                <div>
+                                <div className={styles.memberText}>
                                     <div className={styles.memberName}>{m.name}</div>
                                     <div className={styles.memberMeta}>{m.id} • {m.division}</div>
                                 </div>
@@ -413,7 +413,7 @@ export default function TransactionsPage() {
                                     className={`${styles.ruleItem} ${r.type === 'ACHIEVEMENT' ? styles.ruleItemAchievement : styles.ruleItemViolation}`}
                                     onClick={() => handleRuleSelect(r)}
                                 >
-                                    <div>
+                                    <div className={styles.ruleText}>
                                         <div className={styles.ruleName}>{r.description}</div>
                                         <div className={styles.ruleCode}>{r.id}</div>
                                     </div>

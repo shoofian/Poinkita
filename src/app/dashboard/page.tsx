@@ -486,67 +486,99 @@ export default function DashboardPage() {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                            {/* Achievement Chart */}
-                            <div>
-                                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-success)' }}>
-                                    <Trophy size={18} /> Kategori Pencapaian
-                                </h3>
-                                <div style={{ height: '250px' }}>
-                                    {achievementTypeRank.length > 0 ? (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={achievementTypeRank} layout="vertical" margin={{ left: 40, right: 20 }}>
-                                                <XAxis type="number" hide />
-                                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} width={80} />
-                                                <Tooltip
-                                                    cursor={{ fill: 'rgba(16, 185, 129, 0.05)' }}
-                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', background: 'var(--color-surface)', color: 'var(--color-text)' }}
-                                                />
-                                                <Bar dataKey="count" name="Frekuensi" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20}>
-                                                    {achievementTypeRank.map((_, index) => (
-                                                        <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
-                                                    ))}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    ) : (
-                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
-                                            Tidak ada data pencapaian
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
+                        {/* Custom Tick for long labels */}
+                        {(() => {
+                            const CustomYAxisTick = ({ x, y, payload }: any) => {
+                                const name = payload.value;
+                                const truncated = name.length > 30 ? name.substring(0, 27) + '...' : name;
+                                return (
+                                    <g transform={`translate(${x},${y})`}>
+                                        <text x={-10} y={0} dy={4} textAnchor="end" fill="var(--color-text-muted)" fontSize={11} fontWeight={500}>
+                                            {truncated}
+                                            {name.length > 30 && <title>{name}</title>}
+                                        </text>
+                                    </g>
+                                );
+                            };
 
-                            {/* Violation Chart */}
-                            <div>
-                                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-danger)' }}>
-                                    <AlertTriangle size={18} /> Kategori Pelanggaran
-                                </h3>
-                                <div style={{ height: '250px' }}>
-                                    {violationTypeRank.length > 0 ? (
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={violationTypeRank} layout="vertical" margin={{ left: 40, right: 20 }}>
-                                                <XAxis type="number" hide />
-                                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} width={80} />
-                                                <Tooltip
-                                                    cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
-                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', background: 'var(--color-surface)', color: 'var(--color-text)' }}
-                                                />
-                                                <Bar dataKey="count" name="Frekuensi" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20}>
-                                                    {violationTypeRank.map((_, index) => (
-                                                        <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
-                                                    ))}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    ) : (
-                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
-                                            Tidak ada data pelanggaran
+                            return (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2.5rem' }}>
+                                    {/* Achievement Chart */}
+                                    <div>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-success)' }}>
+                                            <Trophy size={18} /> Kategori Pencapaian
+                                        </h3>
+                                        <div style={{ height: '300px' }}>
+                                            {achievementTypeRank.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={achievementTypeRank} layout="vertical" margin={{ left: 20, right: 30 }}>
+                                                        <XAxis type="number" hide />
+                                                        <YAxis
+                                                            dataKey="name"
+                                                            type="category"
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                            tick={<CustomYAxisTick />}
+                                                            width={180}
+                                                        />
+                                                        <Tooltip
+                                                            cursor={{ fill: 'rgba(16, 185, 129, 0.05)' }}
+                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', background: 'var(--color-surface)', color: 'var(--color-text)' }}
+                                                        />
+                                                        <Bar dataKey="count" name="Frekuensi" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24}>
+                                                            {achievementTypeRank.map((_, index) => (
+                                                                <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
+                                                    Tidak ada data pencapaian
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                    </div>
+
+                                    {/* Violation Chart */}
+                                    <div>
+                                        <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-danger)' }}>
+                                            <AlertTriangle size={18} /> Kategori Pelanggaran
+                                        </h3>
+                                        <div style={{ height: '300px' }}>
+                                            {violationTypeRank.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={violationTypeRank} layout="vertical" margin={{ left: 20, right: 30 }}>
+                                                        <XAxis type="number" hide />
+                                                        <YAxis
+                                                            dataKey="name"
+                                                            type="category"
+                                                            axisLine={false}
+                                                            tickLine={false}
+                                                            tick={<CustomYAxisTick />}
+                                                            width={180}
+                                                        />
+                                                        <Tooltip
+                                                            cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
+                                                            contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', background: 'var(--color-surface)', color: 'var(--color-text)' }}
+                                                        />
+                                                        <Bar dataKey="count" name="Frekuensi" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={24}>
+                                                            {violationTypeRank.map((_, index) => (
+                                                                <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            ) : (
+                                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
+                                                    Tidak ada data pelanggaran
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            );
+                        })()}
                     </div>
                 </div>
             </div>

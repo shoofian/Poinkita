@@ -170,6 +170,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             localStorage.removeItem('currentUser');
         }
 
+        // Backup to LocalStorage
+        localStorage.setItem('members', JSON.stringify(members));
+        localStorage.setItem('users', JSON.stringify(users));
+        localStorage.setItem('warningRules', JSON.stringify(warningRules));
+        localStorage.setItem('auditLogs', JSON.stringify(auditLogs));
+
         // Persist Data Globally
         const saveData = async () => {
             try {
