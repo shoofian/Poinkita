@@ -9,6 +9,8 @@ export interface User {
   email?: string;
   phone?: string;
   adminId?: string; // Creators ID for contributors
+  biometricEnabled?: boolean;
+  biometricId?: string; // Mock credential identifier
 }
 
 export interface Member {

@@ -22,7 +22,8 @@ import {
   Sun,
   Zap,
   Lock,
-  Mail
+  Mail,
+  Fingerprint
 } from 'lucide-react';
 import styles from './page.module.css';
 import { useTheme } from '@/lib/context/ThemeContext';
@@ -74,11 +75,7 @@ function LandingContent() {
   // Check Redirect if already logged in
   useEffect(() => {
     if (currentUser) {
-      if (currentUser.role === 'ADMIN') {
-        router.push('/dashboard');
-      } else {
-        router.push('/dashboard/transactions');
-      }
+      router.push('/dashboard/transactions');
     }
   }, [currentUser, router]);
 
@@ -113,6 +110,48 @@ function LandingContent() {
       }
       setIsLoginLoading(false);
     }, 800);
+  };
+
+  const handleBiometricLogin = async () => {
+    setLoginError('');
+    if (typeof window === 'undefined' || !window.PublicKeyCredential) {
+      setLoginError("Biometric authentication is not supported by your browser.");
+      setActiveModal('LOGIN');
+      return;
+    }
+
+    try {
+      const challenge = new Uint8Array(32);
+      window.crypto.getRandomValues(challenge);
+
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge,
+          timeout: 60000,
+          userVerification: "required"
+        }
+      });
+
+      if (assertion) {
+        // Locate user by credential ID
+        const matchedUser = users.find(u => u.biometricEnabled && u.biometricId === assertion.id);
+
+        if (matchedUser) {
+          setCurrentUser(matchedUser);
+          // Redirect handled by useEffect
+        } else {
+          setLoginError(t.auth.biometricNotSet);
+          setActiveModal('LOGIN');
+        }
+      }
+    } catch (err) {
+      console.error("Biometric login error:", err);
+      // If it's a real error (not cancellation), show feedback
+      if ((err as any).name !== 'NotAllowedError') {
+        setLoginError(t.auth.biometricFailed);
+        setActiveModal('LOGIN');
+      }
+    }
   };
 
   const handleRegister = (e: React.FormEvent) => {
@@ -237,7 +276,10 @@ function LandingContent() {
             <Button variant="primary" size="lg" className={styles.ctaPrimary} onClick={() => setActiveModal('REGISTER')}>
               <UserPlus size={20} /> {t.landing.registerBtn}
             </Button>
-            <Button variant="secondary" size="lg" className={styles.ctaSecondary} onClick={() => {
+            <Button variant="secondary" size="lg" className={`${styles.ctaSecondary} ${styles.ctaBiometric}`} onClick={handleBiometricLogin}>
+              <Fingerprint size={20} /> {t.auth.biometricLogin}
+            </Button>
+            <Button variant="ghost" size="lg" className={styles.ctaTertiary} onClick={() => {
               const checker = document.getElementById('point-checker');
               checker?.scrollIntoView({ behavior: 'smooth' });
             }}>
@@ -397,6 +439,22 @@ function LandingContent() {
           />
           <Button type="submit" variant="primary" isLoading={isLoginLoading} disabled={!isLoaded} className="w-full">
             <LogIn size={18} /> {!isLoaded ? (t.auth.dataLoading || 'Loading...') : t.auth.signIn}
+          </Button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.5rem 0' }}>
+            <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>OR</span>
+            <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+          </div>
+
+          <Button
+            type="button"
+            variant="secondary"
+            className="w-full"
+            onClick={handleBiometricLogin}
+            disabled={!isLoaded}
+          >
+            <Fingerprint size={18} /> {t.auth.biometricLogin}
           </Button>
           <div className={styles.formLink}>
             {t.auth.alreadyHaveAccount ? "" : t.landing.registerBtn}

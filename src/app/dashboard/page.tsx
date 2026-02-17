@@ -30,6 +30,7 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 export default function DashboardPage() {
     const { members, auditLogs, warningRules, users } = useStore();
     const { t } = useLanguage();
+    const [rankFilter, setRankFilter] = React.useState<'day' | 'week' | 'month' | 'year'>('week');
 
     const totalPoints = members.reduce((acc, m) => acc + m.totalPoints, 0);
     const topPerformer = members.length > 0
@@ -109,6 +110,42 @@ export default function DashboardPage() {
     const top10Low = [...members]
         .sort((a, b) => a.totalPoints - b.totalPoints)
         .slice(0, 10);
+
+    // --- Ranking Data with Time Filter ---
+    const getFilteredLogs = () => {
+        const now = new Date();
+        const start = new Date();
+        if (rankFilter === 'day') start.setHours(0, 0, 0, 0);
+        else if (rankFilter === 'week') start.setDate(now.getDate() - 7);
+        else if (rankFilter === 'month') start.setMonth(now.getMonth() - 1);
+        else if (rankFilter === 'year') start.setFullYear(now.getFullYear() - 1);
+
+        return auditLogs.filter(log => new Date(log.timestamp) >= start);
+    };
+
+    const filteredLogsForRank = getFilteredLogs();
+
+    const achievementTypeRank = Array.from(
+        filteredLogsForRank
+            .filter(log => log.points > 0 && log.details !== t.members.initialPoints && log.details !== 'Initial Points' && log.details !== 'Poin Awal')
+            .reduce((acc, log) => {
+                acc.set(log.details, (acc.get(log.details) || 0) + 1);
+                return acc;
+            }, new Map<string, number>())
+    ).map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
+
+    const violationTypeRank = Array.from(
+        filteredLogsForRank
+            .filter(log => log.points < 0 && log.details !== t.members.initialPoints && log.details !== 'Initial Points' && log.details !== 'Poin Awal')
+            .reduce((acc, log) => {
+                acc.set(log.details, (acc.get(log.details) || 0) + 1);
+                return acc;
+            }, new Map<string, number>())
+    ).map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5);
 
     // 5. Active Contributors (Admins/Contributors)
     const contributorActivityMap = auditLogs.reduce((acc, log) => {
@@ -424,6 +461,91 @@ export default function DashboardPage() {
                                 </div>
                             ))}
                             {top10Low.length === 0 && <div style={{ fontSize: '0.875rem', opacity: 0.7, textAlign: 'center', padding: '1rem' }}>Belum ada data.</div>}
+                        </div>
+                    </div>
+                </div>
+
+                {/* --- New Ranking Charts Section --- */}
+                <div className={`${styles.bentoItem} ${styles.span12}`}>
+                    <div className={styles.chartCard}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <div>
+                                <h2 className={styles.chartTitle}>Frekuensi Jenis Poin</h2>
+                                <p className={styles.chartDesc}>Kategori pencatatan yang paling sering muncul berdasarkan periode.</p>
+                            </div>
+                            <div className={styles.filterGroup}>
+                                {(['day', 'week', 'month', 'year'] as const).map((f) => (
+                                    <button
+                                        key={f}
+                                        onClick={() => setRankFilter(f)}
+                                        className={`${styles.filterBtn} ${rankFilter === f ? styles.filterBtnActive : ''}`}
+                                    >
+                                        {f === 'day' ? 'Hari' : f === 'week' ? 'Minggu' : f === 'month' ? 'Bulan' : 'Tahun'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                            {/* Achievement Chart */}
+                            <div>
+                                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-success)' }}>
+                                    <Trophy size={18} /> Kategori Pencapaian
+                                </h3>
+                                <div style={{ height: '250px' }}>
+                                    {achievementTypeRank.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={achievementTypeRank} layout="vertical" margin={{ left: 40, right: 20 }}>
+                                                <XAxis type="number" hide />
+                                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} width={80} />
+                                                <Tooltip
+                                                    cursor={{ fill: 'rgba(16, 185, 129, 0.05)' }}
+                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', background: 'var(--color-surface)', color: 'var(--color-text)' }}
+                                                />
+                                                <Bar dataKey="count" name="Frekuensi" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20}>
+                                                    {achievementTypeRank.map((_, index) => (
+                                                        <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
+                                            Tidak ada data pencapaian
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Violation Chart */}
+                            <div>
+                                <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-danger)' }}>
+                                    <AlertTriangle size={18} /> Kategori Pelanggaran
+                                </h3>
+                                <div style={{ height: '250px' }}>
+                                    {violationTypeRank.length > 0 ? (
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={violationTypeRank} layout="vertical" margin={{ left: 40, right: 20 }}>
+                                                <XAxis type="number" hide />
+                                                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} width={80} />
+                                                <Tooltip
+                                                    cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
+                                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', background: 'var(--color-surface)', color: 'var(--color-text)' }}
+                                                />
+                                                <Bar dataKey="count" name="Frekuensi" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20}>
+                                                    {violationTypeRank.map((_, index) => (
+                                                        <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    ) : (
+                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
+                                            Tidak ada data pelanggaran
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

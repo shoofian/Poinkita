@@ -168,9 +168,55 @@
 }
 
 .memberPoints {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     flex-shrink: 0;
+    text-align: right;
+}
+
+.memberRight {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.memberActions {
+    display: flex;
+    gap: 6px;
+}
+
+.quickBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+}
+
+.quickBtnAchievement {
+    background: var(--color-success);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.quickBtnAchievement:hover {
+    background: #059669;
+    transform: scale(1.1);
+}
+
+.quickBtnViolation {
+    background: var(--color-danger);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.quickBtnViolation:hover {
+    background: #dc2626;
+    transform: scale(1.1);
 }
 
 /* History Table */

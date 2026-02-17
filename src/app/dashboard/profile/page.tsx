@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
-import { FaUser, FaSave, FaCheckCircle, FaUserPlus, FaUsersCog, FaEnvelope, FaPhone, FaEdit, FaTrash, FaFileExcel, FaDownload, FaMoon, FaSun } from 'react-icons/fa';
+import { FaUser, FaSave, FaCheckCircle, FaUserPlus, FaUsersCog, FaEnvelope, FaPhone, FaEdit, FaTrash, FaFileExcel, FaDownload, FaMoon, FaSun, FaFingerprint } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import { User, UserRole } from '@/lib/store';
 import { useTheme } from '@/lib/context/ThemeContext';
@@ -252,6 +252,47 @@ export default function AccountSettingsPage() {
         alert({ title: "Success", message: t.auth.editUserSuccess, variant: 'success' });
     };
 
+    const handleEnableBiometric = async () => {
+        if (typeof window === 'undefined' || !window.PublicKeyCredential) {
+            alert({ title: "Not Supported", message: "Biometric is not supported on this browser.", variant: 'info' });
+            return;
+        }
+
+        try {
+            const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+            if (!available) {
+                alert({ title: "Hardware Required", message: "Biometric hardware not found or not supported on this device.", variant: 'info' });
+                return;
+            }
+
+            const challenge = new Uint8Array(32);
+            window.crypto.getRandomValues(challenge);
+
+            const credential = await navigator.credentials.create({
+                publicKey: {
+                    challenge,
+                    rp: { name: "Poinkita" },
+                    user: {
+                        id: Uint8Array.from(currentUser?.id || 'user', c => c.charCodeAt(0)),
+                        name: currentUser?.username || 'user',
+                        displayName: currentUser?.name || 'User'
+                    },
+                    pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+                    authenticatorSelection: { userVerification: "required" },
+                    timeout: 60000
+                }
+            });
+
+            if (credential) {
+                updateUser(currentUser!.id, { biometricEnabled: true, biometricId: credential.id });
+                alert({ title: "Success", message: t.auth.biometricSuccess, variant: 'success' });
+            }
+        } catch (err) {
+            console.error("Biometric registration error:", err);
+            alert({ title: "Cancelled", message: t.auth.biometricFailed, variant: 'info' });
+        }
+    };
+
     if (!currentUser) {
         return <div className="p-8 text-center text-gray-500">Please login to view settings.</div>;
     }
@@ -403,6 +444,24 @@ export default function AccountSettingsPage() {
                                 >
                                     {theme === 'light' ? <FaMoon /> : <FaSun />}
                                     {theme === 'light' ? 'Enable Dark Mode' : 'Enable Light Mode'}
+                                </Button>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                <div>
+                                    <h4 className="font-semibold text-lg" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <FaFingerprint /> {t.auth.biometricLogin}
+                                    </h4>
+                                    <p className="text-sm text-gray-500">{t.auth.biometricDesc}</p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    onClick={handleEnableBiometric}
+                                    variant={currentUser.biometricEnabled ? "secondary" : "primary"}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
+                                    {currentUser.biometricEnabled ? <FaCheckCircle /> : <FaFingerprint />}
+                                    {currentUser.biometricEnabled ? t.common.save : t.auth.enableBiometric}
                                 </Button>
                             </div>
                         </CardContent>

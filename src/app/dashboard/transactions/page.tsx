@@ -6,7 +6,7 @@ import { useLanguage } from '@/lib/context/LanguageContext';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useDialog } from '@/components/ui/ConfirmDialog';
-import { FaSearch, FaHistory, FaTrash } from 'react-icons/fa';
+import { FaSearch, FaHistory, FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
 import { Member, Rule } from '@/lib/store';
 import styles from './page.module.css';
 
@@ -143,6 +143,15 @@ export default function TransactionsPage() {
         setIsModalOpen(true);
     };
 
+    const handleDirectTypeSelect = (e: React.MouseEvent, member: Member, type: 'ACHIEVEMENT' | 'VIOLATION') => {
+        e.stopPropagation();
+        setSelectedMember(member);
+        setSelectedType(type);
+        setStep('RULE');
+        setRuleSearch('');
+        setIsModalOpen(true);
+    };
+
     const handleTypeSelect = (type: 'ACHIEVEMENT' | 'VIOLATION') => {
         setSelectedType(type);
         setStep('RULE');
@@ -239,8 +248,26 @@ export default function TransactionsPage() {
                                     <div className={styles.memberMeta}>{m.id} • {m.division}</div>
                                 </div>
                             </div>
-                            <div className={`${styles.memberPoints} ${m.totalPoints >= 0 ? styles.pointsPositive : styles.pointsNegative}`}>
-                                {m.totalPoints} pts
+                            <div className={styles.memberRight}>
+                                <div className={`${styles.memberPoints} ${m.totalPoints >= 0 ? styles.pointsPositive : styles.pointsNegative}`}>
+                                    {m.totalPoints} pts
+                                </div>
+                                <div className={styles.memberActions}>
+                                    <button
+                                        className={`${styles.quickBtn} ${styles.quickBtnAchievement}`}
+                                        onClick={(e) => handleDirectTypeSelect(e, m, 'ACHIEVEMENT')}
+                                        title={t.rules.achievement}
+                                    >
+                                        <FaPlus size={10} />
+                                    </button>
+                                    <button
+                                        className={`${styles.quickBtn} ${styles.quickBtnViolation}`}
+                                        onClick={(e) => handleDirectTypeSelect(e, m, 'VIOLATION')}
+                                        title={t.rules.violation}
+                                    >
+                                        <FaMinus size={10} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
