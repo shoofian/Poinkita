@@ -22,15 +22,19 @@ import {
     PieChart as PieChartIcon,
     ArrowUpRight,
     Search,
-    AlertTriangle
+    AlertTriangle,
+    Scale,
+    CheckCircle2
 } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function DashboardPage() {
-    const { members, auditLogs, warningRules, users } = useStore();
+    const { members, auditLogs, warningRules, users, appeals } = useStore();
     const { t } = useLanguage();
     const [rankFilter, setRankFilter] = React.useState<'day' | 'week' | 'month' | 'year'>('week');
+
+    const pendingAppeals = (appeals || []).filter(a => a.status === 'PENDING');
 
     const totalPoints = members.reduce((acc, m) => acc + m.totalPoints, 0);
     const topPerformer = members.length > 0
@@ -256,6 +260,65 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 )}
+
+                {/* Alert: Pending Appeals */}
+                {pendingAppeals.length > 0 && (
+                    <div className={`${styles.bentoItem} ${styles.span12}`}>
+                        <div className={styles.chartCard} style={{ borderLeft: '4px solid var(--color-primary)', background: 'rgba(59, 130, 246, 0.05)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <div style={{ padding: '0.5rem', borderRadius: '50%', background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
+                                    <Scale size={24} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h2 className={styles.chartTitle} style={{ color: 'var(--color-primary)', marginBottom: '0.25rem' }}>Banding Baru ({pendingAppeals.length})</h2>
+                                    <p className={styles.chartDesc} style={{ margin: 0, color: 'var(--color-text)' }}>Beberapa anggota mengajukan banding atas transaksi poin mereka.</p>
+                                </div>
+                                <Link href="/dashboard/appeals" className={styles.filterBtnActive} style={{ padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', fontSize: '0.875rem' }}>
+                                    Kelola Semua
+                                </Link>
+                            </div>
+                            <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin', width: '100%' }}>
+                                {pendingAppeals.map((appeal) => {
+                                    const member = members.find(m => m.id === appeal.memberId);
+                                    return (
+                                        <div key={appeal.id} style={{
+                                            flex: '0 0 min(300px, 85%)',
+                                            padding: '1rem',
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--color-border)',
+                                            background: 'var(--color-surface)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '0.5rem',
+                                            boxShadow: 'var(--shadow-sm)'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)' }}>{member?.name || 'Anggota'}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{new Date(appeal.timestamp).toLocaleString()}</div>
+                                                </div>
+                                                <div style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', fontSize: '0.7rem', fontWeight: 700, padding: '0.25rem 0.5rem', borderRadius: '999px' }}>
+                                                    PENDING
+                                                </div>
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.875rem',
+                                                color: 'var(--color-text)',
+                                                background: 'var(--color-bg-subtle)',
+                                                padding: '0.75rem',
+                                                borderRadius: '8px',
+                                                fontStyle: 'italic',
+                                                borderLeft: '3px solid var(--color-primary)'
+                                            }}>
+                                                "{appeal.reason}"
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                )}
                 <div className={`${styles.bentoItem} ${styles.span8} ${styles.row2}`}>
                     <div className={styles.chartCard}>
                         <h2 className={styles.chartTitle}>Tren Aktivitas Mingguan</h2>
@@ -298,19 +361,25 @@ export default function DashboardPage() {
                             {auditLogs.slice(0, 5).map((log, i) => {
                                 const member = members.find(m => m.id === log.memberId);
                                 const isPositive = log.points > 0;
+                                const isNegative = log.points < 0;
+
+                                // Color logic
+                                const bgColor = isPositive ? 'var(--color-success-bg)' : (isNegative ? 'var(--color-danger-bg)' : 'var(--color-bg-hover)');
+                                const textColor = isPositive ? 'var(--color-success)' : (isNegative ? 'var(--color-danger)' : 'var(--color-text-secondary)');
+
                                 return (
                                     <div key={log.id} className={styles.activityItem}>
                                         <div
                                             className={styles.activityIcon}
-                                            style={{ background: isPositive ? '#d1fae5' : '#fee2e2', color: isPositive ? '#059669' : '#dc2626' }}
+                                            style={{ background: bgColor, color: textColor }}
                                         >
-                                            {member?.name.charAt(0).toUpperCase()}
+                                            {member?.name.charAt(0).toUpperCase() || 'A'}
                                         </div>
                                         <div className={styles.activityContent} style={{ minWidth: 0 }}>
                                             <div className={styles.activityTitle}>{member?.name || 'Unknown'}</div>
                                             <div className={styles.activityTime} title={log.details}>{log.details}</div>
                                         </div>
-                                        <div className={styles.activityPoints} style={{ color: isPositive ? '#059669' : '#dc2626' }}>
+                                        <div className={styles.activityPoints} style={{ color: textColor }}>
                                             {isPositive ? '+' : ''}{log.points}
                                         </div>
                                     </div>

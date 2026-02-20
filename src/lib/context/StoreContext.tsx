@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { INITIAL_MEMBERS, INITIAL_RULES, INITIAL_USERS, INITIAL_WARNING_RULES, Member, Rule, Transaction, User, AuditLog, Archive, ArchiveMember, WarningRule } from '@/lib/store';
+import { INITIAL_MEMBERS, INITIAL_RULES, INITIAL_USERS, INITIAL_WARNING_RULES, Member, Rule, Transaction, User, AuditLog, Archive, ArchiveMember, WarningRule, Appeal, AppealStatus } from '@/lib/store';
 
 /* eslint-disable react-hooks/set-state-in-effect */
 
@@ -13,6 +13,7 @@ interface StoreContextType {
     auditLogs: AuditLog[];
     archives: Archive[];
     users: User[];
+    appeals: Appeal[];
     currentUser: User | null;
     isLoaded: boolean;
     setCurrentUser: (user: User | null) => void;
@@ -30,7 +31,7 @@ interface StoreContextType {
     updateWarningRule: (id: string, updates: Partial<WarningRule>) => void;
     deleteWarningRule: (id: string) => void;
     addTransaction: (transaction: Omit<Transaction, 'adminId'> & { adminId?: string }) => void;
-    deleteTransaction: (id: string) => void;
+    deleteTransaction: (id: string, reason?: string) => void;
     addAuditLogs: (logs: AuditLog[]) => void;
     createArchive: (title: string) => void;
     deleteArchive: (id: string) => void;
@@ -38,10 +39,16 @@ interface StoreContextType {
     registerUsers: (users: User[]) => void;
     updateUser: (id: string, updates: Partial<User>) => void;
     deleteUser: (id: string) => void;
+    addAppeal: (appeal: Omit<Appeal, 'id' | 'status' | 'timestamp'>) => void;
+    updateAppealStatus: (id: string, status: AppealStatus, reason?: string) => void;
+    deleteAppeal: (id: string) => void;
     updateMembers: (ids: string[], updates: Partial<Member>) => void;
-    generateId: (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN', type?: 'ACH' | 'VIO') => string;
+    generateId: (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN' | 'APL', type?: 'ACH' | 'VIO') => string;
     lookupMemberPublic: (id: string, division: string) => Member | null;
     lookupUser: (id: string) => User | undefined;
+    lookupLogsPublic: (memberId: string) => AuditLog[];
+    lookupAppealsPublic: (memberId: string) => Appeal[];
+    lookupRulesPublic: (adminId: string) => Rule[];
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -57,6 +64,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
     const [archives, setArchives] = useState<Archive[]>([]);
     const [users, setUsers] = useState<User[]>(INITIAL_USERS);
+    const [appeals, setAppeals] = useState<Appeal[]>([]);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -69,7 +77,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 if (!response.ok) throw new Error('Failed to fetch data');
                 const serverData: {
                     members: Member[], rules: Rule[], warningRules: WarningRule[],
-                    transactions: Transaction[], auditLogs: AuditLog[], archives: Archive[], users: User[]
+                    transactions: Transaction[], auditLogs: AuditLog[], archives: Archive[], users: User[], appeals: Appeal[]
                 } = await response.json();
 
                 // 2. Check LocalStorage for migration/session
@@ -106,6 +114,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         auditLogs: parse('auditLogs') || serverData.auditLogs,
                         archives: parse('archives') || serverData.archives,
                         users: parse('users') || serverData.users,
+                        appeals: parse('appeals') || serverData.appeals,
                     };
 
                     // Push to server immediately
@@ -123,6 +132,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 setAuditLogs(dataToUse.auditLogs || []);
                 setArchives(dataToUse.archives || []);
                 setUsers(dataToUse.users || []);
+                setAppeals(dataToUse.appeals || []);
 
                 // Load User Session (Local only)
                 if (storedCurrentUser) {
@@ -158,6 +168,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const filteredUsers = currentUser
         ? users.filter(u => u.id === effectiveAdminId || u.adminId === effectiveAdminId)
         : users;
+    const filteredAppeals = appeals.filter(a => a.adminId === effectiveAdminId);
 
     // Persistence Effect (Sync to Server)
     useEffect(() => {
@@ -187,7 +198,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     transactions,
                     auditLogs,
                     archives,
-                    users // Ini daftar lengkap semua user
+                    users, // Ini daftar lengkap semua user
+                    appeals
                 };
 
                 const res = await fetch('/api/data', {
@@ -207,7 +219,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     }, [members, rules, warningRules, transactions, auditLogs, archives, users, currentUser, isLoaded]);
 
-    const generateId = (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN', type?: 'ACH' | 'VIO'): string => {
+    const generateId = (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN' | 'APL', type?: 'ACH' | 'VIO'): string => {
         const date = new Date();
         const yyyymmdd = date.getFullYear().toString() +
             (date.getMonth() + 1).toString().padStart(2, '0') +
@@ -222,6 +234,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             case 'TX': targetList = transactions; break;
             case 'ACT': targetList = auditLogs; break;
             case 'ARC': targetList = archives; break;
+            case 'APL': targetList = appeals; break;
         }
 
         const typeCode = type ? `${type}-` : '';
@@ -316,13 +329,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             contributorId: transaction.contributorId,
             details: rule ? rule.description : 'Unknown Rule',
             points: transaction.pointsSnapshot,
-            adminId
+            adminId,
+            evidence: transaction.evidence, // Include evidence in logs
+            transactionId: transaction.id
         };
         setAuditLogs(prev => [log, ...prev]);
     };
 
-    const deleteTransaction = (id: string) => {
-        const transaction = transactions.find(t => t.id === id);
+    const deleteTransaction = (id: string, reason?: string) => {
+        let transaction = transactions.find(t => t.id === id);
+
+        // If not found by transaction ID, try finding via AuditLog transactionId
+        if (!transaction) {
+            const logEntry = auditLogs.find(l => l.id === id);
+            if (logEntry && logEntry.transactionId) {
+                transaction = transactions.find(t => t.id === logEntry.transactionId);
+            }
+        }
+
         if (!transaction) return;
 
         const pointValue = transaction.pointsSnapshot;
@@ -335,12 +359,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             action: 'DELETE',
             memberId: transaction.memberId,
             contributorId: currentUser ? currentUser.id : 'unknown',
-            details: `Deleted transaction: ${id}`,
+            details: reason || `Deleted transaction: ${transaction.id}`,
             points: -pointValue,
-            adminId: transaction.adminId
+            adminId: transaction.adminId,
+            transactionId: transaction.id,
+            // We usually don't need evidence for deletion log unless specifically asked
         };
         setAuditLogs(prev => [log, ...prev]);
-        setTransactions(prev => prev.filter(t => t.id !== id));
+        setTransactions(prev => prev.filter(t => t.id !== (transaction?.id || id)));
     };
 
     const addAuditLogs = (newLogs: AuditLog[]) => {
@@ -398,6 +424,37 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setMembers(prev => prev.map(m => ids.includes(m.id) ? { ...m, ...updates } : m));
     };
 
+    const addAppeal = (appeal: Omit<Appeal, 'id' | 'status' | 'timestamp'>) => {
+        const id = generateId('APL');
+        const timestamp = new Date().toISOString();
+        const newAppeal: Appeal = { ...appeal, id, status: 'PENDING', timestamp };
+        setAppeals(prev => [newAppeal, ...prev]);
+    };
+
+    const updateAppealStatus = (id: string, status: AppealStatus, reason?: string) => {
+        const appeal = appeals.find(a => a.id === id);
+        if (appeal && status === 'REJECTED' && appeal.status !== 'REJECTED') {
+            const nextLogId = generateId('ACT', 'VIO');
+            const log: AuditLog = {
+                id: nextLogId,
+                timestamp: new Date().toISOString(),
+                action: 'UPDATE',
+                memberId: appeal.memberId,
+                contributorId: currentUser ? currentUser.id : 'unknown',
+                details: reason || 'Appeal Rejected',
+                points: 0,
+                adminId: appeal.adminId,
+                transactionId: appeal.transactionId
+            };
+            setAuditLogs(prev => [log, ...prev]);
+        }
+        setAppeals(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    };
+
+    const deleteAppeal = (id: string) => {
+        setAppeals(prev => prev.filter(a => a.id !== id));
+    };
+
     const lookupMemberPublic = (id: string, division: string): Member | null => {
         const searchId = id.trim().toLowerCase();
         const searchDivision = division.trim().toLowerCase();
@@ -409,6 +466,18 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const lookupUser = (id: string): User | undefined => {
         return users.find(u => u.id === id);
+    };
+
+    const lookupLogsPublic = (memberId: string): AuditLog[] => {
+        return auditLogs.filter(l => l.memberId === memberId);
+    };
+
+    const lookupAppealsPublic = (memberId: string): Appeal[] => {
+        return appeals.filter(a => a.memberId === memberId);
+    };
+
+    const lookupRulesPublic = (adminId: string): Rule[] => {
+        return rules.filter(r => r.adminId === adminId);
     };
 
     // Login function that validates against the FULL (unfiltered) user list
@@ -438,6 +507,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             auditLogs: filteredAuditLogs,
             archives: filteredArchives,
             users: filteredUsers,
+            appeals: filteredAppeals,
             currentUser,
             isLoaded,
             setCurrentUser,
@@ -446,8 +516,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             addRule, addRules, deleteRule, deleteRules, addWarningRule, updateWarningRule, deleteWarningRule,
             addTransaction, deleteTransaction,
             addAuditLogs, createArchive, deleteArchive,
-            registerUser, registerUsers, updateUser, deleteUser, updateMembers, generateId,
-            lookupMemberPublic, lookupUser
+            registerUser, registerUsers, updateUser, deleteUser, addAppeal, updateAppealStatus, deleteAppeal, updateMembers, generateId,
+            lookupMemberPublic, lookupUser, lookupLogsPublic, lookupAppealsPublic, lookupRulesPublic
         }}>
             {children}
         </StoreContext.Provider>

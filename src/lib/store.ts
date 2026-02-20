@@ -37,17 +37,33 @@ export interface Transaction {
   timestamp: string;
   pointsSnapshot: number;
   adminId: string;
+  evidence?: string; // Base64 encoded compressed image
 }
 
 export interface AuditLog {
   id: string;
   timestamp: string;
-  action: 'CREATE' | 'DELETE';
+  action: 'CREATE' | 'DELETE' | 'UPDATE';
   memberId: string;
   contributorId: string;
   details: string;
   points: number;
   adminId: string;
+  evidence?: string; // Path/Base64
+  transactionId?: string;
+}
+
+export type AppealStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+export interface Appeal {
+  id: string;
+  transactionId: string;
+  memberId: string;
+  reason: string;
+  status: AppealStatus;
+  timestamp: string;
+  adminId: string;
+  evidence?: string;
 }
 
 export interface ArchiveMember {

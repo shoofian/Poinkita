@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe, FaTimes, FaArchive, FaMoon, FaSun } from 'react-icons/fa';
+import { FaHome, FaUsers, FaClipboardList, FaChartBar, FaSignOutAlt, FaUserCog, FaGlobe, FaTimes, FaArchive, FaMoon, FaSun, FaGavel } from 'react-icons/fa';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useStore } from '@/lib/context/StoreContext';
 import { useTheme } from '@/lib/context/ThemeContext';
@@ -19,7 +19,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     const router = useRouter();
     const { t, language, setLanguage } = useLanguage();
     const { theme, toggleTheme } = useTheme();
-    const { currentUser, setCurrentUser } = useStore();
+    const { currentUser, setCurrentUser, appeals } = useStore();
+    const pendingAppealsCount = (appeals || []).filter(a => a.status === 'PENDING').length;
 
     const allMenuItems = [
         { label: t.sidebar.dashboard, href: '/dashboard', icon: FaHome },
@@ -27,6 +28,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: t.sidebar.members, href: '/dashboard/members', icon: FaUsers },
         { label: t.sidebar.rules, href: '/dashboard/rules', icon: FaUserCog },
         { label: t.sidebar.archive, href: '/dashboard/archive', icon: FaArchive },
+        { label: t.sidebar.appeals, href: '/dashboard/appeals', icon: FaGavel },
     ];
 
     const MENU_ITEMS = allMenuItems;
@@ -62,6 +64,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                         >
                             <Icon className={styles.navIcon} />
                             <span>{item.label}</span>
+                            {item.href === '/dashboard/appeals' && pendingAppealsCount > 0 && (
+                                <span className={styles.notificationDot} />
+                            )}
                         </Link>
                     );
                 })}

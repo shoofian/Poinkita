@@ -23,7 +23,16 @@ import {
   Zap,
   Lock,
   Mail,
-  Fingerprint
+  Fingerprint,
+  Scale,
+  MessageSquare,
+  AlertCircle,
+  Image as ImageIcon,
+  Camera,
+  Loader2,
+  X,
+  XCircle,
+  Clock
 } from 'lucide-react';
 import styles from './page.module.css';
 import { useTheme } from '@/lib/context/ThemeContext';
@@ -44,7 +53,13 @@ function LandingContent() {
     isLoaded,
     registerUser,
     lookupMemberPublic,
-    generateId
+    generateId,
+    auditLogs,
+    addAppeal,
+    appeals,
+    lookupLogsPublic,
+    lookupAppealsPublic,
+    lookupRulesPublic
   } = useStore();
 
   // Modals State
@@ -71,6 +86,72 @@ function LandingContent() {
   const [checkDivision, setCheckDivision] = useState('');
   const [checkResult, setCheckResult] = useState<any | null>(null);
   const [checkError, setCheckError] = useState(false);
+  const [memberLogs, setMemberLogs] = useState<any[]>([]);
+  const [memberAppeals, setMemberAppeals] = useState<any[]>([]);
+
+  // Appeal Modal State
+  const [isAppealModalOpen, setIsAppealModalOpen] = useState(false);
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [appealReason, setAppealReason] = useState('');
+  const [appealEvidence, setAppealEvidence] = useState<string | null>(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [appealSuccess, setAppealSuccess] = useState(false);
+
+  // Rules Modal State
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const [memberRules, setMemberRules] = useState<any[]>([]);
+
+  // Image compression helper
+  const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxWidth) {
+              width *= maxWidth / height;
+              height = maxWidth;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return reject('Canvas context not available');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsCompressing(true);
+    try {
+      const compressed = await compressImage(file);
+      setAppealEvidence(compressed);
+    } catch (err) {
+      console.error('Compression failed:', err);
+    } finally {
+      setIsCompressing(false);
+    }
+  };
 
   // Check Redirect if already logged in
   useEffect(() => {
@@ -78,6 +159,22 @@ function LandingContent() {
       router.push('/dashboard/transactions');
     }
   }, [currentUser, router]);
+
+  // Refresh check results if appeals or logs change to show new statuses
+  useEffect(() => {
+    if (checkResult) {
+      const updatedMember = lookupMemberPublic(checkId, checkDivision);
+      if (updatedMember) {
+        setCheckResult(updatedMember);
+        const logs = lookupLogsPublic(updatedMember.id);
+        setMemberLogs(logs);
+        const apps = lookupAppealsPublic(updatedMember.id);
+        setMemberAppeals(apps);
+        const rules = lookupRulesPublic(updatedMember.adminId);
+        setMemberRules(rules);
+      }
+    }
+  }, [appeals, auditLogs]);
 
   // Handle Query Params for Auth Modals
   useEffect(() => {
@@ -214,10 +311,49 @@ function LandingContent() {
     if (member) {
       setCheckResult(member);
       setCheckError(false);
+      // Fetch logs for this member using public lookup
+      const logs = lookupLogsPublic(member.id);
+      setMemberLogs(logs);
+      // Fetch appeals for this member using public lookup
+      const appeals = lookupAppealsPublic(member.id);
+      setMemberAppeals(appeals);
+      // Fetch rules for this member's admin
+      const rules = lookupRulesPublic(member.adminId);
+      setMemberRules(rules);
     } else {
       setCheckResult(null);
       setCheckError(true);
+      setMemberLogs([]);
+      setMemberAppeals([]);
+      setMemberRules([]);
     }
+  };
+
+  const handleAppealClick = (txId: string) => {
+    setSelectedTransactionId(txId);
+    setAppealReason('');
+    setAppealEvidence(null);
+    setAppealSuccess(false);
+    setIsAppealModalOpen(true);
+  };
+
+  const handleAppealSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedTransactionId || !checkResult) return;
+
+    addAppeal({
+      transactionId: selectedTransactionId,
+      memberId: checkResult.id,
+      reason: appealReason,
+      adminId: checkResult.adminId,
+      evidence: appealEvidence || undefined
+    });
+
+    setAppealSuccess(true);
+    setTimeout(() => {
+      setIsAppealModalOpen(false);
+      setAppealSuccess(false);
+    }, 2000);
   };
 
   const toggleLanguage = () => {
@@ -393,10 +529,82 @@ function LandingContent() {
                   <div className={styles.resultPoints}>
                     <span className={styles.resultLabel}>{t.landing.resultPoints}</span>
                     <div className={`${styles.resultPointsValue} ${checkResult.totalPoints >= 0 ? styles.pointsPositive : styles.pointsNegative}`}>
-                      {checkResult.totalPoints} pts
+                      {checkResult.totalPoints} {t.transactions.pts}
                     </div>
                   </div>
+                  <div className={styles.resultActions}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsRulesModalOpen(true)}
+                      className={styles.viewRulesBtn}
+                    >
+                      <ShieldCheck size={16} /> {t.landing.viewRules}
+                    </Button>
+                  </div>
                 </div>
+
+                {memberLogs.length > 0 && (
+                  <div className={styles.publicHistory}>
+                    <h4 className={styles.historyTitle}>
+                      <History size={16} /> {t.members.historyTitle}
+                    </h4>
+                    <div className={styles.historyList}>
+                      {memberLogs.map(log => {
+                        const hasAppeal = memberAppeals.some(a => a.transactionId === log.id || (log.transactionId && a.transactionId === log.transactionId));
+                        return (
+                          <div key={log.id} className={`${styles.historyItem} ${log.action === 'DELETE' ? styles.historyItemDeleted : ''}`}>
+                            <div className={styles.historyMain}>
+                              <div className={styles.historyMeta}>
+                                <span className={styles.historyDate}>{new Date(log.timestamp).toLocaleDateString()}</span>
+                                <span className={styles.historyContributor}>
+                                  • {t.members.changedBy} {users.find(u => u.id === log.contributorId)?.name || 'Admin'}
+                                </span>
+                              </div>
+                              <span className={styles.historyDetails}>{log.details}</span>
+                            </div>
+                            <div className={styles.historySide}>
+                              <span className={`${styles.historyPoints} ${log.action === 'DELETE' ? styles.pointsNeutral : (log.points >= 0 ? styles.pointsPositive : styles.pointsNegative)}`}>
+                                {log.points >= 0 ? '+' : ''}{log.points}
+                              </span>
+                              {!hasAppeal && (
+                                <button
+                                  className={styles.appealBtn}
+                                  onClick={() => handleAppealClick(log.transactionId || log.id)}
+                                  title={t.transactions.appeal}
+                                >
+                                  <Scale size={14} />
+                                </button>
+                              )}
+                              {hasAppeal && (() => {
+                                const appeal = memberAppeals.find(a => a.transactionId === log.id || (log.transactionId && a.transactionId === log.transactionId));
+                                if (appeal?.status === 'APPROVED') {
+                                  return (
+                                    <span className={`${styles.appealBadge} ${styles.appealApproved}`} title={t.transactions.approved}>
+                                      <CheckCircle2 size={14} />
+                                    </span>
+                                  );
+                                }
+                                if (appeal?.status === 'REJECTED') {
+                                  return (
+                                    <span className={`${styles.appealBadge} ${styles.appealRejected}`} title={t.transactions.rejected}>
+                                      <XCircle size={14} />
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className={styles.appealBadge} title={t.transactions.pending}>
+                                    <Clock size={14} />
+                                  </span>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
@@ -548,6 +756,101 @@ function LandingContent() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Appeal Modal */}
+      <Modal
+        isOpen={isAppealModalOpen}
+        onClose={() => setIsAppealModalOpen(false)}
+        title={t.transactions.appealTitle}
+      >
+        <form onSubmit={handleAppealSubmit} className={styles.formBody}>
+          {appealSuccess && (
+            <div className={styles.formSuccess}>
+              <CheckCircle2 size={18} /> {t.transactions.appealSuccess}
+            </div>
+          )}
+          <div className={styles.appealInfo}>
+            <MessageSquare size={20} />
+            <p>{t.transactions.appealReason}</p>
+          </div>
+          <textarea
+            className={styles.appealTextArea}
+            placeholder="..."
+            required
+            value={appealReason}
+            onChange={(e) => setAppealReason(e.target.value)}
+            disabled={appealSuccess}
+            rows={4}
+          />
+
+          <div className={styles.evidenceSection}>
+            <label className={styles.evidenceLabel}>
+              <ImageIcon size={16} /> {t.transactions.evidence || 'Evidence (Optional)'}
+            </label>
+
+            {isCompressing ? (
+              <div className={styles.compressingStatus}>
+                <Loader2 size={20} className={styles.compressingIcon} />
+                <span>{t.transactions.compressing || 'Compressing photo...'}</span>
+              </div>
+            ) : appealEvidence ? (
+              <div className={styles.previewContainer}>
+                <img src={appealEvidence} alt="Evidence Preview" className={styles.previewImage} />
+                <button
+                  type="button"
+                  className={styles.removeBtn}
+                  onClick={() => setAppealEvidence(null)}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <label className={styles.uploadBox}>
+                <Camera size={24} />
+                <p>{t.transactions.uploadLabel}</p>
+                <span>{t.transactions.uploadHint}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                />
+              </label>
+            )}
+          </div>
+          <Button type="submit" variant="primary" isLoading={appealSuccess || isCompressing} disabled={appealSuccess || isCompressing} className="w-full">
+            <Scale size={18} /> {t.transactions.submitAppeal}
+          </Button>
+        </form>
+      </Modal>
+
+      {/* Rules Modal */}
+      <Modal
+        isOpen={isRulesModalOpen}
+        onClose={() => setIsRulesModalOpen(false)}
+        title={t.rules.title}
+      >
+        <div className={styles.rulesList}>
+          {memberRules.length > 0 ? (
+            memberRules.map(rule => (
+              <div key={rule.id} className={styles.ruleItem}>
+                <div className={styles.ruleHeader}>
+                  <div className={styles.ruleContent}>
+                    <span className={styles.ruleCode}>{rule.id}</span>
+                    <span className={styles.ruleName}>{rule.description}</span>
+                  </div>
+                  <span className={`${styles.ruleBadge} ${rule.points >= 0 ? styles.pointsPositive : styles.pointsNegative}`}>
+                    {rule.points >= 0 ? '+' : ''}{rule.points} {t.transactions.pts}
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className={styles.noData}>{t.rules.noRules || 'No rules available.'}</div>
+          )}
+        </div>
       </Modal>
     </div>
   );

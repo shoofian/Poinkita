@@ -113,8 +113,8 @@ export default function RecapPage() {
                                                 member.totalPoints > 50 ? "bg-blue-100 text-blue-700" :
                                                     member.totalPoints >= 0 ? "bg-gray-100 text-gray-700" : "bg-red-100 text-red-700"
                                             )} style={{
-                                                background: member.totalPoints > 50 ? 'hsl(var(--hue-info), 20%, 90%)' : member.totalPoints >= 0 ? 'rgba(0,0,0,0.05)' : 'var(--color-danger-bg)',
-                                                color: member.totalPoints > 50 ? 'hsl(var(--hue-info), 80%, 40%)' : member.totalPoints >= 0 ? 'inherit' : 'var(--color-danger)',
+                                                background: member.totalPoints > 50 ? 'var(--color-primary-light)' : member.totalPoints >= 0 ? 'var(--color-bg-hover)' : 'var(--color-danger-bg)',
+                                                color: member.totalPoints > 50 ? 'var(--color-primary)' : member.totalPoints >= 0 ? 'var(--color-text-main)' : 'var(--color-danger)',
                                                 padding: '0.25rem 0.5rem',
                                                 borderRadius: '4px'
                                             }}>
@@ -129,6 +129,6 @@ export default function RecapPage() {
             </Card>
 
 
-        </div>
+        </div >
     );
 }

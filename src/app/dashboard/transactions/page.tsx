@@ -6,12 +6,49 @@ import { useLanguage } from '@/lib/context/LanguageContext';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useDialog } from '@/components/ui/ConfirmDialog';
-import { FaSearch, FaHistory, FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
+import { FaSearch, FaHistory, FaTrash, FaPlus, FaMinus, FaCamera, FaTimes, FaImage } from 'react-icons/fa';
 import { Member, Rule } from '@/lib/store';
 import styles from './page.module.css';
 
+// Image compression helper
+const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height *= maxWidth / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxWidth) {
+                        width *= maxWidth / height;
+                        height = maxWidth;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject;
+        };
+        reader.onerror = reject;
+    });
+};
+
 // Reusable history modal content
-function MemberHistoryContent({ memberLogs, t, users }: { memberLogs: { id: string; action: string; points: number; details: string; timestamp: string; contributorId: string }[]; t: ReturnType<typeof import('@/lib/context/LanguageContext').useLanguage>['t']; users: { id: string; name: string }[] }) {
+function MemberHistoryContent({ memberLogs, t, users, onViewImage }: { memberLogs: any[]; t: any; users: any[]; onViewImage?: (src: string) => void }) {
     if (memberLogs.length === 0) {
         return (
             <div style={{
@@ -41,7 +78,7 @@ function MemberHistoryContent({ memberLogs, t, users }: { memberLogs: { id: stri
                             padding: '0.875rem 1rem',
                             borderRadius: 'var(--radius-md)',
                             border: '1px solid var(--color-border)',
-                            background: isCreate ? 'var(--color-white)' : '#fef2f2',
+                            background: 'var(--color-bg-card)',
                         }}
                     >
                         <div style={{
@@ -67,13 +104,13 @@ function MemberHistoryContent({ memberLogs, t, users }: { memberLogs: { id: stri
                                     padding: '0.125rem 0.5rem',
                                     borderRadius: 'var(--radius-sm)',
                                     background: isCreate
-                                        ? (isPositivePoints ? '#d1fae5' : '#fee2e2')
-                                        : '#f3f4f6',
+                                        ? (isPositivePoints ? 'var(--color-success-bg)' : 'var(--color-danger-bg)')
+                                        : (log.action === 'UPDATE' ? 'var(--color-primary-light)' : 'var(--color-bg-hover)'),
                                     color: isCreate
-                                        ? (isPositivePoints ? '#065f46' : '#991b1b')
-                                        : '#6b7280',
+                                        ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
+                                        : (log.action === 'UPDATE' ? 'var(--color-primary)' : 'var(--color-text-secondary)'),
                                 }}>
-                                    {isCreate ? t.members.added : t.members.reverted}
+                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? t.sidebar.appeals : t.members.reverted)}
                                 </span>
                                 <span style={{
                                     fontSize: '1rem',
@@ -100,6 +137,17 @@ function MemberHistoryContent({ memberLogs, t, users }: { memberLogs: { id: stri
                                 <span>{new Date(log.timestamp).toLocaleString()}</span>
                                 <span>• {t.members.changedBy} {users.find(u => u.id === log.contributorId)?.name || log.contributorId}</span>
                             </div>
+                            {log.evidence && (
+                                <div className={styles.historyEvidence}>
+                                    <img
+                                        src={log.evidence}
+                                        alt="evidence"
+                                        className={styles.evidenceThumb}
+                                        onClick={() => onViewImage?.(log.evidence)}
+                                    />
+                                    <span style={{ fontSize: '11px', color: 'var(--color-primary)', fontWeight: 500 }}>{t.transactions.evidence}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
@@ -124,6 +172,14 @@ export default function TransactionsPage() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [historyMember, setHistoryMember] = useState<Member | null>(null);
 
+    // Evidence state
+    const [evidence, setEvidence] = useState<string | null>(null);
+    const [isCompressing, setIsCompressing] = useState(false);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    // Image Zoom State
+    const [zoomImage, setZoomImage] = useState<string | null>(null);
+
     const filteredMembers = members.filter(m =>
         m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
         m.id.toLowerCase().includes(memberSearch.toLowerCase())
@@ -140,6 +196,7 @@ export default function TransactionsPage() {
         setStep('TYPE');
         setSelectedType(null);
         setRuleSearch('');
+        setEvidence(null);
         setIsModalOpen(true);
     };
 
@@ -149,7 +206,24 @@ export default function TransactionsPage() {
         setSelectedType(type);
         setStep('RULE');
         setRuleSearch('');
+        setEvidence(null);
         setIsModalOpen(true);
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsCompressing(true);
+            const compressed = await compressImage(file);
+            setEvidence(compressed);
+        } catch (err) {
+            console.error(err);
+            alert({ title: "Error", message: "Failed to process image.", variant: 'danger' });
+        } finally {
+            setIsCompressing(false);
+        }
     };
 
     const handleTypeSelect = (type: 'ACHIEVEMENT' | 'VIOLATION') => {
@@ -183,9 +257,11 @@ export default function TransactionsPage() {
                 ruleId: rule.id,
                 timestamp: new Date().toISOString(),
                 pointsSnapshot: rule.points,
-                adminId: currentUser.adminId || currentUser.id // Admin Scope Owner
+                adminId: currentUser.adminId || currentUser.id, // Admin Scope Owner
+                evidence: evidence || undefined
             });
             setIsModalOpen(false);
+            setEvidence(null);
         }
     };
 
@@ -323,6 +399,16 @@ export default function TransactionsPage() {
                                     </div>
                                     <div className={styles.historyDesc}>
                                         {log.action === 'DELETE' ? 'Reverted' : log.details}
+                                        {log.evidence && (
+                                            <div style={{ marginTop: '4px' }}>
+                                                <img
+                                                    src={log.evidence}
+                                                    alt="evidence"
+                                                    className={styles.evidenceThumb}
+                                                    onClick={() => setZoomImage(log.evidence!)}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className={`${styles.memberPoints} ${log.points > 0 ? styles.pointsPositive : styles.pointsNegative}`}>
                                         {log.points > 0 ? '+' : ''}{log.points}
@@ -385,7 +471,12 @@ export default function TransactionsPage() {
                                         {t.members.historyTitle}
                                     </div>
                                     <div style={{ padding: '0 1.5rem 1.5rem', maxHeight: '250px', overflowY: 'auto' }}>
-                                        <MemberHistoryContent memberLogs={selectedMemberLogs} t={t} users={users} />
+                                        <MemberHistoryContent
+                                            memberLogs={selectedMemberLogs}
+                                            t={t}
+                                            users={users}
+                                            onViewImage={(src) => setZoomImage(src)}
+                                        />
                                     </div>
                                 </div>
                             );
@@ -405,29 +496,57 @@ export default function TransactionsPage() {
                                     autoFocus
                                 />
                             </div>
+
+                            <div className={styles.evidenceSection}>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    hidden
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                />
+                                <button
+                                    className={styles.uploadBtn}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isCompressing}
+                                >
+                                    <FaCamera /> {isCompressing ? t.transactions.compressing : t.transactions.addEvidence}
+                                </button>
+
+                                {evidence && (
+                                    <div className={styles.evidencePreview}>
+                                        <img src={evidence} alt="Preview" />
+                                        <button className={styles.removeImg} onClick={() => setEvidence(null)}>
+                                            <FaTimes />
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className={styles.rulesList} style={{ padding: '0 1.5rem 1rem' }}>
+                        <div className={styles.rulesList} style={{ padding: '0.5rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {filteredRules.map(r => (
                                 <div
                                     key={r.id}
-                                    className={`${styles.ruleItem} ${r.type === 'ACHIEVEMENT' ? styles.ruleItemAchievement : styles.ruleItemViolation}`}
+                                    className={styles.ruleItemCard}
                                     onClick={() => handleRuleSelect(r)}
                                 >
-                                    <div className={styles.ruleText}>
-                                        <div className={styles.ruleName}>{r.description}</div>
-                                        <div className={styles.ruleCode}>{r.id}</div>
-                                    </div>
-                                    <div className={`${styles.rulePoints} ${r.points > 0 ? styles.pointsPositive : styles.pointsNegative}`}>
-                                        {r.points > 0 ? '+' : ''}{r.points}
+                                    <div className={styles.ruleHeader}>
+                                        <div className={styles.ruleContent}>
+                                            <span className={styles.ruleCode}>{r.id}</span>
+                                            <div className={styles.ruleName}>{r.description}</div>
+                                        </div>
+                                        <div className={`${styles.ruleBadge} ${r.points > 0 ? styles.pointsPositive : styles.pointsNegative}`}>
+                                            {r.points > 0 ? '+' : ''}{r.points} {t.transactions.pts}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
                             {filteredRules.length === 0 && (
-                                <div className={styles.emptyState}>No rules found</div>
+                                <div className={styles.emptyState}>{t.rules.noRules}</div>
                             )}
                         </div>
                         <div className={styles.modalFooter} style={{ padding: '1rem 1.5rem 1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                            <Button variant="secondary" onClick={() => setStep('TYPE')}>← Back</Button>
+                            <Button variant="secondary" onClick={() => setStep('TYPE')}>← {t.common.back}</Button>
                             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>{t.common.cancel}</Button>
                         </div>
                     </>
@@ -441,7 +560,27 @@ export default function TransactionsPage() {
                 title={historyMember ? `${t.members.historyTitle} — ${historyMember.name}` : t.members.historyTitle}
             >
                 <div style={{ padding: '1.5rem' }}>
-                    <MemberHistoryContent memberLogs={historyLogs} t={t} users={users} />
+                    <MemberHistoryContent
+                        memberLogs={historyLogs}
+                        t={t}
+                        users={users}
+                        onViewImage={(src) => setZoomImage(src)}
+                    />
+                </div>
+            </Modal>
+
+            {/* Image Zoom Modal */}
+            <Modal
+                isOpen={!!zoomImage}
+                onClose={() => setZoomImage(null)}
+                title={t.transactions.evidence}
+            >
+                <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center' }}>
+                    <img
+                        src={zoomImage || ''}
+                        alt="Zoomed evidence"
+                        style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: 'var(--shadow-lg)' }}
+                    />
                 </div>
             </Modal>
         </div>

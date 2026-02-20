@@ -263,11 +263,12 @@
 }
 
 .checkerResult {
-  margin-top: 1.5rem;
+  margin-top: 2rem;
   padding: 1.5rem;
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
-  border: 1px solid #dbeafe;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 0 20px rgba(59, 130, 246, 0.03);
   animation: fadeSlideUp 0.3s ease-out;
 }
 
@@ -317,6 +318,10 @@
 
 .pointsNegative {
   color: var(--color-danger);
+}
+
+.pointsNeutral {
+  color: var(--color-text-secondary);
 }
 
 .checkerNotFound {
@@ -587,6 +592,373 @@
 }
 
 @keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Point Checker Result - History */
+.publicHistory {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px dashed var(--color-border);
+}
+
+.historyTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin-bottom: 1rem;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.historyList::-webkit-scrollbar {
+  width: 4px;
+}
+
+.historyList::-webkit-scrollbar-track {
+  background: var(--color-bg-subtle);
+  border-radius: 10px;
+}
+
+.historyList::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 10px;
+}
+
+.historyList::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.historyItemDeleted {
+  opacity: 0.75;
+  background: var(--color-bg-hover);
+  border-style: dashed;
+}
+
+.historyItem:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-primary-light);
+  transform: translateX(4px);
+}
+
+.historyMain {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.historyDate {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.historyMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.historyContributor {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.historyDetails {
+  font-size: 0.85rem;
+  color: var(--color-text-main);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.historySide {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.historyPoints {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.appealBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.appealBtn:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+.appealBadge {
+  color: var(--color-warning);
+  display: flex;
+  align-items: center;
+}
+
+.appealApproved {
+  color: var(--color-success);
+}
+
+.appealRejected {
+  color: var(--color-danger);
+}
+
+/* Appeal Modal */
+.appealInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.appealInfo p {
+  margin: 0;
+}
+
+.appealTextArea {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-main);
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: none;
+  margin-bottom: 1.5rem;
+  transition: all 0.2s;
+}
+
+.appealTextArea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  background: var(--color-surface);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+}
+
+.evidenceSection {
+  margin-bottom: 1.5rem;
+}
+
+.evidenceLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.uploadBox {
+  width: 100%;
+  padding: 1rem;
+  border: 2px dashed var(--color-border);
+  border-radius: 12px;
+  background: var(--color-bg-subtle);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.uploadBox:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.uploadBox p {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.uploadBox span {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.previewContainer {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+}
+
+.previewImage {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.removeBtn:hover {
+  background: var(--color-danger);
+  transform: scale(1.1);
+}
+
+.compressingStatus {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  padding: 1rem;
+  background: var(--color-primary-light);
+  border-radius: 12px;
+}
+
+.compressingIcon {
+  animation: spin 1s linear infinite;
+}
+
+
+
+.resultActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.viewRulesBtn {
+  gap: 0.5rem;
+}
+
+.rulesList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ruleItem {
+  padding: 1rem;
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.ruleHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ruleContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.ruleCode {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ruleDescription {
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: var(--color-text-main);
+  line-height: 1.4;
+}
+
+.ruleBadge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: var(--color-bg-hover);
+}
+
+.noData {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
   to {
     transform: rotate(360deg);
   }

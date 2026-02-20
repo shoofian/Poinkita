@@ -17,6 +17,7 @@ export const translations = {
             previous: "Previous",
             next: "Next",
             rowsPerPage: "Rows per page",
+            back: "Back",
         },
         auth: {
             loginTitle: "Welcome to Poinkita",
@@ -67,6 +68,7 @@ export const translations = {
             rules: "Rules",
             recap: "Recap",
             archive: "Archive",
+            appeals: "Appeals",
             accountSettings: "Account Settings",
         },
         dashboard: {
@@ -77,6 +79,9 @@ export const translations = {
             recentActivity: "Recent Activity",
             noActivity: "No recent transactions.",
             viewHistory: "View full history in Transactions page.",
+            appealAlertTitle: "New Appeals ({0})",
+            appealAlertDesc: "Some members have submitted appeals for their point transactions.",
+            manageAll: "Manage All",
         },
         members: {
             title: "Member Management",
@@ -139,6 +144,7 @@ export const translations = {
             deleteConfirm: "Delete this rule?",
             importRulesTemplate: "Download Rules Template",
             importRulesSuccess: "Successfully imported {0} rules.",
+            noRules: "No rules available for this admin."
         },
         transactions: {
             selectMember: "1. Select Member",
@@ -160,6 +166,22 @@ export const translations = {
             deleteSuccess: "Transaction deleted and points reverted.",
             selectType: "Select Transaction Type",
             selectRule: "Select Rule",
+            addEvidence: "Add Evidence (Photo)",
+            evidence: "Evidence",
+            compressing: "Compressing image...",
+            appeal: "Appeal",
+            appealTitle: "Submit Appeal",
+            appealReason: "Reason for appeal",
+            submitAppeal: "Submit",
+            appealSuccess: "Appeal submitted successfully!",
+            appeals: "Appeals",
+            pending: "Pending",
+            approved: "Approved",
+            rejected: "Rejected",
+            appealApprovedInfo: "Appeal Approved - Transaction Cancelled",
+            appealRejectedInfo: "Appeal Rejected (Banding Ditolak)",
+            uploadLabel: "Take Photo or Choose File",
+            uploadHint: "Max. 5MB, format JPG/PNG"
         },
         recap: {
             title: "Recap & Reporting",
@@ -183,6 +205,7 @@ export const translations = {
             resultDivision: "Division",
             resultPoints: "Total Points",
             notFound: "Member not found. Please check your ID and Division.",
+            viewRules: "View Rules List",
             feature1Title: "Real-time Tracking",
             feature1Desc: "Track points instantly as they are recorded by teachers and staff.",
             feature2Title: "Transparent Reports",
@@ -219,6 +242,7 @@ export const translations = {
             previous: "Sebelumnya",
             next: "Berikutnya",
             rowsPerPage: "Baris per halaman",
+            back: "Kembali",
         },
         auth: {
             loginTitle: "Selamat Datang di Poinkita",
@@ -269,6 +293,7 @@ export const translations = {
             rules: "Aturan",
             recap: "Rekap",
             archive: "Arsip",
+            appeals: "Banding",
             accountSettings: "Pengaturan Akun",
         },
         dashboard: {
@@ -279,6 +304,9 @@ export const translations = {
             recentActivity: "Aktivitas Terbaru",
             noActivity: "Belum ada transaksi terbaru.",
             viewHistory: "Lihat riwayat lengkap di halaman Transaksi.",
+            appealAlertTitle: "Banding Baru ({0})",
+            appealAlertDesc: "Beberapa anggota mengajukan banding atas transaksi poin mereka.",
+            manageAll: "Kelola Semua",
         },
         members: {
             title: "Manajemen Anggota",
@@ -341,6 +369,7 @@ export const translations = {
             deleteConfirm: "Hapus aturan ini?",
             importRulesTemplate: "Unduh Format Aturan",
             importRulesSuccess: "Berhasil mengimpor {0} aturan.",
+            noRules: "Belum ada aturan yang tersedia."
         },
         transactions: {
             selectMember: "1. Pilih Anggota",
@@ -362,6 +391,22 @@ export const translations = {
             deleteSuccess: "Transaksi dihapus dan poin dikembalikan.",
             selectType: "Pilih Jenis Transaksi",
             selectRule: "Pilih Aturan",
+            addEvidence: "Tambah Bukti (Foto)",
+            evidence: "Bukti Foto",
+            compressing: "Mengompres foto...",
+            appeal: "Banding",
+            appealTitle: "Ajukan Banding",
+            appealReason: "Alasan banding",
+            submitAppeal: "Kirim",
+            appealSuccess: "Banding berhasil diajukan!",
+            appeals: "Banding",
+            pending: "Menunggu",
+            approved: "Disetujui",
+            rejected: "Ditolak",
+            appealApprovedInfo: "Banding disetujui - transaksi dibatalkan",
+            appealRejectedInfo: "Banding Ditolak",
+            uploadLabel: "Ambil Foto atau Pilih File",
+            uploadHint: "Maks. 5MB, format JPG/PNG"
         },
         recap: {
             title: "Rekap & Laporan",
@@ -385,6 +430,7 @@ export const translations = {
             resultDivision: "Divisi",
             resultPoints: "Total Poin",
             notFound: "Anggota tidak ditemukan. Periksa kembali ID dan Divisi Anda.",
+            viewRules: "Lihat Daftar Aturan",
             feature1Title: "Pelacakan Real-time",
             feature1Desc: "Lacak poin secara instan saat dicatat oleh guru dan staf.",
             feature2Title: "Laporan Transparan",

@@ -1159,8 +1159,7 @@ export default function MembersPage() {
                                             padding: '0.875rem 1rem',
                                             borderRadius: 'var(--radius-md)',
                                             border: '1px solid var(--color-border)',
-                                            background: isCreate ? 'var(--color-white)' : '#fef2f2',
-                                            transition: 'box-shadow 150ms ease',
+                                            background: 'var(--color-bg-card)',
                                         }}
                                     >
                                         {/* Timeline dot */}
@@ -1189,13 +1188,13 @@ export default function MembersPage() {
                                                     padding: '0.125rem 0.5rem',
                                                     borderRadius: 'var(--radius-sm)',
                                                     background: isCreate
-                                                        ? (isPositivePoints ? '#d1fae5' : '#fee2e2')
-                                                        : '#f3f4f6',
+                                                        ? (isPositivePoints ? 'var(--color-success-bg)' : 'var(--color-danger-bg)')
+                                                        : (log.action === 'UPDATE' ? 'var(--color-primary-light)' : 'var(--color-bg-hover)'),
                                                     color: isCreate
-                                                        ? (isPositivePoints ? '#065f46' : '#991b1b')
-                                                        : '#6b7280',
+                                                        ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
+                                                        : (log.action === 'UPDATE' ? 'var(--color-primary)' : 'var(--color-text-secondary)'),
                                                 }}>
-                                                    {isCreate ? t.members.added : t.members.reverted}
+                                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? t.sidebar.appeals : t.members.reverted)}
                                                 </span>
                                                 <span style={{
                                                     fontSize: '1rem',

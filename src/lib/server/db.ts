@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import {
-    Member, Rule, WarningRule, Transaction, AuditLog, Archive, User,
+    Member, Rule, WarningRule, Transaction, AuditLog, Archive, User, Appeal,
     INITIAL_MEMBERS, INITIAL_RULES, INITIAL_USERS, INITIAL_WARNING_RULES
 } from '@/lib/store';
 
@@ -23,6 +23,7 @@ export interface StoreData {
     auditLogs: AuditLog[];
     archives: Archive[];
     users: User[];
+    appeals: Appeal[];
 }
 
 const DEFAULT_DATA: StoreData = {
@@ -33,6 +34,7 @@ const DEFAULT_DATA: StoreData = {
     auditLogs: [],
     archives: [],
     users: INITIAL_USERS,
+    appeals: [],
 };
 
 export const getStoreData = async (): Promise<StoreData> => {
@@ -49,7 +51,8 @@ export const getStoreData = async (): Promise<StoreData> => {
             transactionsRes,
             auditLogsRes,
             archivesRes,
-            usersRes
+            usersRes,
+            appealsRes
         ] = await Promise.all([
             supabase.from('members').select('*'),
             supabase.from('rules').select('*'),
@@ -57,7 +60,8 @@ export const getStoreData = async (): Promise<StoreData> => {
             supabase.from('transactions').select('*'),
             supabase.from('auditLogs').select('*'),
             supabase.from('archives').select('*'),
-            supabase.from('users').select('*')
+            supabase.from('users').select('*'),
+            supabase.from('appeals').select('*')
         ]);
 
         return {
@@ -73,6 +77,7 @@ export const getStoreData = async (): Promise<StoreData> => {
                     : a.memberSnapshots
             })),
             users: usersRes.data || [],
+            appeals: appealsRes.data || [],
         };
     } catch (error) {
         console.error('Error fetching data from Supabase:', error);
@@ -100,7 +105,8 @@ export const saveStoreData = async (data: StoreData): Promise<void> => {
                 ...a,
                 memberSnapshots: a.memberSnapshots // Supabase handles JSONB
             }))),
-            supabase.from('users').upsert(data.users)
+            supabase.from('users').upsert(data.users),
+            supabase.from('appeals').upsert(data.appeals)
         ]);
     } catch (error) {
         console.error('Error saving data to Supabase:', error);

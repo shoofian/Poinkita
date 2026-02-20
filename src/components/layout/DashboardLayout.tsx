@@ -20,7 +20,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     useEffect(() => {
         // Simple client-side route protection
         if (!currentUser) {
-            router.replace('/login');
+            router.replace('/');
             return;
         }
     }, [pathname, currentUser, router]);
