@@ -31,6 +31,7 @@ export async function POST(req: Request) {
             auditLogs: body.auditLogs || currentData.auditLogs || [],
             archives: body.archives || currentData.archives || [],
             users: body.users || currentData.users || INITIAL_USERS,
+            appeals: body.appeals || currentData.appeals || [],
         };
 
         await saveStoreData(newData);
