@@ -5,6 +5,10 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import styles from './page.module.css';
 import Link from 'next/link';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
+import { useDialog } from '@/components/ui/ConfirmDialog';
+import imageCompression from 'browser-image-compression';
 
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -24,15 +28,83 @@ import {
     Search,
     AlertTriangle,
     Scale,
-    CheckCircle2
+    CheckCircle2,
+    MessageSquare,
+    Image as ImageIcon,
+    Camera,
+    Loader2,
+    X
 } from 'lucide-react';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
 export default function DashboardPage() {
-    const { members, auditLogs, warningRules, users, appeals } = useStore();
+    const { members, auditLogs, warningRules, users, appeals, addAuditLogs, currentUser, generateId } = useStore();
     const { t } = useLanguage();
+    const { alert } = useDialog();
     const [rankFilter, setRankFilter] = React.useState<'day' | 'week' | 'month' | 'year'>('week');
+
+    const isAdmin = currentUser?.role === 'ADMIN';
+
+    const [isActionModalOpen, setIsActionModalOpen] = React.useState(false);
+    const [selectedMemberForWarning, setSelectedMemberForWarning] = React.useState<any>(null);
+    const [warningActionNote, setWarningActionNote] = React.useState('');
+    const [warningActionImage, setWarningActionImage] = React.useState<string | null>(null);
+    const [isCompressing, setIsCompressing] = React.useState(false);
+
+    const handleConfirmWarning = () => {
+        if (!selectedMemberForWarning) return;
+
+        const logId = generateId('ACT', 'VIO');
+        const log = {
+            id: logId,
+            timestamp: new Date().toISOString(),
+            action: 'UPDATE' as const,
+            memberId: selectedMemberForWarning.id,
+            contributorId: currentUser?.id || 'unknown',
+            details: `[Peringatan] ${warningActionNote || 'Telah dikonfirmasi tanpa catatan khusus.'}`,
+            points: 0,
+            adminId: selectedMemberForWarning.adminId,
+            evidence: warningActionImage || undefined
+        };
+        addAuditLogs([log]);
+
+        alert({
+            title: "Tindakan Dikonfirmasi",
+            message: `Tindakan untuk ${selectedMemberForWarning.name} telah dikonfirmasi. ${warningActionNote ? `Catatan: ${warningActionNote}` : ''} ${warningActionImage ? '(Lampiran Disimpan)' : ''}`,
+            variant: 'success'
+        });
+
+        setIsActionModalOpen(false);
+        setSelectedMemberForWarning(null);
+        setWarningActionNote('');
+        setWarningActionImage(null);
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        try {
+            setIsCompressing(true);
+            const options = {
+                maxSizeMB: 0.2, // Highly compressed, max 200KB
+                maxWidthOrHeight: 800,
+                useWebWorker: true
+            };
+            const compressedFile = await imageCompression(file, options);
+
+            const reader = new FileReader();
+            reader.readAsDataURL(compressedFile);
+            reader.onloadend = () => {
+                setWarningActionImage(reader.result as string);
+                setIsCompressing(false);
+            };
+        } catch (error) {
+            console.error("Error compressing image:", error);
+            setIsCompressing(false);
+        }
+    };
 
     const pendingAppeals = (appeals || []).filter(a => a.status === 'PENDING');
 
@@ -220,23 +292,52 @@ export default function DashboardPage() {
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h2 className={styles.chartTitle} style={{ color: 'var(--color-danger)', marginBottom: '0.25rem' }}>Perlu Perhatian ({membersWithWarnings.length})</h2>
-                                    <p className={styles.chartDesc} style={{ margin: 0, color: 'var(--color-text)' }}>Anggota berikut telah mencapai batas peringatan poin.</p>
+                                    <p className={styles.chartDesc} style={{ margin: 0, color: 'var(--color-text)' }}>Anggota berikut telah mencapai batas peringatan poin.{isAdmin ? ' Klik card untuk mencatat konfirmasi tindakan.' : ''}</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin', width: '100%' }}>
                                 {membersWithWarnings.map(({ member, warnings }) => (
-                                    <div key={member.id} style={{
-                                        flex: '0 0 min(250px, 80%)',
-                                        padding: '1rem',
-                                        borderRadius: '12px',
-                                        border: '1px solid var(--color-border)',
-                                        background: 'var(--color-surface)',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        gap: '0.25rem',
-                                        boxShadow: 'var(--shadow-sm)'
-                                    }}>
-                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)' }}>{member.name}</div>
+                                    <div
+                                        key={member.id}
+                                        style={{
+                                            flex: '0 0 min(250px, 80%)',
+                                            padding: '1rem',
+                                            borderRadius: '12px',
+                                            border: '1px solid var(--color-border)',
+                                            background: 'var(--color-surface)',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '0.25rem',
+                                            boxShadow: 'var(--shadow-sm)',
+                                            cursor: isAdmin ? 'pointer' : 'default',
+                                            transition: 'transform 0.2s, box-shadow 0.2s, border-color 0.2s'
+                                        }}
+                                        onClick={() => {
+                                            if (!isAdmin) return;
+                                            setSelectedMemberForWarning(member);
+                                            setWarningActionNote('');
+                                            setWarningActionImage(null);
+                                            setIsActionModalOpen(true);
+                                        }}
+                                        title={isAdmin ? "Klik untuk konfirmasi tindakan" : "Hanya Admin yang dapat mengonfirmasi"}
+                                        onMouseOver={(e) => {
+                                            if (!isAdmin) return;
+                                            e.currentTarget.style.transform = 'translateY(-3px)';
+                                            e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                            e.currentTarget.style.borderColor = 'var(--color-primary-light)';
+                                        }}
+                                        onMouseOut={(e) => {
+                                            if (!isAdmin) return;
+                                            e.currentTarget.style.transform = 'none';
+                                            e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                                            e.currentTarget.style.borderColor = 'var(--color-border)';
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                                            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)' }}>
+                                                {member.name}
+                                            </div>
+                                        </div>
                                         <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{member.division}</div>
                                         <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-danger)', margin: '0.5rem 0' }}>{member.totalPoints} <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Poin</span></div>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: 'auto' }}>
@@ -651,6 +752,145 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Warning Action Confirm Modal */}
+            <Modal
+                isOpen={isActionModalOpen}
+                onClose={() => {
+                    setIsActionModalOpen(false);
+                    setSelectedMemberForWarning(null);
+                    setWarningActionNote('');
+                    setWarningActionImage(null);
+                }}
+                title="Konfirmasi Tindakan"
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsActionModalOpen(false)}>Batal</Button>
+                        <Button onClick={handleConfirmWarning}>Simpan Konfirmasi</Button>
+                    </>
+                }
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '1.5rem' }}>
+                    {selectedMemberForWarning && (() => {
+                        const history = auditLogs.filter(log =>
+                            log.memberId === selectedMemberForWarning.id &&
+                            log.details.startsWith('[Peringatan]')
+                        ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+                        if (history.length === 0) return null;
+
+                        return (
+                            <div style={{ padding: '1rem', background: 'var(--color-bg-alt)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+                                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text)' }}>Riwayat Tindakan Sebelumnya</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '180px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+                                    {history.map((log, i) => (
+                                        <div key={log.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingBottom: i !== history.length - 1 ? '1rem' : '0', borderBottom: i !== history.length - 1 ? '1px dashed var(--color-border)' : 'none' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)' }}>{new Date(log.timestamp).toLocaleString()}</span>
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Oleh: {users.find(u => u.id === log.contributorId)?.name || 'Admin'}</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--color-text)' }}>{log.details.replace('[Peringatan] ', '')}</div>
+                                            {log.evidence && (
+                                                <img src={log.evidence} alt="Bukti" style={{ marginTop: '0.5rem', maxHeight: '80px', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--color-border)', alignSelf: 'flex-start' }} />
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: 'var(--color-warning-light)', color: 'var(--color-warning)', borderRadius: '12px', fontSize: '0.875rem', fontWeight: 500 }}>
+                        <MessageSquare size={20} />
+                        <p style={{ margin: 0 }}>Catat konfirmasi tindak lanjut baru untuk <strong>{selectedMemberForWarning?.name}</strong>.</p>
+                    </div>
+
+                    <textarea
+                        value={warningActionNote}
+                        onChange={(e) => setWarningActionNote(e.target.value)}
+                        placeholder="Detail tindakan (opsional)..."
+                        style={{
+                            width: '100%',
+                            padding: '1rem',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '12px',
+                            background: 'var(--color-bg-subtle)',
+                            color: 'var(--color-text-main)',
+                            fontFamily: 'inherit',
+                            fontSize: '0.9rem',
+                            resize: 'none'
+                        }}
+                        rows={4}
+                    />
+
+                    <div>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>
+                            <ImageIcon size={16} /> Bukti Gambar (Opsional)
+                        </label>
+                        <div style={{ position: 'relative' }}>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                disabled={isCompressing}
+                                id="warning-image-upload"
+                                style={{ display: 'none' }}
+                            />
+                            {isCompressing ? (
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                    padding: '1.5rem', border: '2px dashed var(--color-border)', borderRadius: '12px',
+                                    color: 'var(--color-primary)', background: 'var(--color-primary-light)'
+                                }}>
+                                    <Loader2 size={24} style={{ animation: 'spin 1.5s linear infinite' }} />
+                                    <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Memproses gambar...</span>
+                                </div>
+                            ) : warningActionImage ? (
+                                <div style={{ position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                                    <img src={warningActionImage} alt="Preview" style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', background: 'var(--color-bg-alt)', display: 'block' }} />
+                                    <button
+                                        type="button"
+                                        onClick={() => setWarningActionImage(null)}
+                                        style={{
+                                            position: 'absolute', top: '0.5rem', right: '0.5rem',
+                                            background: 'rgba(0,0,0,0.6)', color: 'white', border: 'none',
+                                            borderRadius: '50%', width: '32px', height: '32px',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <X size={16} />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label
+                                    htmlFor="warning-image-upload"
+                                    style={{
+                                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                        gap: '0.5rem', width: '100%', height: '140px',
+                                        border: '2px dashed var(--color-border)', borderRadius: '12px',
+                                        background: 'var(--color-bg-subtle)', cursor: 'pointer',
+                                        color: 'var(--color-text-muted)', transition: 'all 0.2s',
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.borderColor = 'var(--color-primary)';
+                                        e.currentTarget.style.color = 'var(--color-primary)';
+                                        e.currentTarget.style.background = 'var(--color-primary-light)';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.borderColor = 'var(--color-border)';
+                                        e.currentTarget.style.color = 'var(--color-text-muted)';
+                                        e.currentTarget.style.background = 'var(--color-bg-subtle)';
+                                    }}
+                                >
+                                    <Camera size={28} />
+                                    <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Ambil Foto atau Pilih File</span>
+                                </label>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }

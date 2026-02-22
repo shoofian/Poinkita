@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",
+    "browser-image-compression": "^2.0.2",
     "clsx": "^2.1.1",
     "docx": "^9.5.3",
     "file-saver": "^2.0.5",

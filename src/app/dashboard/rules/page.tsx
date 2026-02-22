@@ -106,13 +106,13 @@ export default function RulesPage() {
 
     const handleAddWarningRule = () => {
         const thresholdNum = Number(newWarning.threshold);
-        if (!newWarning.name || isNaN(thresholdNum)) return;
+        if (!newWarning.action || isNaN(thresholdNum)) return;
 
         addWarningRule({
             id: generateId('WRN'),
-            name: newWarning.name,
+            name: newWarning.action || 'Peringatan',
             threshold: thresholdNum,
-            message: newWarning.message,
+            message: newWarning.action || 'Peringatan',
             action: newWarning.action,
             textColor: newWarning.textColor,
             backgroundColor: newWarning.backgroundColor,
@@ -475,7 +475,6 @@ export default function RulesPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Threshold</TableHead>
-                                    <TableHead>Name</TableHead>
                                     <TableHead>Action</TableHead>
                                     <TableHead>Alert Preview</TableHead>
                                     {isAdmin && <TableHead>{t.common.actions}</TableHead>}
@@ -485,7 +484,6 @@ export default function RulesPage() {
                                 {warningRules.sort((a, b) => b.threshold - a.threshold).map((rule) => (
                                     <TableRow key={rule.id}>
                                         <TableCell style={{ fontWeight: 'bold' }}>&le; {rule.threshold}</TableCell>
-                                        <TableCell>{rule.name}</TableCell>
                                         <TableCell>{rule.action}</TableCell>
                                         <TableCell>
                                             <div style={{
@@ -497,7 +495,7 @@ export default function RulesPage() {
                                                 fontWeight: 500,
                                                 display: 'inline-block'
                                             }}>
-                                                {rule.message}
+                                                {rule.action}
                                             </div>
                                         </TableCell>
                                         {isAdmin && (
@@ -564,10 +562,10 @@ export default function RulesPage() {
             >
                 <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
                     <Input
-                        label="Name"
-                        placeholder="e.g. Warning Letter 1"
-                        value={newWarning.name}
-                        onChange={(e) => setNewWarning({ ...newWarning, name: e.target.value })}
+                        label="Action Required"
+                        placeholder="e.g. Surat Peringatan 1"
+                        value={newWarning.action}
+                        onChange={(e) => setNewWarning({ ...newWarning, action: e.target.value })}
                     />
                     <Input
                         label="Point Threshold (Less than or equal to)"
@@ -576,18 +574,7 @@ export default function RulesPage() {
                         value={newWarning.threshold}
                         onChange={(e) => setNewWarning({ ...newWarning, threshold: e.target.value })}
                     />
-                    <Input
-                        label="Action Required"
-                        placeholder="e.g. Issue Warning Letter"
-                        value={newWarning.action}
-                        onChange={(e) => setNewWarning({ ...newWarning, action: e.target.value })}
-                    />
-                    <Input
-                        label="Alert Message"
-                        placeholder="e.g. Student requires counseling"
-                        value={newWarning.message}
-                        onChange={(e) => setNewWarning({ ...newWarning, message: e.target.value })}
-                    />
+
 
                     <div>
                         <label className="text-sm font-medium mb-2 block">Alert Color Style</label>

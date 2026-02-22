@@ -414,13 +414,27 @@ export default function MembersPage() {
     const handleExportMemberHistory = (member: Member) => {
         try {
             const logs = auditLogs.filter(log => log.memberId === member.id);
-            const exportData = logs.map(log => ({
-                [t.members.date]: new Date(log.timestamp).toLocaleString(),
-                [t.members.details]: log.details,
-                [t.members.points]: log.points,
-                [t.members.action]: log.action === 'CREATE' ? t.members.added : t.members.reverted,
-                [t.members.changedBy]: users.find(u => u.id === log.contributorId)?.name || log.contributorId
-            }));
+            const exportData = logs.map(log => {
+                let actionText = log.action === 'CREATE' ? (log.points > 0 ? 'Pencapaian' : 'Pelanggaran') : t.members.reverted;
+                let detailsText = log.details;
+
+                if (log.action === 'UPDATE') {
+                    if (log.details.startsWith('[Peringatan]')) {
+                        actionText = 'Peringatan';
+                        detailsText = log.details.replace('[Peringatan]', '').trim();
+                    } else {
+                        actionText = t.sidebar.appeals;
+                    }
+                }
+
+                return {
+                    [t.members.date]: new Date(log.timestamp).toLocaleString(),
+                    [t.members.details]: detailsText,
+                    [t.members.points]: log.points,
+                    [t.members.action]: actionText,
+                    [t.members.changedBy]: users.find(u => u.id === log.contributorId)?.name || log.contributorId
+                };
+            });
 
             const ws = XLSX.utils.json_to_sheet(exportData);
             const wb = XLSX.utils.book_new();
@@ -556,15 +570,29 @@ export default function MembersPage() {
                                         new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: t.transactions.contributor, bold: true })], alignment: AlignmentType.CENTER })], shading: { fill: "f3f4f6" } }),
                                     ],
                                 }),
-                                ...logs.map(log => new TableRow({
-                                    children: [
-                                        new TableCell({ children: [new Paragraph({ text: new Date(log.timestamp).toLocaleString('id-ID'), alignment: AlignmentType.CENTER })] }),
-                                        new TableCell({ children: [new Paragraph({ text: log.details })] }),
-                                        new TableCell({ children: [new Paragraph({ text: log.action === 'CREATE' ? t.members.added : t.members.reverted, alignment: AlignmentType.CENTER })] }),
-                                        new TableCell({ children: [new Paragraph({ text: (log.points > 0 ? "+" : "") + log.points.toString(), alignment: AlignmentType.CENTER })] }),
-                                        new TableCell({ children: [new Paragraph({ text: users.find(u => u.id === log.contributorId)?.name || log.contributorId, alignment: AlignmentType.CENTER })] }),
-                                    ],
-                                })),
+                                ...logs.map(log => {
+                                    let actionText = log.action === 'CREATE' ? (log.points > 0 ? 'Pencapaian' : 'Pelanggaran') : t.members.reverted;
+                                    let detailsText = log.details;
+
+                                    if (log.action === 'UPDATE') {
+                                        if (log.details.startsWith('[Peringatan]')) {
+                                            actionText = 'Peringatan';
+                                            detailsText = log.details.replace('[Peringatan]', '').trim();
+                                        } else {
+                                            actionText = t.sidebar.appeals;
+                                        }
+                                    }
+
+                                    return new TableRow({
+                                        children: [
+                                            new TableCell({ children: [new Paragraph({ text: new Date(log.timestamp).toLocaleString('id-ID'), alignment: AlignmentType.CENTER })] }),
+                                            new TableCell({ children: [new Paragraph({ text: detailsText })] }),
+                                            new TableCell({ children: [new Paragraph({ text: actionText, alignment: AlignmentType.CENTER })] }),
+                                            new TableCell({ children: [new Paragraph({ text: (log.points > 0 ? "+" : "") + log.points.toString(), alignment: AlignmentType.CENTER })] }),
+                                            new TableCell({ children: [new Paragraph({ text: users.find(u => u.id === log.contributorId)?.name || log.contributorId, alignment: AlignmentType.CENTER })] }),
+                                        ],
+                                    });
+                                }),
                             ],
                         }),
 
@@ -1171,7 +1199,7 @@ export default function MembersPage() {
                                             flexShrink: 0,
                                             background: isCreate
                                                 ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
-                                                : 'var(--color-gray-400)',
+                                                : (log.action === 'UPDATE' && log.details.startsWith('[Peringatan]') ? 'var(--color-warning)' : 'var(--color-gray-400)'),
                                         }} />
 
                                         {/* Content */}
@@ -1189,12 +1217,12 @@ export default function MembersPage() {
                                                     borderRadius: 'var(--radius-sm)',
                                                     background: isCreate
                                                         ? (isPositivePoints ? 'var(--color-success-bg)' : 'var(--color-danger-bg)')
-                                                        : (log.action === 'UPDATE' ? 'var(--color-primary-light)' : 'var(--color-bg-hover)'),
+                                                        : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'var(--color-warning-light)' : 'var(--color-primary-light)') : 'var(--color-bg-hover)'),
                                                     color: isCreate
                                                         ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
-                                                        : (log.action === 'UPDATE' ? 'var(--color-primary)' : 'var(--color-text-secondary)'),
+                                                        : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'var(--color-warning)' : 'var(--color-primary)') : 'var(--color-text-secondary)'),
                                                 }}>
-                                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? t.sidebar.appeals : t.members.reverted)}
+                                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'Peringatan' : t.sidebar.appeals) : t.members.reverted)}
                                                 </span>
                                                 <span style={{
                                                     fontSize: '1rem',

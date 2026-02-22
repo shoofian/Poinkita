@@ -89,7 +89,7 @@ function MemberHistoryContent({ memberLogs, t, users, onViewImage }: { memberLog
                             flexShrink: 0,
                             background: isCreate
                                 ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
-                                : 'var(--color-gray-400)',
+                                : (log.action === 'UPDATE' && log.details.startsWith('[Peringatan]') ? 'var(--color-warning)' : 'var(--color-gray-400)'),
                         }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{
@@ -105,12 +105,12 @@ function MemberHistoryContent({ memberLogs, t, users, onViewImage }: { memberLog
                                     borderRadius: 'var(--radius-sm)',
                                     background: isCreate
                                         ? (isPositivePoints ? 'var(--color-success-bg)' : 'var(--color-danger-bg)')
-                                        : (log.action === 'UPDATE' ? 'var(--color-primary-light)' : 'var(--color-bg-hover)'),
+                                        : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'var(--color-warning-light)' : 'var(--color-primary-light)') : 'var(--color-bg-hover)'),
                                     color: isCreate
                                         ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
-                                        : (log.action === 'UPDATE' ? 'var(--color-primary)' : 'var(--color-text-secondary)'),
+                                        : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'var(--color-warning)' : 'var(--color-primary)') : 'var(--color-text-secondary)'),
                                 }}>
-                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? t.sidebar.appeals : t.members.reverted)}
+                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'Peringatan' : t.sidebar.appeals) : t.members.reverted)}
                                 </span>
                                 <span style={{
                                     fontSize: '1rem',
