@@ -106,7 +106,9 @@ export const INITIAL_RULES: Rule[] = [
   { id: 'RUL-ACH-20260210-003', description: 'Helping Others', type: 'ACHIEVEMENT', points: 5, adminId: 'USR-20260210-001' },
 ];
 
+export const DEFAULT_ADMIN_ID = 'USR-20260210-001';
+
 export const INITIAL_USERS: User[] = [
-  { id: 'USR-20260210-001', name: 'Admin User', username: 'admin', role: 'ADMIN', password: 'admin123' },
+  { id: 'USR-20260210-001', name: 'Admin User', username: 'admin', role: 'ADMIN', password: 'admin123', adminId: 'USR-20260210-001' },
   { id: 'USR-20260210-002', name: 'Teacher 1', username: 'teacher', role: 'CONTRIBUTOR', password: 'teacher123', adminId: 'USR-20260210-001' },
 ];

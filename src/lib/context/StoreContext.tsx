@@ -131,18 +131,31 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 setTransactions(dataToUse.transactions || []);
                 setAuditLogs(dataToUse.auditLogs || []);
                 setArchives(dataToUse.archives || []);
-                setUsers(dataToUse.users || []);
+
+                // Migrasi data lama: pastikan SEMUA user punya adminId
+                // - ADMIN tanpa adminId → self-reference (instansi baru)
+                // - CONTRIBUTOR tanpa adminId → DEFAULT_ADMIN_ID (fallback)
+                const migratedUsers = (dataToUse.users || []).map((u: User) => {
+                    if (u.adminId) return u; // sudah punya, tidak perlu migrasi
+                    if (u.role === 'ADMIN') return { ...u, adminId: u.id };
+                    return { ...u, adminId: DEFAULT_ADMIN_ID };
+                });
+                setUsers(migratedUsers);
                 setAppeals(dataToUse.appeals || []);
 
-                // Load User Session (Local only)
+                // Load User Session — ALWAYS re-validate against fresh server data
+                // so any updated fields (e.g. adminId) are reflected correctly.
                 if (storedCurrentUser) {
                     const parsed = JSON.parse(storedCurrentUser);
-                    if (parsed && typeof parsed === 'object') {
-                        let migratedUser = parsed;
-                        // Ensure user exists in the (now global) user list, otherwise might be stale session
-                        // But for now trust local session or re-validate against loaded users?
-                        // Let's just restore it.
-                        setCurrentUser(migratedUser);
+                    if (parsed && typeof parsed === 'object' && parsed.id) {
+                        // Find the canonical, up-to-date version from the server list
+                        const freshUser = (dataToUse.users || []).find((u: User) => u.id === parsed.id);
+                        if (freshUser) {
+                            setCurrentUser(freshUser);
+                        } else {
+                            // User no longer exists on server — clear stale session
+                            localStorage.removeItem('currentUser');
+                        }
                     }
                 }
 
@@ -165,8 +178,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const filteredTransactions = transactions.filter(t => t.adminId === effectiveAdminId);
     const filteredAuditLogs = auditLogs.filter(l => l.adminId === effectiveAdminId);
     const filteredArchives = archives.filter(a => a.adminId === effectiveAdminId);
+    // filteredUsers: the logged-in user sees only themselves + people whose adminId
+    // points to the current effectiveAdminId. This prevents any cross-instance leakage
+    // (e.g., Admin B must never see Admin A or Admin A's contributors).
     const filteredUsers = currentUser
-        ? users.filter(u => u.id === effectiveAdminId || u.adminId === effectiveAdminId)
+        ? users.filter(u =>
+            u.id === currentUser.id ||                        // diri sendiri
+            u.adminId === effectiveAdminId                    // contributor/admin di instansi yg sama
+        )
         : users;
     const filteredAppeals = appeals.filter(a => a.adminId === effectiveAdminId);
 
@@ -208,7 +227,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     body: JSON.stringify(payload)
                 });
 
-                if (!res.ok) console.error('Sync failed with status:', res.status);
+                if (!res.ok) {
+                    const errBody = await res.json().catch(() => ({}));
+                    console.error('Sync failed:', res.status, errBody.error || '');
+                }
             } catch (err) {
                 console.error('Failed to sync to server', err);
             }
@@ -398,7 +420,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (currentUser?.role === 'ADMIN') {
             newUser.adminId = currentUser.id;
         } else if (!newUser.adminId) {
-            newUser.adminId = DEFAULT_ADMIN_ID;
+            // Jika user baru adalah ADMIN (dari landing page), maka jadikan ID-nya sebagai adminId-nya sendiri
+            // sehingga membentuk "instansi" baru yang terisolasi.
+            if (newUser.role === 'ADMIN') {
+                newUser.adminId = newUser.id;
+            } else {
+                newUser.adminId = DEFAULT_ADMIN_ID;
+            }
         }
         setUsers(prev => [...prev, newUser]);
     };

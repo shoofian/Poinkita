@@ -13,6 +13,8 @@ import * as XLSX from 'xlsx';
 import { User, UserRole } from '@/lib/store';
 import { useTheme } from '@/lib/context/ThemeContext';
 
+const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
+
 export default function AccountSettingsPage() {
     const { currentUser, updateUser, deleteUser, registerUser, registerUsers, users, generateId } = useStore();
     const { t } = useLanguage();
@@ -84,6 +86,11 @@ export default function AccountSettingsPage() {
             return;
         }
 
+        if (!USERNAME_REGEX.test(profileData.username)) {
+            alert({ title: "Error", message: t.auth.usernameInvalid, variant: 'danger' });
+            return;
+        }
+
         setIsProfileLoading(true);
         setIsProfileSuccess(false);
 
@@ -108,6 +115,12 @@ export default function AccountSettingsPage() {
 
         if (users.some(u => u.username === registerData.username)) {
             alert({ title: "Error", message: t.auth.usernameTaken, variant: 'danger' });
+            setIsRegisterLoading(false);
+            return;
+        }
+
+        if (!USERNAME_REGEX.test(registerData.username)) {
+            alert({ title: "Error", message: t.auth.usernameInvalid, variant: 'danger' });
             setIsRegisterLoading(false);
             return;
         }
@@ -158,6 +171,7 @@ export default function AccountSettingsPage() {
                     const role = (row.Role || row.Peran || 'CONTRIBUTOR').toUpperCase() as UserRole;
 
                     if (!name || !username) return;
+                    if (!USERNAME_REGEX.test(username)) return;
                     if (users.some(u => u.username === username) || importedUsers.some(u => u.username === username)) return;
 
                     const password = generateRandomPassword();
@@ -246,6 +260,10 @@ export default function AccountSettingsPage() {
 
     const handleSaveEditUser = () => {
         if (!editingUser) return;
+        if (!USERNAME_REGEX.test(editUserData.username)) {
+            alert({ title: "Error", message: t.auth.usernameInvalid, variant: 'danger' });
+            return;
+        }
         updateUser(editingUser.id, editUserData);
         setIsEditModalOpen(false);
         setEditingUser(null);

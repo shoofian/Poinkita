@@ -37,6 +37,8 @@ import {
 import styles from './page.module.css';
 import { useTheme } from '@/lib/context/ThemeContext';
 
+const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
+
 function LandingContent() {
   const router = useRouter();
   // ... (omitting unchanged lines for brevity in thought process, but tool needs exact content for block)
@@ -274,6 +276,12 @@ function LandingContent() {
 
       if (exists) {
         setRegError(t.auth.usernameTaken);
+        setIsRegLoading(false);
+        return;
+      }
+
+      if (!USERNAME_REGEX.test(normalizedUsername)) {
+        setRegError(t.auth.usernameInvalid);
         setIsRegLoading(false);
         return;
       }
