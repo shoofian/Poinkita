@@ -15,7 +15,7 @@ import clsx from 'clsx';
 import * as XLSX from 'xlsx';
 
 export default function RulesPage() {
-    const { currentUser, rules, warningRules, addRule, addRules, deleteRule, deleteRules, addWarningRule, deleteWarningRule, generateId } = useStore();
+    const { currentUser, rules, warningRules, addRule, addRules, updateRule, deleteRule, deleteRules, addWarningRule, deleteWarningRule, generateId } = useStore();
     const isAdmin = currentUser?.role === 'ADMIN';
     const { t } = useLanguage();
     const { confirm, alert } = useDialog();
@@ -25,7 +25,7 @@ export default function RulesPage() {
     // Rules State
     const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [newRule, setNewRule] = useState({ description: '', points: '', type: 'VIOLATION' as 'ACHIEVEMENT' | 'VIOLATION' });
+    const [newRule, setNewRule] = useState({ description: '', points: '', type: 'VIOLATION' as 'ACHIEVEMENT' | 'VIOLATION', oncePerDay: false });
 
     // Warning Rules State
     const [isWarningModalOpen, setIsWarningModalOpen] = useState(false);
@@ -83,11 +83,12 @@ export default function RulesPage() {
             description: newRule.description,
             points: pointsNum,
             type: pointsNum > 0 ? 'ACHIEVEMENT' : 'VIOLATION',
+            oncePerDay: newRule.oncePerDay,
             adminId: '' // Set by context
         } as Rule);
 
         setIsRuleModalOpen(false);
-        setNewRule({ description: '', points: '', type: 'VIOLATION' });
+        setNewRule({ description: '', points: '', type: 'VIOLATION', oncePerDay: false });
     };
 
     const handleDeleteRule = async (id: string) => {
@@ -144,8 +145,8 @@ export default function RulesPage() {
 
     const handleDownloadTemplate = () => {
         const templateData = [
-            { Description: "Datang Terlambat", Points: -5 },
-            { Description: "Juara 1 Lomba", Points: 20 },
+            { Description: "Datang Terlambat", Points: -5, "Sekali Sehari": "Tidak" },
+            { Description: "Tugas Lengkap", Points: 20, "Sekali Sehari": "Ya" },
         ];
 
         const ws = XLSX.utils.json_to_sheet(templateData);
@@ -179,6 +180,8 @@ export default function RulesPage() {
                 data.forEach((row) => {
                     const description = row.Description || row.Deskripsi || row.description || row.deskripsi;
                     const points = Number(row.Points || row.Poin || row.points || row.poin || 0);
+                    const oncePerDayStr = String(row["Sekali Sehari"] || row.oncePerDay || row["Once per Day"] || row["Maks. Sekali Sehari"] || "Tidak").toLowerCase();
+                    const oncePerDay = ["ya", "yes", "true", "1"].includes(oncePerDayStr);
 
                     if (!description || points === 0) return;
 
@@ -199,6 +202,7 @@ export default function RulesPage() {
                         description,
                         points,
                         type,
+                        oncePerDay,
                         adminId: ''
                     } as Rule);
                 });
@@ -405,6 +409,7 @@ export default function RulesPage() {
                                     <TableHead>{t.rules.description}</TableHead>
                                     <TableHead>{t.rules.type}</TableHead>
                                     <TableHead>{t.rules.points}</TableHead>
+                                    <TableHead>{t.rules.oncePerDay || "Once per Day"}</TableHead>
                                     {isAdmin && <TableHead>{t.common.actions}</TableHead>}
                                 </TableRow>
                             </TableHeader>
@@ -440,6 +445,51 @@ export default function RulesPage() {
                                             </TableCell>
                                             <TableCell style={{ fontWeight: 600, color: rule.points > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                                                 {rule.points > 0 ? `+${rule.points}` : rule.points}
+                                            </TableCell>
+                                            <TableCell>
+                                                {isAdmin ? (
+                                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.5rem' }}>
+                                                        <div style={{
+                                                            position: 'relative',
+                                                            width: '36px',
+                                                            height: '20px',
+                                                            backgroundColor: rule.oncePerDay ? 'var(--color-primary)' : 'var(--color-gray-300)',
+                                                            borderRadius: '20px',
+                                                            transition: 'background-color 0.2s',
+                                                        }}>
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                top: '2px',
+                                                                left: rule.oncePerDay ? '18px' : '2px',
+                                                                width: '16px',
+                                                                height: '16px',
+                                                                backgroundColor: 'white',
+                                                                borderRadius: '50%',
+                                                                transition: 'left 0.2s',
+                                                                boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                                            }} />
+                                                            <input
+                                                                type="checkbox"
+                                                                hidden
+                                                                checked={rule.oncePerDay || false}
+                                                                onChange={(e) => updateRule(rule.id, { oncePerDay: e.target.checked })}
+                                                            />
+                                                        </div>
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: rule.oncePerDay ? 700 : 500, color: rule.oncePerDay ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                                                            {rule.oncePerDay ? (t.common.yes || "Ya") : (t.common.no || "Tidak")}
+                                                        </span>
+                                                    </label>
+                                                ) : (
+                                                    rule.oncePerDay ? (
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'var(--color-primary-light)', color: 'var(--color-primary)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                                                            {t.common.yes || "Ya"}
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>
+                                                            {t.common.no || "Tidak"}
+                                                        </span>
+                                                    )
+                                                )}
                                             </TableCell>
                                             {isAdmin && (
                                                 <TableCell>
@@ -545,6 +595,18 @@ export default function RulesPage() {
                         value={newRule.points}
                         onChange={(e) => setNewRule({ ...newRule, points: e.target.value })}
                     />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--color-text-main)', userSelect: 'none' }}>
+                        <input
+                            type="checkbox"
+                            checked={newRule.oncePerDay}
+                            onChange={(e) => setNewRule({ ...newRule, oncePerDay: e.target.checked })}
+                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        />
+                        {t.rules.oncePerDay || "Maks. Sekali Sehari"}
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '0.25rem' }}>
+                            (Mencegah input berulang di hari yang sama)
+                        </span>
+                    </label>
                 </div>
             </Modal>
 

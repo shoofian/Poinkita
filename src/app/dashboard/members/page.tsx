@@ -15,7 +15,7 @@ import * as XLSX from 'xlsx';
 import clsx from 'clsx';
 
 export default function MembersPage() {
-    const { members, addMember, addMembers, updateMemberPoints, updateMembers, deleteMember, deleteMembers, addAuditLogs, auditLogs, users, currentUser, generateId, warningRules, createArchive } = useStore();
+    const { members, addMember, addMembers, updateMemberPoints, updateMembers, deleteMember, deleteMembers, addAuditLogs, auditLogs, users, currentUser, generateId, warningRules, createArchive, archives } = useStore();
     const { t } = useLanguage();
     const { confirm, alert } = useDialog();
     const [searchTerm, setSearchTerm] = useState('');
@@ -168,7 +168,18 @@ export default function MembersPage() {
 
     const handleConfirmArchive = () => {
         if (!archiveTitle.trim()) return;
-        createArchive(archiveTitle);
+
+        const isDuplicate = archives.some(a => a.title.toLowerCase() === archiveTitle.trim().toLowerCase());
+        if (isDuplicate) {
+            alert({
+                title: t.common.error || "Error",
+                message: t.archive.duplicateTitle,
+                variant: 'danger'
+            });
+            return;
+        }
+
+        createArchive(archiveTitle.trim());
         setArchiveTitle('');
         setIsArchiveModalOpen(false);
         alert({

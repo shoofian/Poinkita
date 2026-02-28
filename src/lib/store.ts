@@ -27,6 +27,7 @@ export interface Rule {
   type: 'ACHIEVEMENT' | 'VIOLATION';
   points: number;
   adminId: string;
+  oncePerDay?: boolean;
 }
 
 export interface Transaction {
@@ -66,11 +67,21 @@ export interface Appeal {
   evidence?: string;
 }
 
+export interface ArchiveHistoryEntry {
+  timestamp: string;
+  details: string;
+  points: number;
+  contributorId: string;
+  contributorName: string;
+  action: 'CREATE' | 'DELETE' | 'UPDATE';
+}
+
 export interface ArchiveMember {
   id: string;
   name: string;
   division: string;
   points: number;
+  history?: ArchiveHistoryEntry[];
 }
 
 export interface Archive {

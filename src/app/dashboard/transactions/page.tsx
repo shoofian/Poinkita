@@ -241,6 +241,24 @@ export default function TransactionsPage() {
             return;
         }
 
+        if (rule.oncePerDay) {
+            const todayStr = new Date().toLocaleDateString();
+
+            const hasTxToday = transactions.some(tx => {
+                const txDate = new Date(tx.timestamp).toLocaleDateString();
+                return tx.memberId === selectedMember.id && tx.ruleId === rule.id && txDate === todayStr;
+            });
+
+            if (hasTxToday) {
+                alert({
+                    title: t.transactions.dailyLimitTitle || "Batas Harian Tercapai",
+                    message: (t.transactions.dailyLimitMessage || "Aturan '{0}' hanya bisa dicatat maksimal sekali sehari untuk anggota ini.").replace('{0}', rule.description),
+                    variant: 'warning'
+                });
+                return;
+            }
+        }
+
         const ok = await confirm({
             title: t.transactions.confirm,
             message: `${t.members.added}: ${rule.description} (${rule.points} pts) ${t.members.changedBy} ${selectedMember.name}`,

@@ -25,6 +25,7 @@ interface StoreContextType {
     deleteMembers: (ids: string[]) => void;
     addRule: (rule: Omit<Rule, 'adminId'> & { adminId?: string }) => void;
     addRules: (rules: (Omit<Rule, 'adminId'> & { adminId?: string })[]) => void;
+    updateRule: (id: string, updates: Partial<Rule>) => void;
     deleteRule: (id: string) => void;
     deleteRules: (ids: string[]) => void;
     addWarningRule: (rule: Omit<WarningRule, 'adminId'> & { adminId?: string }) => void;
@@ -116,7 +117,24 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         users: parse('users') || serverData.users,
                         appeals: parse('appeals') || serverData.appeals,
                     };
+                }
 
+                // Migrasi data lama: pastikan SEMUA user punya adminId
+                // - ADMIN tanpa adminId → self-reference (instansi baru)
+                // - CONTRIBUTOR tanpa adminId → DEFAULT_ADMIN_ID (fallback)
+                const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
+                const migratedUsers = (dataToUse.users || [])
+                    .filter((u: User) => USERNAME_REGEX.test(u.username))
+                    .map((u: User) => {
+                        if (u.adminId) return u; // sudah punya, tidak perlu migrasi
+                        if (u.role === 'ADMIN') return { ...u, adminId: u.id };
+                        return { ...u, adminId: DEFAULT_ADMIN_ID };
+                    });
+
+                dataToUse.users = migratedUsers;
+
+                if (shoudMigrate) {
+                    console.log('Pushing Migration Data to Server...');
                     // Push to server immediately
                     await fetch('/api/data', {
                         method: 'POST',
@@ -131,16 +149,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 setTransactions(dataToUse.transactions || []);
                 setAuditLogs(dataToUse.auditLogs || []);
                 setArchives(dataToUse.archives || []);
-
-                // Migrasi data lama: pastikan SEMUA user punya adminId
-                // - ADMIN tanpa adminId → self-reference (instansi baru)
-                // - CONTRIBUTOR tanpa adminId → DEFAULT_ADMIN_ID (fallback)
-                const migratedUsers = (dataToUse.users || []).map((u: User) => {
-                    if (u.adminId) return u; // sudah punya, tidak perlu migrasi
-                    if (u.role === 'ADMIN') return { ...u, adminId: u.id };
-                    return { ...u, adminId: DEFAULT_ADMIN_ID };
-                });
-                setUsers(migratedUsers);
+                setUsers(dataToUse.users);
                 setAppeals(dataToUse.appeals || []);
 
                 // Load User Session — ALWAYS re-validate against fresh server data
@@ -320,6 +329,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setRules(prev => [...prev, ...rulesWithAdmin]);
     };
 
+    const updateRule = (id: string, updates: Partial<Rule>) => {
+        setRules(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+    };
+
     const deleteRule = (id: string) => setRules(prev => prev.filter(r => r.id !== id));
     const deleteRules = (ids: string[]) => setRules(prev => prev.filter(r => !ids.includes(r.id)));
 
@@ -400,12 +413,26 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const createArchive = (title: string) => {
         const id = generateId('ARC');
         const timestamp = new Date().toISOString();
-        const snapshotsWithAdmin = members.map(m => ({
-            id: m.id,
-            name: m.name,
-            division: m.division,
-            points: m.totalPoints
-        }));
+        const snapshotsWithAdmin = members.map(m => {
+            const memberLogs = auditLogs.filter(log => log.memberId === m.id);
+            return {
+                id: m.id,
+                name: m.name,
+                division: m.division,
+                points: m.totalPoints,
+                history: memberLogs.map(log => {
+                    const contributor = users.find(u => u.id === log.contributorId);
+                    return {
+                        timestamp: log.timestamp,
+                        details: log.details,
+                        points: log.points,
+                        contributorId: log.contributorId,
+                        contributorName: contributor?.name || log.contributorId,
+                        action: log.action
+                    };
+                })
+            };
+        });
 
         const adminId = effectiveAdminId || DEFAULT_ADMIN_ID;
         setArchives(prev => [{ id, title, timestamp, memberSnapshots: snapshotsWithAdmin, adminId }, ...prev]);
@@ -541,7 +568,10 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setCurrentUser,
             loginUser,
             addMember, addMembers, updateMemberPoints, deleteMember, deleteMembers,
-            addRule, addRules, deleteRule, deleteRules, addWarningRule, updateWarningRule, deleteWarningRule,
+            addRule,
+            addRules,
+            updateRule,
+            deleteRule, deleteRules, addWarningRule, updateWarningRule, deleteWarningRule,
             addTransaction, deleteTransaction,
             addAuditLogs, createArchive, deleteArchive,
             registerUser, registerUsers, updateUser, deleteUser, addAppeal, updateAppealStatus, deleteAppeal, updateMembers, generateId,

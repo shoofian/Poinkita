@@ -64,6 +64,16 @@ export const getStoreData = async (): Promise<StoreData> => {
             supabase.from('appeals').select('*')
         ]);
 
+        const USERNAME_REGEX = /^[a-z0-9_]{3,20}$/;
+        const fetchedUsers = usersRes.data || [];
+        const validUsers = fetchedUsers.filter((u: any) => USERNAME_REGEX.test(u.username));
+        const invalidUsers = fetchedUsers.filter((u: any) => !USERNAME_REGEX.test(u.username));
+
+        if (invalidUsers.length > 0 && supabase) {
+            console.log(`Deleting ${invalidUsers.length} invalid users...`);
+            await Promise.all(invalidUsers.map((u: any) => supabase!.from('users').delete().eq('id', u.id)));
+        }
+
         return {
             members: membersRes.data || [],
             rules: rulesRes.data || [],
@@ -76,7 +86,7 @@ export const getStoreData = async (): Promise<StoreData> => {
                     ? JSON.parse(a.memberSnapshots)
                     : a.memberSnapshots
             })),
-            users: usersRes.data || [],
+            users: validUsers,
             appeals: appealsRes.data || [],
         };
     } catch (error) {

@@ -65,7 +65,7 @@ function LandingContent() {
   } = useStore();
 
   // Modals State
-  const [activeModal, setActiveModal] = useState<'LOGIN' | 'REGISTER' | null>(null);
+  const [activeModal, setActiveModal] = useState<'LOGIN' | 'REGISTER' | 'PRICING' | null>(null);
 
   // Login Form State
   const [loginUsername, setLoginUsername] = useState('');
@@ -385,6 +385,9 @@ function LandingContent() {
           </Button>
           <Button variant="ghost" className={styles.langBtn} onClick={toggleTheme}>
             {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+          </Button>
+          <Button variant="ghost" className={styles.pricingBtn} onClick={() => setActiveModal('PRICING')}>
+            {t.landing.pricing || 'Pricing'}
           </Button>
           <Button variant="secondary" onClick={() => { setActiveModal('LOGIN'); setLoginError(''); }}>
             {t.landing.loginBtn}
@@ -858,6 +861,89 @@ function LandingContent() {
           ) : (
             <div className={styles.noData}>{t.rules.noRules || 'No rules available.'}</div>
           )}
+        </div>
+      </Modal>
+      {/* Pricing Modal */}
+      <Modal
+        isOpen={activeModal === 'PRICING'}
+        onClose={() => setActiveModal(null)}
+        title={t.landing.pricing || 'Pricing'}
+        maxWidth="1000px"
+      >
+        <div className={styles.pricingModalContent}>
+          <div className={styles.pricingGrid}>
+            {/* Starter Plan */}
+            <div className={`${styles.pricingCard} ${styles.cardStarter}`}>
+              <div className={styles.tierHeader}>
+                <div className={`${styles.tierIconWrapper} ${styles.iconStarter}`}>
+                  <ShieldCheck size={28} className={styles.tierIcon} />
+                </div>
+                <h3 className={styles.tierName}>Starter</h3>
+                <div className={styles.tierPrice}>
+                  <span className={styles.currency}>Rp</span>
+                  <span className={styles.amount}>0</span>
+                  <span className={styles.period}>/gratis</span>
+                </div>
+              </div>
+              <ul className={styles.featureList}>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Kapasitas: <b>Hingga 20 Member</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Kontributor: <b>Single Admin</b></span></li>
+                <li><XCircle size={16} className={styles.timesIcon} /><span className={styles.disabledFeature}>Bukti Transaksi</span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Laporan & Arsip: <b>Di Landing Page</b></span></li>
+                <li><XCircle size={16} className={styles.timesIcon} /><span className={styles.disabledFeature}>Notifikasi</span></li>
+                <li><XCircle size={16} className={styles.timesIcon} /><span className={styles.disabledFeature}>Fitur Banding</span></li>
+              </ul>
+            </div>
+
+            {/* Pro Plan */}
+            <div className={`${styles.pricingCard} ${styles.popularPlan} ${styles.cardPro}`}>
+              <div className={styles.popularBadge}>Populer</div>
+              <div className={styles.tierHeader}>
+                <div className={`${styles.tierIconWrapper} ${styles.iconPro}`}>
+                  <Zap size={28} className={styles.tierIcon} />
+                </div>
+                <h3 className={styles.tierName}>Pro</h3>
+                <div className={styles.tierPrice}>
+                  <span className={styles.currency}>Rp</span>
+                  <span className={styles.amount}>500</span>
+                  <span className={styles.thousands}>rb</span>
+                  <span className={styles.period}>/tahun</span>
+                </div>
+              </div>
+              <ul className={styles.featureList}>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Kapasitas: <b>Hingga 250 Member</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Kontributor: <b>Hingga 5 Admin</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Bukti Transaksi: <b>Foto/Gambar</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Laporan & Arsip: <b>Export Excel</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Notifikasi: <b>Email</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Fitur Banding: <b>Tersedia</b></span></li>
+              </ul>
+            </div>
+
+            {/* Enterprise Plan */}
+            <div className={`${styles.pricingCard} ${styles.cardEnterprise}`}>
+              <div className={styles.tierHeader}>
+                <div className={`${styles.tierIconWrapper} ${styles.iconEnterprise}`}>
+                  <Users size={28} className={styles.tierIcon} />
+                </div>
+                <h3 className={styles.tierName}>Enterprise</h3>
+                <div className={styles.tierPrice}>
+                  <span className={styles.currency}>Rp</span>
+                  <span className={styles.amount}>1,3</span>
+                  <span className={styles.thousands}>jt</span>
+                  <span className={styles.period}>/tahun</span>
+                </div>
+              </div>
+              <ul className={styles.featureList}>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Kapasitas: <b>Unlimited</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Kontributor: <b>Unlimited</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Bukti Transaksi: <b>Foto & PDF</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Laporan & Arsip: <b>Excel, PDF, Cetak</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Notifikasi: <b>WhatsApp Gateway</b></span></li>
+                <li><CheckCircle2 size={16} className={styles.checkIcon} /><span>Fitur Banding: <b>Tersedia</b></span></li>
+              </ul>
+            </div>
+          </div>
         </div>
       </Modal>
     </div>

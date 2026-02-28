@@ -8,6 +8,8 @@ export const translations = {
             edit: "Edit",
             search: "Search...",
             actions: "Actions",
+            error: "Error",
+            success: "Success",
             export: "Export Data",
             welcome: "Welcome",
             logout: "Logout",
@@ -18,6 +20,8 @@ export const translations = {
             next: "Next",
             rowsPerPage: "Rows per page",
             back: "Back",
+            yes: "Yes",
+            no: "No",
         },
         auth: {
             loginTitle: "Welcome to Poinkita",
@@ -71,6 +75,7 @@ export const translations = {
             archive: "Archive",
             appeals: "Appeals",
             accountSettings: "Account Settings",
+            upgrade: "Upgrade",
         },
         dashboard: {
             overview: "Dashboard Overview",
@@ -128,9 +133,17 @@ export const translations = {
             noArchives: "No archives saved yet.",
             archiveSnapshot: "Archive current state?",
             archiveSuccess: "Archive created successfully.",
+            duplicateTitle: "Archive title already exists. Please use a unique title.",
             memberSnapshot: "Member Snapshot",
             deleteArchive: "Delete Archive",
-            confirmDelete: "Are you sure you want to delete this archive?"
+            confirmDelete: "Are you sure you want to delete this archive?",
+            searchArchive: "Search name or ID...",
+            allDivisions: "All Divisions",
+            sortHighest: "Highest Points",
+            sortLowest: "Lowest Points",
+            sortNameAsc: "Name A-Z",
+            sortNameDesc: "Name Z-A",
+            noFilteredMembers: "No members match the search/filter criteria."
         },
         rules: {
             title: "Rules Management",
@@ -145,7 +158,8 @@ export const translations = {
             deleteConfirm: "Delete this rule?",
             importRulesTemplate: "Download Rules Template",
             importRulesSuccess: "Successfully imported {0} rules.",
-            noRules: "No rules available for this admin."
+            noRules: "No rules available for this admin.",
+            oncePerDay: "Maks. Once per Day"
         },
         transactions: {
             selectMember: "1. Select Member",
@@ -179,6 +193,8 @@ export const translations = {
             pending: "Pending",
             approved: "Approved",
             rejected: "Rejected",
+            dailyLimitTitle: "Daily Limit Reached",
+            dailyLimitMessage: "The rule '{0}' can only be recorded once per day for this member.",
             appealApprovedInfo: "Appeal Approved - Entry Cancelled",
             appealRejectedInfo: "Appeal Rejected (Banding Ditolak)",
             uploadLabel: "Take Photo or Choose File",
@@ -213,6 +229,7 @@ export const translations = {
             feature2Desc: "Complete audit trail of every point change with full accountability.",
             feature3Title: "Multi-role Access",
             feature3Desc: "Admins and contributors collaborate seamlessly with role-based permissions.",
+            pricing: "Pricing",
         },
         report: {
             title: "Point History Report",
@@ -234,6 +251,8 @@ export const translations = {
             edit: "Ubah",
             search: "Cari...",
             actions: "Aksi",
+            error: "Kesalahan",
+            success: "Berhasil",
             export: "Ekspor Data",
             welcome: "Selamat Datang",
             logout: "Keluar",
@@ -244,6 +263,8 @@ export const translations = {
             next: "Berikutnya",
             rowsPerPage: "Baris per halaman",
             back: "Kembali",
+            yes: "Ya",
+            no: "Tidak",
         },
         auth: {
             loginTitle: "Selamat Datang di Poinkita",
@@ -297,6 +318,7 @@ export const translations = {
             archive: "Arsip",
             appeals: "Banding",
             accountSettings: "Pengaturan Akun",
+            upgrade: "Upgrade",
         },
         dashboard: {
             overview: "Ringkasan Beranda",
@@ -354,9 +376,17 @@ export const translations = {
             noArchives: "Belum ada arsip yang disimpan.",
             archiveSnapshot: "Simpan kondisi saat ini ke arsip?",
             archiveSuccess: "Arsip berhasil dibuat.",
+            duplicateTitle: "Nama arsip sudah ada. Silakan gunakan nama lain.",
             memberSnapshot: "Snapshot Anggota",
             deleteArchive: "Hapus Arsip",
-            confirmDelete: "Apakah Anda yakin ingin menghapus arsip ini?"
+            confirmDelete: "Apakah Anda yakin ingin menghapus arsip ini?",
+            searchArchive: "Cari nama atau ID...",
+            allDivisions: "Semua Divisi",
+            sortHighest: "Poin Tertinggi",
+            sortLowest: "Poin Terendah",
+            sortNameAsc: "Nama A-Z",
+            sortNameDesc: "Nama Z-A",
+            noFilteredMembers: "Tidak ada anggota yang memenuhi kriteria pencarian/filter."
         },
         rules: {
             title: "Manajemen Aturan",
@@ -371,7 +401,8 @@ export const translations = {
             deleteConfirm: "Hapus aturan ini?",
             importRulesTemplate: "Unduh Format Aturan",
             importRulesSuccess: "Berhasil mengimpor {0} aturan.",
-            noRules: "Belum ada aturan yang tersedia."
+            noRules: "Belum ada aturan yang tersedia.",
+            oncePerDay: "Maks. Sekali Sehari"
         },
         transactions: {
             selectMember: "1. Pilih Anggota",
@@ -405,6 +436,8 @@ export const translations = {
             pending: "Menunggu",
             approved: "Disetujui",
             rejected: "Ditolak",
+            dailyLimitTitle: "Batas Harian Tercapai",
+            dailyLimitMessage: "Aturan '{0}' hanya bisa dicatat maksimal sekali sehari untuk anggota ini.",
             appealApprovedInfo: "Banding disetujui - catatan dibatalkan",
             appealRejectedInfo: "Banding Ditolak",
             uploadLabel: "Ambil Foto atau Pilih File",
@@ -439,6 +472,7 @@ export const translations = {
             feature2Desc: "Jejak audit lengkap dari setiap perubahan poin dengan akuntabilitas penuh.",
             feature3Title: "Akses Multi-peran",
             feature3Desc: "Admin dan kontributor berkolaborasi dengan sistem perizinan berbasis peran.",
+            pricing: "Harga",
         },
         report: {
             title: "Laporan Riwayat Poin Anggota",
