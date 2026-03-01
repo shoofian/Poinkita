@@ -41,7 +41,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
                 >
                     <motion.div
                         className={styles.modal}
-                        style={{ maxWidth: maxWidth || undefined }}
+                        style={{ maxWidth: (typeof window !== 'undefined' && window.innerWidth > 640) ? (maxWidth || undefined) : undefined }}
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}

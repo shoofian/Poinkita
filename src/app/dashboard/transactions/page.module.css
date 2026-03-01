@@ -160,18 +160,19 @@
     font-weight: 600;
     color: var(--color-text-main);
     font-size: 15px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    overflow: visible;
 }
 
 .memberMeta {
     font-size: 13px;
     color: var(--color-text-muted);
     margin-top: 2px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 @media (max-width: 480px) {
@@ -357,9 +358,9 @@
 
 .historyDesc {
     color: var(--color-text-secondary);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
 }
 
 .deleteBtn {
@@ -619,6 +620,7 @@
     display: flex;
     flex-direction: column;
 }
+
 .pointsPositive {
     color: var(--color-success) !important;
 }

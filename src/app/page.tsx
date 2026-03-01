@@ -32,7 +32,8 @@ import {
   Loader2,
   X,
   XCircle,
-  Clock
+  Clock,
+  Menu
 } from 'lucide-react';
 import styles from './page.module.css';
 import { useTheme } from '@/lib/context/ThemeContext';
@@ -102,6 +103,7 @@ function LandingContent() {
   // Rules Modal State
   const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
   const [memberRules, setMemberRules] = useState<any[]>([]);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Image compression helper
   const compressImage = (file: File, maxWidth = 800, quality = 0.7): Promise<string> => {
@@ -396,7 +398,49 @@ function LandingContent() {
             {t.landing.registerBtn}
           </Button>
         </div>
+        <button className={styles.mobileMenuBtn} onClick={() => setIsMobileMenuOpen(true)}>
+          <Menu size={24} />
+        </button>
       </motion.header>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            className={`${styles.mobileMenu} ${styles.active}`}
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          >
+            <div className={styles.mobileMenuHeader}>
+              <div className={styles.navLogo}>Poinkita</div>
+              <button className={styles.mobileMenuBtn} onClick={() => setIsMobileMenuOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className={styles.mobileMenuActions}>
+              <Button variant="ghost" className={styles.langBtn} onClick={toggleLanguage}>
+                <Languages size={18} />
+                {t.common?.language || 'Language'}: {language.toUpperCase()}
+              </Button>
+              <Button variant="ghost" className={styles.langBtn} onClick={toggleTheme}>
+                {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
+              </Button>
+              <Button variant="ghost" className={styles.pricingBtn} onClick={() => { setActiveModal('PRICING'); setIsMobileMenuOpen(false); }}>
+                {t.landing.pricing || 'Pricing'}
+              </Button>
+              <Button variant="secondary" onClick={() => { setActiveModal('LOGIN'); setLoginError(''); setIsMobileMenuOpen(false); }}>
+                {t.landing.loginBtn}
+              </Button>
+              <Button variant="primary" onClick={() => { setActiveModal('REGISTER'); setRegError(''); setRegSuccess(false); setIsMobileMenuOpen(false); }}>
+                {t.landing.registerBtn}
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hero Section */}
       <section className={styles.hero}>

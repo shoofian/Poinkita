@@ -43,6 +43,11 @@ export default function DashboardPage() {
     const { t } = useLanguage();
     const { alert } = useDialog();
     const [rankFilter, setRankFilter] = React.useState<'day' | 'week' | 'month' | 'year'>('week');
+    const [isMounted, setIsMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const isAdmin = currentUser?.role === 'ADMIN';
 
@@ -334,7 +339,7 @@ export default function DashboardPage() {
                                         }}
                                     >
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                                            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)' }}>
+                                            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)', wordBreak: 'break-word', whiteSpace: 'normal' }}>
                                                 {member.name}
                                             </div>
                                         </div>
@@ -425,30 +430,34 @@ export default function DashboardPage() {
                         <h2 className={styles.chartTitle}>Tren Aktivitas Mingguan</h2>
                         <p className={styles.chartDesc}>Jumlah pencatatan poin selama 7 hari terakhir.</p>
                         <div className={styles.chartContainer}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={activityData}>
-                                    <defs>
-                                        <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
-                                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                                    <Tooltip
-                                        contentStyle={{
-                                            borderRadius: '12px',
-                                            border: 'none',
-                                            boxShadow: 'var(--shadow-lg)',
-                                            background: 'var(--color-surface)',
-                                            color: 'var(--color-text)'
-                                        }}
-                                        itemStyle={{ color: 'var(--color-primary)' }}
-                                    />
-                                    <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
+                            {isMounted ? (
+                                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                                    <AreaChart data={activityData}>
+                                        <defs>
+                                            <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
+                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} dy={10} minTickGap={10} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b' }} />
+                                        <Tooltip
+                                            contentStyle={{
+                                                borderRadius: '12px',
+                                                border: 'none',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                background: 'var(--color-surface)',
+                                                color: 'var(--color-text)'
+                                            }}
+                                            itemStyle={{ color: 'var(--color-primary)' }}
+                                        />
+                                        <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorCount)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <div className={styles.loadingPlaceholder}>Memuat grafik...</div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -476,9 +485,9 @@ export default function DashboardPage() {
                                         >
                                             {member?.name.charAt(0).toUpperCase() || 'A'}
                                         </div>
-                                        <div className={styles.activityContent} style={{ minWidth: 0 }}>
-                                            <div className={styles.activityTitle}>{member?.name || 'Unknown'}</div>
-                                            <div className={styles.activityTime} title={log.details}>{log.details}</div>
+                                        <div className={styles.activityContent} style={{ minWidth: 0, flex: 1 }}>
+                                            <div className={styles.activityTitle} style={{ whiteSpace: 'normal', overflow: 'visible', textOverflow: 'clip' }}>{member?.name || 'Unknown'}</div>
+                                            <div className={styles.activityTime} style={{ whiteSpace: 'normal', overflow: 'visible', textOverflow: 'clip' }} title={log.details}>{log.details}</div>
                                         </div>
                                         <div className={styles.activityPoints} style={{ color: textColor }}>
                                             {isPositive ? '+' : ''}{log.points}
@@ -514,30 +523,32 @@ export default function DashboardPage() {
                     <div className={styles.chartCard}>
                         <h2 className={styles.chartTitle}>Distribusi Poin</h2>
                         <div className={styles.chartContainer} style={{ minHeight: '180px' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={divisionData}
-                                        innerRadius={50}
-                                        outerRadius={70}
-                                        paddingAngle={4}
-                                        dataKey="value"
-                                    >
-                                        {divisionData.map((_entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        contentStyle={{
-                                            borderRadius: '12px',
-                                            border: 'none',
-                                            boxShadow: 'var(--shadow-lg)',
-                                            background: 'var(--color-surface)',
-                                            color: 'var(--color-text)'
-                                        }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
+                            {isMounted ? (
+                                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                                    <PieChart>
+                                        <Pie
+                                            data={divisionData}
+                                            innerRadius={50}
+                                            outerRadius={70}
+                                            paddingAngle={4}
+                                            dataKey="value"
+                                        >
+                                            {divisionData.map((_entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            contentStyle={{
+                                                borderRadius: '12px',
+                                                border: 'none',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                background: 'var(--color-surface)',
+                                                color: 'var(--color-text)'
+                                            }}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -548,31 +559,33 @@ export default function DashboardPage() {
                         <h2 className={styles.chartTitle}>Kontributor Teraktif</h2>
                         <p className={styles.chartDesc}>Admin/Petugas dengan jumlah aksi terbanyak.</p>
                         <div className={styles.chartContainer} style={{ minHeight: '180px' }}>
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={contributorData} layout="vertical">
-                                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-                                    <XAxis type="number" hide />
-                                    <YAxis
-                                        dataKey="name"
-                                        type="category"
-                                        axisLine={false}
-                                        tickLine={false}
-                                        tick={{ fontSize: 11, fill: '#64748b' }}
-                                        width={80}
-                                    />
-                                    <Tooltip
-                                        cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
-                                        contentStyle={{
-                                            borderRadius: '12px',
-                                            border: 'none',
-                                            boxShadow: 'var(--shadow-lg)',
-                                            background: 'var(--color-surface)',
-                                            color: 'var(--color-text)'
-                                        }}
-                                    />
-                                    <Bar dataKey="count" fill="var(--color-primary)" radius={[0, 4, 4, 0]} barSize={20} />
-                                </BarChart>
-                            </ResponsiveContainer>
+                            {isMounted ? (
+                                <ResponsiveContainer width="100%" height="100%" debounce={100}>
+                                    <BarChart data={contributorData} layout="vertical">
+                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                                        <XAxis type="number" hide />
+                                        <YAxis
+                                            dataKey="name"
+                                            type="category"
+                                            axisLine={false}
+                                            tickLine={false}
+                                            tick={{ fontSize: 11, fill: '#64748b' }}
+                                            width={80}
+                                        />
+                                        <Tooltip
+                                            cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                                            contentStyle={{
+                                                borderRadius: '12px',
+                                                border: 'none',
+                                                boxShadow: 'var(--shadow-lg)',
+                                                background: 'var(--color-surface)',
+                                                color: 'var(--color-text)'
+                                            }}
+                                        />
+                                        <Bar dataKey="count" fill="var(--color-primary)" radius={[0, 4, 4, 0]} barSize={20} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -679,8 +692,12 @@ export default function DashboardPage() {
                                             <Trophy size={18} /> Kategori Pencapaian
                                         </h3>
                                         <div style={{ height: '300px' }}>
-                                            {achievementTypeRank.length > 0 ? (
-                                                <ResponsiveContainer width="100%" height="100%">
+                                            {!isMounted ? (
+                                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
+                                                    Memuat...
+                                                </div>
+                                            ) : achievementTypeRank.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height="100%" debounce={100}>
                                                     <BarChart data={achievementTypeRank} layout="vertical" margin={{ left: 20, right: 30 }}>
                                                         <XAxis type="number" hide />
                                                         <YAxis
@@ -716,8 +733,12 @@ export default function DashboardPage() {
                                             <AlertTriangle size={18} /> Kategori Pelanggaran
                                         </h3>
                                         <div style={{ height: '300px' }}>
-                                            {violationTypeRank.length > 0 ? (
-                                                <ResponsiveContainer width="100%" height="100%">
+                                            {!isMounted ? (
+                                                <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
+                                                    Memuat...
+                                                </div>
+                                            ) : violationTypeRank.length > 0 ? (
+                                                <ResponsiveContainer width="100%" height="100%" debounce={100}>
                                                     <BarChart data={violationTypeRank} layout="vertical" margin={{ left: 20, right: 30 }}>
                                                         <XAxis type="number" hide />
                                                         <YAxis

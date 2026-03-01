@@ -53,12 +53,15 @@
     height: 32px;
     border-radius: var(--radius-full);
     transition: all var(--transition);
+    position: absolute;
+    top: var(--spacing-4);
+    right: var(--spacing-4);
+    z-index: 10;
 }
 
 .closeButton:hover {
     background: var(--color-gray-100);
     color: var(--color-gray-900);
-    transform: rotate(90deg);
 }
 
 .content {
