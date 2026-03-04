@@ -95,12 +95,12 @@ export default function ArchivePage() {
         if (!member.history) return;
         try {
             const exportData = member.history.map(log => {
-                let actionText = log.action === 'CREATE' ? (log.points > 0 ? 'Pencapaian' : 'Pelanggaran') : t.members.reverted;
+                let actionText = log.action === 'CREATE' ? (log.points > 0 ? t.sidebar.achievement : t.sidebar.violation) : t.members.reverted;
                 let detailsText = log.details;
 
                 if (log.action === 'UPDATE') {
                     if (log.details.startsWith('[Peringatan]')) {
-                        actionText = 'Peringatan';
+                        actionText = t.sidebar.warning;
                         detailsText = log.details.replace('[Peringatan]', '').trim();
                     } else {
                         actionText = t.sidebar.appeals;
@@ -179,10 +179,10 @@ export default function ArchivePage() {
                                     ],
                                 }),
                                 ...logs.map(log => {
-                                    let actionText = log.action === 'CREATE' ? (log.points > 0 ? 'Pencapaian' : 'Pelanggaran') : t.members.reverted;
+                                    let actionText = log.action === 'CREATE' ? (log.points > 0 ? t.sidebar.achievement : t.sidebar.violation) : t.members.reverted;
                                     let detailsText = log.details;
                                     if (log.action === 'UPDATE') {
-                                        if (log.details.startsWith('[Peringatan]')) { actionText = 'Peringatan'; detailsText = log.details.replace('[Peringatan]', '').trim(); }
+                                        if (log.details.startsWith('[Peringatan]')) { actionText = t.sidebar.warning; detailsText = log.details.replace('[Peringatan]', '').trim(); }
                                         else { actionText = t.sidebar.appeals; }
                                     }
                                     return new TableRow({
@@ -270,7 +270,7 @@ export default function ArchivePage() {
                                 </div>
                                 <input
                                     type="text"
-                                    placeholder={t.archive.searchArchive || "Cari nama atau ID..."}
+                                    placeholder={t.archive.searchArchive}
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     style={{
@@ -301,7 +301,7 @@ export default function ArchivePage() {
                                             cursor: 'pointer'
                                         }}
                                     >
-                                        <option value="all">{t.members.allDivisions || t.archive.allDivisions || "Semua Divisi"}</option>
+                                        <option value="all">{t.archive.allDivisions}</option>
                                         {uniqueDivisions.map(div => (
                                             <option key={div} value={div}>{div}</option>
                                         ))}
@@ -362,7 +362,7 @@ export default function ArchivePage() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>
-                                            {t.archive.noFilteredMembers || "Tidak ada anggota yang memenuhi kriteria pencarian/filter."}
+                                            {t.archive.noFilteredMembers}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -428,7 +428,7 @@ export default function ArchivePage() {
                     {t.archive.title}
                 </h1>
                 <p style={{ color: 'var(--color-text-muted)' }}>
-                    Lihat snapshot data yang telah Anda simpan sebelumnya.
+                    {t.archive.archiveDesc}
                 </p>
             </div>
 
@@ -465,7 +465,7 @@ export default function ArchivePage() {
                             <CardContent>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                                        {archive.memberSnapshots.length} Anggota
+                                        {archive.memberSnapshots.length} {t.archive.membersCount}
                                     </span>
                                     <Button variant="secondary" className="flex items-center gap-2">
                                         <FaEye /> {t.archive.viewArchive}

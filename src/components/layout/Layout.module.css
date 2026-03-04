@@ -13,6 +13,10 @@
     width: 100%;
     padding: 24px;
     transition: margin-left 0.3s ease;
+    /* Prevent horizontal overflow */
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .mobileHeader {
@@ -71,6 +75,15 @@
     }
 }
 
+/* ─── Tablet Landscape (769px – 1023px): sidebar visible, slightly reduced padding ─── */
+@media (max-width: 1023px) and (min-width: 769px) {
+    .main {
+        padding: 20px;
+        margin-left: 260px;
+    }
+}
+
+/* ─── Mobile & Small Tablet (≤768px): hidden sidebar, top header bar ─── */
 @media (max-width: 768px) {
     .container {
         flex-direction: column;
@@ -88,5 +101,12 @@
         display: flex;
         background: var(--color-surface);
         border-bottom: 1px solid var(--color-border);
+    }
+}
+
+/* ─── Extra Small (≤400px): tighter padding ─── */
+@media (max-width: 400px) {
+    .main {
+        padding: 8px;
     }
 }

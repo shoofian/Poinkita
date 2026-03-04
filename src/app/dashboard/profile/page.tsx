@@ -82,7 +82,7 @@ export default function AccountSettingsPage() {
         if (!currentUser) return;
 
         if (profileData.password !== profileData.confirmPassword) {
-            alert({ title: "Error", message: "Passwords do not match.", variant: 'danger' });
+            alert({ title: t.common.error, message: t.auth.passwordsDoNotMatch || "Passwords do not match.", variant: 'danger' });
             return;
         }
 
@@ -105,7 +105,7 @@ export default function AccountSettingsPage() {
             setIsProfileLoading(false);
             setIsProfileSuccess(true);
             setTimeout(() => setIsProfileSuccess(false), 3000);
-            alert({ title: "Success", message: "Profile updated successfully!", variant: 'success' });
+            alert({ title: t.common.success, message: t.auth.profileUpdated || "Profile updated successfully!", variant: 'success' });
         }, 800);
     };
 
@@ -207,13 +207,13 @@ export default function AccountSettingsPage() {
                 } else {
                     alert({
                         title: "Import Failed",
-                        message: "No valid and unique user data found.",
+                        message: t.auth.noValidUserData || "No valid and unique user data found.",
                         variant: 'danger'
                     });
                 }
             } catch (error) {
                 console.error("Excel Import Error:", error);
-                alert({ title: "Error", message: "Failed to process Excel file.", variant: 'danger' });
+                alert({ title: t.common.error, message: t.transactions?.processImageError || "Failed to process Excel file.", variant: 'danger' });
             }
             if (e.target) e.target.value = '';
         };
@@ -272,14 +272,14 @@ export default function AccountSettingsPage() {
 
     const handleEnableBiometric = async () => {
         if (typeof window === 'undefined' || !window.PublicKeyCredential) {
-            alert({ title: "Not Supported", message: "Biometric is not supported on this browser.", variant: 'info' });
+            alert({ title: "Not Supported", message: t.auth.biometricNotSupported || "Biometric is not supported on this browser.", variant: 'info' });
             return;
         }
 
         try {
             const available = await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
             if (!available) {
-                alert({ title: "Hardware Required", message: "Biometric hardware not found or not supported on this device.", variant: 'info' });
+                alert({ title: "Hardware Required", message: t.auth.biometricHardwareNotFound || "Biometric hardware not found or not supported on this device.", variant: 'info' });
                 return;
             }
 
@@ -331,11 +331,11 @@ export default function AccountSettingsPage() {
 
     const handleDisableBiometric = () => {
         updateUser(currentUser!.id, { biometricEnabled: false });
-        alert({ title: "Removed", message: "Biometric login disabled.", variant: 'info' });
+        alert({ title: "Removed", message: t.auth.biometricDisabledMessage || "Biometric login disabled.", variant: 'info' });
     };
 
     if (!currentUser) {
-        return <div className="p-8 text-center text-gray-500">Please login to view settings.</div>;
+        return <div className="p-8 text-center text-gray-500">{t.auth.loginToViewSettings || "Please login to view settings."}</div>;
     }
 
     const isAdmin = currentUser.role === 'ADMIN';
@@ -416,7 +416,7 @@ export default function AccountSettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>{t.auth.name || 'Personal Information'}</CardTitle>
-                        <CardDescription>Update your display name and contact credentials.</CardDescription>
+                        <CardDescription>{t.auth.updateProfileDesc || "Update your display name and contact credentials."}</CardDescription>
                     </CardHeader>
                     <form onSubmit={handleSaveProfile}>
                         <CardContent style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -453,7 +453,7 @@ export default function AccountSettingsPage() {
                             </div>
 
                             <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0', paddingTop: '1rem' }}>
-                                <CardDescription style={{ marginBottom: '1rem' }}>Change your password below if needed.</CardDescription>
+                                <CardDescription style={{ marginBottom: '1rem' }}>{t.auth.changePasswordDesc || "Change your password below if needed."}</CardDescription>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(250px, 100%), 1fr))', gap: '1.25rem' }}>
                                     <Input
                                         label={t.auth.password || 'New Password'}
@@ -475,7 +475,7 @@ export default function AccountSettingsPage() {
                             <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                                 <div>
                                     <h4 className="font-semibold text-lg">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</h4>
-                                    <p className="text-sm text-gray-500">Switch between light and dark themes.</p>
+                                    <p className="text-sm text-gray-500">{t.auth.themeDesc || "Switch between light and dark themes."}</p>
                                 </div>
                                 <Button
                                     type="button"
@@ -484,7 +484,7 @@ export default function AccountSettingsPage() {
                                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                 >
                                     {theme === 'light' ? <FaMoon /> : <FaSun />}
-                                    {theme === 'light' ? 'Enable Dark Mode' : 'Enable Light Mode'}
+                                    {theme === 'light' ? (t.auth.enableDarkMode || "Enable Dark Mode") : (t.auth.enableLightMode || "Enable Light Mode")}
                                 </Button>
                             </div>
 
@@ -650,7 +650,7 @@ export default function AccountSettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>{t.auth.userList}</CardTitle>
-                        <CardDescription>Manage contributor and admin accounts.</CardDescription>
+                        <CardDescription>{t.auth.manageAccountsDesc || "Manage contributor and admin accounts."}</CardDescription>
                     </CardHeader>
                     <CardContent style={{ padding: 0 }}>
                         <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>

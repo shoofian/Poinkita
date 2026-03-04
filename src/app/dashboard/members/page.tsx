@@ -152,15 +152,15 @@ export default function MembersPage() {
             XLSX.writeFile(wb, `Poinkita_Members_${dateStr}.xlsx`);
 
             alert({
-                title: "Export Success",
-                message: "Member data has been exported to Excel.",
+                title: t.members.exportSuccessTitle,
+                message: t.members.exportSuccessDesc,
                 variant: 'success'
             });
         } catch (error) {
             console.error("Export Error:", error);
             alert({
-                title: "Export Error",
-                message: "Failed to export data. Please try again.",
+                title: t.members.exportErrorTitle,
+                message: t.members.exportErrorDesc,
                 variant: 'danger'
             });
         }
@@ -184,7 +184,7 @@ export default function MembersPage() {
         setIsArchiveModalOpen(false);
         alert({
             title: t.archive.archiveSuccess,
-            message: "Snapshot saved successfully.",
+            message: t.common.success,
             variant: 'success'
         });
     };
@@ -272,22 +272,22 @@ export default function MembersPage() {
                     addMembers(importedMembers);
                     if (importedLogs.length > 0) addAuditLogs(importedLogs);
                     alert({
-                        title: "Import Success",
-                        message: `Successfully imported ${importedMembers.length} members.`,
+                        title: t.members.importSuccessTitle,
+                        message: t.members.importSuccessDesc.replace('{0}', importedMembers.length.toString()),
                         variant: 'danger'
                     });
                 } else {
                     alert({
-                        title: "Import Failed",
-                        message: "No valid member data found in the Excel file.",
+                        title: t.members.importFailedTitle,
+                        message: t.members.importFailedDesc,
                         variant: 'danger'
                     });
                 }
             } catch (error) {
                 console.error("Excel Import Error:", error);
                 alert({
-                    title: "Import Error",
-                    message: "Failed to process Excel file. Please ensure it is a valid format.",
+                    title: t.members.importErrorTitle,
+                    message: t.members.importErrorDesc,
                     variant: 'danger'
                 });
             }
@@ -325,14 +325,14 @@ export default function MembersPage() {
         if (!currentUser || adminPassword !== currentUser.password) {
             alert({
                 title: t.members.incorrectPassword,
-                message: "Password verification failed.",
+                message: t.members.passwordFailed,
                 variant: 'danger'
             });
             return;
         }
 
         const ok = await confirm({
-            title: "Confirm Mass Deletion",
+            title: t.members.deleteMassConfirm,
             message: t.members.massDeleteConfirm.replace('{0}', selectedIds.length.toString()),
             variant: 'danger'
         });
@@ -343,8 +343,8 @@ export default function MembersPage() {
             setIsPasswordModalOpen(false);
             setAdminPassword('');
             alert({
-                title: "Success",
-                message: `${selectedIds.length} members deleted.`,
+                title: t.common.success,
+                message: t.members.deleteAllSuccess.replace('{0}', selectedIds.length.toString()),
                 variant: 'danger'
             });
         }
@@ -374,7 +374,7 @@ export default function MembersPage() {
         setNewBulkDivision('');
         setSelectedIds([]);
         alert({
-            title: "Success",
+            title: t.common.success,
             message: t.members.divisionChanged.replace('{0}', selectedIds.length.toString()),
             variant: 'info'
         });
@@ -397,7 +397,7 @@ export default function MembersPage() {
         setIsEditModalOpen(false);
         setEditingMember(null);
         alert({
-            title: "Success",
+            title: t.common.success,
             message: t.members.editSuccess,
             variant: 'success'
         });
@@ -406,7 +406,7 @@ export default function MembersPage() {
     const handleDelete = async (id: string) => {
         const ok = await confirm({
             title: t.members.deleteConfirm,
-            message: "This action will permanently delete the member.",
+            message: t.members.permDeleteConfirm,
             variant: 'danger',
             confirmLabel: t.common.delete,
             cancelLabel: t.common.cancel
@@ -426,12 +426,12 @@ export default function MembersPage() {
         try {
             const logs = auditLogs.filter(log => log.memberId === member.id);
             const exportData = logs.map(log => {
-                let actionText = log.action === 'CREATE' ? (log.points > 0 ? 'Pencapaian' : 'Pelanggaran') : t.members.reverted;
+                let actionText = log.action === 'CREATE' ? (log.points > 0 ? t.sidebar.achievement : t.sidebar.violation) : t.members.reverted;
                 let detailsText = log.details;
 
                 if (log.action === 'UPDATE') {
                     if (log.details.startsWith('[Peringatan]')) {
-                        actionText = 'Peringatan';
+                        actionText = t.sidebar.warning;
                         detailsText = log.details.replace('[Peringatan]', '').trim();
                     } else {
                         actionText = t.sidebar.appeals;
@@ -454,15 +454,15 @@ export default function MembersPage() {
             XLSX.writeFile(wb, `History_${member.name}_${new Date().toISOString().split('T')[0]}.xlsx`);
 
             alert({
-                title: "Export Berhasil",
-                message: `Rekapan poin untuk ${member.name} telah diunduh.`,
+                title: t.members.reportExportSuccessTitle,
+                message: t.members.reportExportSuccessDesc.replace('{0}', member.name),
                 variant: 'success'
             });
         } catch (error) {
             console.error("Export member history error:", error);
             alert({
-                title: "Export Gagal",
-                message: "Gagal mengunduh rekapan poin.",
+                title: t.members.reportExportErrorTitle,
+                message: t.members.reportExportErrorDesc,
                 variant: 'danger'
             });
         }
@@ -582,12 +582,12 @@ export default function MembersPage() {
                                     ],
                                 }),
                                 ...logs.map(log => {
-                                    let actionText = log.action === 'CREATE' ? (log.points > 0 ? 'Pencapaian' : 'Pelanggaran') : t.members.reverted;
+                                    let actionText = log.action === 'CREATE' ? (log.points > 0 ? t.sidebar.achievement : t.sidebar.violation) : t.members.reverted;
                                     let detailsText = log.details;
 
                                     if (log.action === 'UPDATE') {
                                         if (log.details.startsWith('[Peringatan]')) {
-                                            actionText = 'Peringatan';
+                                            actionText = t.sidebar.warning;
                                             detailsText = log.details.replace('[Peringatan]', '').trim();
                                         } else {
                                             actionText = t.sidebar.appeals;
@@ -653,15 +653,15 @@ export default function MembersPage() {
             saveAs(blob, `Report_${member.name}_${new Date().toISOString().split('T')[0]}.docx`);
 
             alert({
-                title: "Export Berhasil",
-                message: `Laporan Word untuk ${member.name} telah diunduh.`,
+                title: t.members.wordExportSuccessTitle,
+                message: t.members.wordExportSuccessDesc.replace('{0}', member.name),
                 variant: 'success'
             });
         } catch (error) {
             console.error("Export Word error:", error);
             alert({
-                title: "Export Gagal",
-                message: "Gagal mengunduh laporan Word.",
+                title: t.members.wordExportErrorTitle,
+                message: t.members.wordExportErrorDesc,
                 variant: 'danger'
             });
         }
@@ -1233,7 +1233,7 @@ export default function MembersPage() {
                                                         ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
                                                         : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'var(--color-warning)' : 'var(--color-primary)') : 'var(--color-text-secondary)'),
                                                 }}>
-                                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'Peringatan' : t.sidebar.appeals) : t.members.reverted)}
+                                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? t.sidebar.warning : t.sidebar.appeals) : t.members.reverted)}
                                                 </span>
                                                 <span style={{
                                                     fontSize: '1rem',

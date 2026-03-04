@@ -110,7 +110,7 @@ function MemberHistoryContent({ memberLogs, t, users, onViewImage }: { memberLog
                                         ? (isPositivePoints ? 'var(--color-success)' : 'var(--color-danger)')
                                         : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'var(--color-warning)' : 'var(--color-primary)') : 'var(--color-text-secondary)'),
                                 }}>
-                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? 'Peringatan' : t.sidebar.appeals) : t.members.reverted)}
+                                    {isCreate ? t.members.added : (log.action === 'UPDATE' ? (log.details.startsWith('[Peringatan]') ? t.rules.warningDefault : t.sidebar.appeals) : t.members.reverted)}
                                 </span>
                                 <span style={{
                                     fontSize: '1rem',
@@ -220,7 +220,7 @@ export default function TransactionsPage() {
             setEvidence(compressed);
         } catch (err) {
             console.error(err);
-            alert({ title: "Error", message: "Failed to process image.", variant: 'danger' });
+            alert({ title: t.common.error, message: t.transactions.processImageError, variant: 'danger' });
         } finally {
             setIsCompressing(false);
         }
@@ -234,8 +234,8 @@ export default function TransactionsPage() {
     const handleRuleSelect = async (rule: Rule) => {
         if (!selectedMember || !currentUser) {
             alert({
-                title: "Error",
-                message: "Please login first.",
+                title: t.common.error,
+                message: t.transactions.loginRequired,
                 variant: 'info'
             });
             return;
@@ -251,8 +251,8 @@ export default function TransactionsPage() {
 
             if (hasTxToday) {
                 alert({
-                    title: t.transactions.dailyLimitTitle || "Batas Harian Tercapai",
-                    message: (t.transactions.dailyLimitMessage || "Aturan '{0}' hanya bisa dicatat maksimal sekali sehari untuk anggota ini.").replace('{0}', rule.description),
+                    title: t.transactions.dailyLimitTitle,
+                    message: t.transactions.dailyLimitMessage.replace('{0}', rule.description),
                     variant: 'warning'
                 });
                 return;
@@ -286,7 +286,7 @@ export default function TransactionsPage() {
     const handleDelete = async (txId: string) => {
         const ok = await confirm({
             title: t.transactions.deleteConfirm,
-            message: "This action cannot be undone.",
+            message: t.transactions.actionCannotBeUndone,
             variant: 'danger',
             confirmLabel: t.common.delete,
             cancelLabel: t.common.cancel
@@ -366,7 +366,7 @@ export default function TransactionsPage() {
                         </div>
                     ))}
                     {filteredMembers.length === 0 && (
-                        <div className={styles.emptyState}>No members found</div>
+                        <div className={styles.emptyState}>{t.transactions.noMembersFound}</div>
                     )}
                 </div>
             </div>
@@ -416,7 +416,7 @@ export default function TransactionsPage() {
                                         </div>
                                     </div>
                                     <div className={styles.historyDesc}>
-                                        {log.action === 'DELETE' ? 'Reverted' : log.details}
+                                        {log.action === 'DELETE' ? t.transactions.reverted : log.details}
                                         {log.evidence && (
                                             <div style={{ marginTop: '4px' }}>
                                                 <img

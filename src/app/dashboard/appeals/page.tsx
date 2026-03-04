@@ -35,7 +35,7 @@ export default function AppealsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedAppeal, setSelectedAppeal] = useState<any>(null);
 
-    if (!isLoaded) return <div className={styles.loading}>Loading...</div>;
+    if (!isLoaded) return <div className={styles.loading}>{t.common.loading}</div>;
 
     const filteredAppeals = (appeals || [])
         .filter(a => filter === 'ALL' ? true : a.status === filter)
@@ -74,7 +74,7 @@ export default function AppealsPage() {
                     <FaGavel className={styles.headerIcon} />
                     <div>
                         <h1>{t.transactions.appeals}</h1>
-                        <p>{t.sidebar.appeals} Management</p>
+                        <p>{t.sidebar.appealsManagement}</p>
                     </div>
                 </div>
             </header>
@@ -84,7 +84,7 @@ export default function AppealsPage() {
                     <FaSearch />
                     <input
                         type="text"
-                        placeholder="Search by member name..."
+                        placeholder={t.sidebar.searchMemberPlaceholder}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
@@ -95,7 +95,7 @@ export default function AppealsPage() {
                         size="sm"
                         onClick={() => setFilter('ALL')}
                     >
-                        All
+                        {t.sidebar.allFilter}
                     </Button>
                     <Button
                         variant={filter === 'PENDING' ? 'primary' : 'secondary'}
@@ -140,7 +140,7 @@ export default function AppealsPage() {
                                         </div>
                                     </div>
                                     <div className={`${styles.statusBadge} ${styles[appeal.status.toLowerCase()]}`}>
-                                        {appeal.status}
+                                        {appeal.status === 'PENDING' ? t.transactions.pending : appeal.status === 'APPROVED' ? t.transactions.approved : t.transactions.rejected}
                                     </div>
                                 </div>
 
@@ -166,7 +166,7 @@ export default function AppealsPage() {
 
                                     {log && (
                                         <div className={styles.transactionPreview}>
-                                            <span className={styles.txLabel}>Contested Transaction:</span>
+                                            <span className={styles.txLabel}>{t.sidebar.contestedTransaction}</span>
                                             <div className={styles.txInfo}>
                                                 <span className={styles.txDetails}>{log.details}</span>
                                                 <span className={`${styles.txPoints} ${log.points >= 0 ? styles.positive : styles.negative}`}>
@@ -201,7 +201,7 @@ export default function AppealsPage() {
                 ) : (
                     <div className={styles.emptyState}>
                         <FaShieldAlt size={48} />
-                        <p>No appeals found for this filter.</p>
+                        <p>{t.sidebar.noAppealsFound}</p>
                     </div>
                 )}
             </div>
@@ -209,13 +209,13 @@ export default function AppealsPage() {
             <Modal
                 isOpen={!!selectedAppeal}
                 onClose={() => setSelectedAppeal(null)}
-                title="Bukti Banding"
+                title={t.dashboard.appealEvidence}
             >
                 {selectedAppeal && (
                     <div className={styles.evidenceModalContent}>
                         <img src={selectedAppeal.evidence} alt="Full Bukti" className={styles.evidenceFullImg} />
                         <Button variant="secondary" onClick={() => setSelectedAppeal(null)} className="w-full">
-                            Tutup
+                            {t.dashboard.close}
                         </Button>
                     </div>
                 )}

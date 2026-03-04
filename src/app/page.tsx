@@ -422,7 +422,7 @@ function LandingContent() {
             <div className={styles.mobileMenuActions}>
               <Button variant="ghost" className={styles.langBtn} onClick={toggleLanguage}>
                 <Languages size={18} />
-                {t.common?.language || 'Language'}: {language.toUpperCase()}
+                {language === 'id' ? 'Bahasa' : 'Language'}: {language.toUpperCase()}
               </Button>
               <Button variant="ghost" className={styles.langBtn} onClick={toggleTheme}>
                 {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}

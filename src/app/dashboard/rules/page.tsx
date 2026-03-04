@@ -56,8 +56,8 @@ export default function RulesPage() {
 
     const handleBulkDelete = async () => {
         const ok = await confirm({
-            title: `Hapus ${selectedRuleIds.length} Aturan`,
-            message: "Apakah Anda yakin ingin menghapus semua aturan yang dipilih? Tindakan ini tidak dapat dibatalkan.",
+            title: t.rules.deleteMassConfirm.replace('{0}', selectedRuleIds.length.toString()),
+            message: t.rules.deleteMassMessage,
             variant: 'danger',
             confirmLabel: t.common.delete,
             cancelLabel: t.common.cancel
@@ -67,8 +67,8 @@ export default function RulesPage() {
             deleteRules(selectedRuleIds);
             setSelectedRuleIds([]);
             alert({
-                title: "Berhasil",
-                message: `${selectedRuleIds.length} aturan telah dihapus.`,
+                title: t.common.success,
+                message: t.rules.deleteAllSuccess.replace('{0}', selectedRuleIds.length.toString()),
                 variant: 'success'
             });
         }
@@ -94,7 +94,7 @@ export default function RulesPage() {
     const handleDeleteRule = async (id: string) => {
         const ok = await confirm({
             title: t.rules.deleteConfirm,
-            message: "This action will permanently delete this rule and cannot be undone.",
+            message: t.rules.deleteWarningMessage,
             variant: 'danger',
             confirmLabel: t.common.delete,
             cancelLabel: t.common.cancel
@@ -111,9 +111,9 @@ export default function RulesPage() {
 
         addWarningRule({
             id: generateId('WRN'),
-            name: newWarning.action || 'Peringatan',
+            name: newWarning.action || t.rules.warningDefault,
             threshold: thresholdNum,
-            message: newWarning.action || 'Peringatan',
+            message: newWarning.action || t.rules.warningDefault,
             action: newWarning.action,
             textColor: newWarning.textColor,
             backgroundColor: newWarning.backgroundColor,
@@ -133,8 +133,8 @@ export default function RulesPage() {
 
     const handleDeleteWarning = async (id: string) => {
         const ok = await confirm({
-            title: "Delete Warning Rule",
-            message: "This will delete the warning configuration.",
+            title: t.rules.deleteWarningRuleTitle,
+            message: t.rules.deleteWarningRuleMessage,
             variant: 'danger'
         });
 
@@ -210,7 +210,7 @@ export default function RulesPage() {
                 if (importedRules.length > 0) {
                     addRules(importedRules);
                     alert({
-                        title: "Import Success",
+                        title: t.rules.importSuccessTitle,
                         message: t.rules.importRulesSuccess.replace('{0}', importedRules.length.toString()),
                         variant: 'success'
                     });
@@ -218,8 +218,8 @@ export default function RulesPage() {
             } catch (error) {
                 console.error(error);
                 alert({
-                    title: "Import Error",
-                    message: "Failed to process Excel file.",
+                    title: t.rules.importErrorTitle,
+                    message: t.rules.importErrorDesc,
                     variant: 'danger'
                 });
             }
@@ -261,7 +261,7 @@ export default function RulesPage() {
                     }}
                 >
                     <FaExclamationTriangle size={14} />
-                    Warning Thresholds
+                    {t.rules.warningThresholds}
                 </button>
             </div>
 
@@ -509,14 +509,14 @@ export default function RulesPage() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
                         <div>
-                            <CardTitle>Warning Thresholds</CardTitle>
+                            <CardTitle>{t.rules.warningThresholds}</CardTitle>
                             <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                                Configure automatic alerts when a member's points drop below a certain value.
+                                {t.rules.warningThresholdsDesc}
                             </p>
                         </div>
                         {isAdmin && (
                             <Button onClick={() => setIsWarningModalOpen(true)}>
-                                <FaPlus /> Add Threshold
+                                <FaPlus /> {t.rules.addThreshold}
                             </Button>
                         )}
                     </CardHeader>
@@ -524,9 +524,9 @@ export default function RulesPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Threshold</TableHead>
-                                    <TableHead>Action</TableHead>
-                                    <TableHead>Alert Preview</TableHead>
+                                    <TableHead>{t.rules.threshold}</TableHead>
+                                    <TableHead>{t.rules.actionDetails}</TableHead>
+                                    <TableHead>{t.rules.alertPreview}</TableHead>
                                     {isAdmin && <TableHead>{t.common.actions}</TableHead>}
                                 </TableRow>
                             </TableHeader>
@@ -560,7 +560,7 @@ export default function RulesPage() {
                                 {warningRules.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={5} style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>
-                                            No warning thresholds configured.
+                                            {t.rules.noThresholds}
                                         </TableCell>
                                     </TableRow>
                                 )}
@@ -604,7 +604,7 @@ export default function RulesPage() {
                         />
                         {t.rules.oncePerDay || "Maks. Sekali Sehari"}
                         <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '0.25rem' }}>
-                            (Mencegah input berulang di hari yang sama)
+                            {t.rules.preventDuplicateDesc}
                         </span>
                     </label>
                 </div>
@@ -614,7 +614,7 @@ export default function RulesPage() {
             <Modal
                 isOpen={isWarningModalOpen}
                 onClose={() => setIsWarningModalOpen(false)}
-                title="Add Warning Threshold"
+                title={t.rules.addWarningThreshold}
                 footer={
                     <>
                         <Button variant="secondary" onClick={() => setIsWarningModalOpen(false)}>{t.common.cancel}</Button>
@@ -624,13 +624,13 @@ export default function RulesPage() {
             >
                 <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
                     <Input
-                        label="Action Required"
-                        placeholder="e.g. Surat Peringatan 1"
+                        label={t.rules.actionRequiredLabel}
+                        placeholder={t.rules.actionRequiredPlaceholder}
                         value={newWarning.action}
                         onChange={(e) => setNewWarning({ ...newWarning, action: e.target.value })}
                     />
                     <Input
-                        label="Point Threshold (Less than or equal to)"
+                        label={t.rules.pointThresholdLabel}
                         type="number"
                         placeholder="e.g. 75"
                         value={newWarning.threshold}
@@ -639,7 +639,7 @@ export default function RulesPage() {
 
 
                     <div>
-                        <label className="text-sm font-medium mb-2 block">Alert Color Style</label>
+                        <label className="text-sm font-medium mb-2 block">{t.rules.alertColorStyle}</label>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             {[
                                 { bg: '#fee2e2', text: '#ef4444', label: 'Red' },

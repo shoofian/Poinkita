@@ -246,7 +246,7 @@ export default function DashboardPage() {
         <div className={styles.container}>
             <div className={styles.header}>
                 <h1 className={styles.pageTitle}>{t.dashboard.overview}</h1>
-                <p className={styles.pageSubtitle}>Pantau kinerja dan aktivitas anggota secara real-time.</p>
+                <p className={styles.pageSubtitle}>{t.dashboard.subtitle}</p>
             </div>
 
             <div className={styles.bentoGrid}>
@@ -277,12 +277,12 @@ export default function DashboardPage() {
                             </div>
                             <span className={`${styles.statTrend} ${activeToday > 0 ? styles.trendUp : styles.trendDown}`}>
                                 {activeToday > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                                {activeToday} Aktivitas
+                                {activeToday} {t.dashboard.activityCount}
                             </span>
                         </div>
                         <div className={styles.statMeta}>
                             <div className={styles.statValue}>{activeToday}</div>
-                            <div className={styles.statLabel}>Aktivitas Hari Ini</div>
+                            <div className={styles.statLabel}>{t.dashboard.activityToday}</div>
                         </div>
                     </div>
                 </div>
@@ -296,11 +296,11 @@ export default function DashboardPage() {
                                     <AlertTriangle size={24} />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <h2 className={styles.chartTitle} style={{ color: 'var(--color-danger)', marginBottom: '0.25rem' }}>Perlu Perhatian ({membersWithWarnings.length})</h2>
-                                    <p className={styles.chartDesc} style={{ margin: 0, color: 'var(--color-text)' }}>Anggota berikut telah mencapai batas peringatan poin.{isAdmin ? ' Klik card untuk mencatat konfirmasi tindakan.' : ''}</p>
+                                    <h2 className={styles.chartTitle} style={{ color: 'var(--color-danger)', marginBottom: '0.25rem' }}>{t.dashboard.needsAttention.replace('{0}', membersWithWarnings.length.toString())}</h2>
+                                    <p className={styles.chartDesc} style={{ margin: 0, color: 'var(--color-text)' }}>{t.dashboard.warningDesc}{isAdmin ? t.dashboard.warningAdminNote : ''}</p>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin', width: '100%' }}>
+                            <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin', width: '100%', minWidth: 0 }}>
                                 {membersWithWarnings.map(({ member, warnings }) => (
                                     <div
                                         key={member.id}
@@ -324,7 +324,7 @@ export default function DashboardPage() {
                                             setWarningActionImage(null);
                                             setIsActionModalOpen(true);
                                         }}
-                                        title={isAdmin ? "Klik untuk konfirmasi tindakan" : "Hanya Admin yang dapat mengonfirmasi"}
+                                        title={isAdmin ? t.dashboard.confirmActionTooltip : t.dashboard.adminOnlyTooltip}
                                         onMouseOver={(e) => {
                                             if (!isAdmin) return;
                                             e.currentTarget.style.transform = 'translateY(-3px)';
@@ -344,7 +344,7 @@ export default function DashboardPage() {
                                             </div>
                                         </div>
                                         <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>{member.division}</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-danger)', margin: '0.5rem 0' }}>{member.totalPoints} <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Poin</span></div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-danger)', margin: '0.5rem 0' }}>{member.totalPoints} <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{t.dashboard.pointsLabel}</span></div>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: 'auto' }}>
                                             {warnings.map(w => (
                                                 <span key={w.id} style={{
@@ -376,14 +376,14 @@ export default function DashboardPage() {
                                     <Scale size={24} />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <h2 className={styles.chartTitle} style={{ color: 'var(--color-primary)', marginBottom: '0.25rem' }}>Banding Baru ({pendingAppeals.length})</h2>
-                                    <p className={styles.chartDesc} style={{ margin: 0, color: 'var(--color-text)' }}>Beberapa anggota mengajukan banding atas transaksi poin mereka.</p>
+                                    <h2 className={styles.chartTitle} style={{ color: 'var(--color-primary)', marginBottom: '0.25rem' }}>{t.dashboard.appealAlertTitle.replace('{0}', pendingAppeals.length.toString())}</h2>
+                                    <p className={styles.chartDesc} style={{ margin: 0, color: 'var(--color-text)' }}>{t.dashboard.appealAlertDesc}</p>
                                 </div>
                                 <Link href="/dashboard/appeals" className={styles.filterBtnActive} style={{ padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', fontSize: '0.875rem' }}>
-                                    Kelola Semua
+                                    {t.dashboard.manageAll}
                                 </Link>
                             </div>
-                            <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin', width: '100%' }}>
+                            <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'thin', width: '100%', minWidth: 0 }}>
                                 {pendingAppeals.map((appeal) => {
                                     const member = members.find(m => m.id === appeal.memberId);
                                     return (
@@ -400,7 +400,7 @@ export default function DashboardPage() {
                                         }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                                 <div>
-                                                    <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)' }}>{member?.name || 'Anggota'}</div>
+                                                    <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)' }}>{member?.name || t.sidebar.members}</div>
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{new Date(appeal.timestamp).toLocaleString()}</div>
                                                 </div>
                                                 <div style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)', fontSize: '0.7rem', fontWeight: 700, padding: '0.25rem 0.5rem', borderRadius: '999px' }}>
@@ -427,8 +427,8 @@ export default function DashboardPage() {
                 )}
                 <div className={`${styles.bentoItem} ${styles.span8} ${styles.row2}`}>
                     <div className={styles.chartCard}>
-                        <h2 className={styles.chartTitle}>Tren Aktivitas Mingguan</h2>
-                        <p className={styles.chartDesc}>Jumlah pencatatan poin selama 7 hari terakhir.</p>
+                        <h2 className={styles.chartTitle}>{t.dashboard.weeklyTrend}</h2>
+                        <p className={styles.chartDesc}>{t.dashboard.weeklyTrendDesc}</p>
                         <div className={styles.chartContainer}>
                             {isMounted ? (
                                 <ResponsiveContainer width="100%" height="100%" debounce={100}>
@@ -456,7 +456,7 @@ export default function DashboardPage() {
                                     </AreaChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className={styles.loadingPlaceholder}>Memuat grafik...</div>
+                                <div className={styles.loadingPlaceholder}>{t.dashboard.loadingChart}</div>
                             )}
                         </div>
                     </div>
@@ -466,7 +466,7 @@ export default function DashboardPage() {
                 <div className={`${styles.bentoItem} ${styles.span4} ${styles.row2}`}>
                     <div className={styles.chartCard}>
                         <h2 className={styles.chartTitle}>{t.dashboard.recentActivity}</h2>
-                        <p className={styles.chartDesc}>Riwayat perubahan poin terbaru.</p>
+                        <p className={styles.chartDesc}>{t.dashboard.recentPointChanges}</p>
                         <div className={styles.activityList}>
                             {auditLogs.slice(0, 5).map((log, i) => {
                                 const member = members.find(m => m.id === log.memberId);
@@ -521,7 +521,7 @@ export default function DashboardPage() {
                 {/* Chart: Distribution (Small) */}
                 <div className={`${styles.bentoItem} ${styles.span4}`}>
                     <div className={styles.chartCard}>
-                        <h2 className={styles.chartTitle}>Distribusi Poin</h2>
+                        <h2 className={styles.chartTitle}>{t.dashboard.pointDistribution}</h2>
                         <div className={styles.chartContainer} style={{ minHeight: '180px' }}>
                             {isMounted ? (
                                 <ResponsiveContainer width="100%" height="100%" debounce={100}>
@@ -556,8 +556,8 @@ export default function DashboardPage() {
                 {/* Chart: Active Contributors (Small) */}
                 <div className={`${styles.bentoItem} ${styles.span4}`}>
                     <div className={styles.chartCard}>
-                        <h2 className={styles.chartTitle}>Kontributor Teraktif</h2>
-                        <p className={styles.chartDesc}>Admin/Petugas dengan jumlah aksi terbanyak.</p>
+                        <h2 className={styles.chartTitle}>{t.dashboard.topContributors}</h2>
+                        <p className={styles.chartDesc}>{t.dashboard.topContributorsDesc}</p>
                         <div className={styles.chartContainer} style={{ minHeight: '180px' }}>
                             {isMounted ? (
                                 <ResponsiveContainer width="100%" height="100%" debounce={100}>
@@ -594,7 +594,7 @@ export default function DashboardPage() {
                 <div className={`${styles.bentoItem} ${styles.span6}`}>
                     <div className={styles.chartCard} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white', border: 'none' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                            <h2 className={styles.chartTitle} style={{ color: 'white' }}>10 Poin Tertinggi</h2>
+                            <h2 className={styles.chartTitle} style={{ color: 'white' }}>{t.dashboard.top10High}</h2>
                             <Trophy size={24} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -614,7 +614,7 @@ export default function DashboardPage() {
                                     <span style={{ fontWeight: 800, background: 'rgba(255,255,255,0.2)', padding: '0.125rem 0.5rem', borderRadius: '4px' }}>{m.totalPoints}</span>
                                 </div>
                             ))}
-                            {top10High.length === 0 && <div style={{ fontSize: '0.875rem', opacity: 0.7, textAlign: 'center', padding: '1rem' }}>Belum ada data.</div>}
+                            {top10High.length === 0 && <div style={{ fontSize: '0.875rem', opacity: 0.7, textAlign: 'center', padding: '1rem' }}>{t.dashboard.noData}</div>}
                         </div>
                     </div>
                 </div>
@@ -623,7 +623,7 @@ export default function DashboardPage() {
                 <div className={`${styles.bentoItem} ${styles.span6}`}>
                     <div className={styles.chartCard} style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: 'white', border: 'none' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                            <h2 className={styles.chartTitle} style={{ color: 'white' }}>10 Poin Terendah</h2>
+                            <h2 className={styles.chartTitle} style={{ color: 'white' }}>{t.dashboard.top10Low}</h2>
                             <TrendingDown size={24} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -643,7 +643,7 @@ export default function DashboardPage() {
                                     <span style={{ fontWeight: 800, background: 'rgba(255,255,255,0.2)', padding: '0.125rem 0.5rem', borderRadius: '4px' }}>{m.totalPoints}</span>
                                 </div>
                             ))}
-                            {top10Low.length === 0 && <div style={{ fontSize: '0.875rem', opacity: 0.7, textAlign: 'center', padding: '1rem' }}>Belum ada data.</div>}
+                            {top10Low.length === 0 && <div style={{ fontSize: '0.875rem', opacity: 0.7, textAlign: 'center', padding: '1rem' }}>{t.dashboard.noData}</div>}
                         </div>
                     </div>
                 </div>
@@ -651,10 +651,10 @@ export default function DashboardPage() {
                 {/* --- New Ranking Charts Section --- */}
                 <div className={`${styles.bentoItem} ${styles.span12}`}>
                     <div className={styles.chartCard}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.5rem' }}>
                             <div>
-                                <h2 className={styles.chartTitle}>Frekuensi Jenis Poin</h2>
-                                <p className={styles.chartDesc}>Kategori pencatatan yang paling sering muncul berdasarkan periode.</p>
+                                <h2 className={styles.chartTitle}>{t.dashboard.pointFrequency}</h2>
+                                <p className={styles.chartDesc}>{t.dashboard.pointFrequencyDesc}</p>
                             </div>
                             <div className={styles.filterGroup}>
                                 {(['day', 'week', 'month', 'year'] as const).map((f) => (
@@ -663,7 +663,7 @@ export default function DashboardPage() {
                                         onClick={() => setRankFilter(f)}
                                         className={`${styles.filterBtn} ${rankFilter === f ? styles.filterBtnActive : ''}`}
                                     >
-                                        {f === 'day' ? 'Hari' : f === 'week' ? 'Minggu' : f === 'month' ? 'Bulan' : 'Tahun'}
+                                        {f === 'day' ? t.dashboard.filterDay : f === 'week' ? t.dashboard.filterWeek : f === 'month' ? t.dashboard.filterMonth : t.dashboard.filterYear}
                                     </button>
                                 ))}
                             </div>
@@ -685,11 +685,11 @@ export default function DashboardPage() {
                             };
 
                             return (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '2.5rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(350px, 100%), 1fr))', gap: '2rem' }}>
                                     {/* Achievement Chart */}
                                     <div>
                                         <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-success)' }}>
-                                            <Trophy size={18} /> Kategori Pencapaian
+                                            <Trophy size={18} /> {t.dashboard.achievementCategory}
                                         </h3>
                                         <div style={{ height: '300px' }}>
                                             {!isMounted ? (
@@ -712,7 +712,7 @@ export default function DashboardPage() {
                                                             cursor={{ fill: 'rgba(16, 185, 129, 0.05)' }}
                                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', background: 'var(--color-surface)', color: 'var(--color-text)' }}
                                                         />
-                                                        <Bar dataKey="count" name="Frekuensi" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24}>
+                                                        <Bar dataKey="count" name={t.transactions.pts} fill="#10b981" radius={[0, 4, 4, 0]} barSize={24}>
                                                             {achievementTypeRank.map((_, index) => (
                                                                 <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
                                                             ))}
@@ -721,7 +721,7 @@ export default function DashboardPage() {
                                                 </ResponsiveContainer>
                                             ) : (
                                                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
-                                                    Tidak ada data pencapaian
+                                                    {t.dashboard.noAchievementData}
                                                 </div>
                                             )}
                                         </div>
@@ -730,12 +730,12 @@ export default function DashboardPage() {
                                     {/* Violation Chart */}
                                     <div>
                                         <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-danger)' }}>
-                                            <AlertTriangle size={18} /> Kategori Pelanggaran
+                                            <AlertTriangle size={18} /> {t.dashboard.violationCategory}
                                         </h3>
                                         <div style={{ height: '300px' }}>
                                             {!isMounted ? (
                                                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
-                                                    Memuat...
+                                                    {t.dashboard.loading}
                                                 </div>
                                             ) : violationTypeRank.length > 0 ? (
                                                 <ResponsiveContainer width="100%" height="100%" debounce={100}>
@@ -753,7 +753,7 @@ export default function DashboardPage() {
                                                             cursor={{ fill: 'rgba(239, 68, 68, 0.05)' }}
                                                             contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: 'var(--shadow-lg)', background: 'var(--color-surface)', color: 'var(--color-text)' }}
                                                         />
-                                                        <Bar dataKey="count" name="Frekuensi" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={24}>
+                                                        <Bar dataKey="count" name={t.transactions.pts} fill="#ef4444" radius={[0, 4, 4, 0]} barSize={24}>
                                                             {violationTypeRank.map((_, index) => (
                                                                 <Cell key={`cell-${index}`} fillOpacity={1 - (index * 0.15)} />
                                                             ))}
@@ -762,7 +762,7 @@ export default function DashboardPage() {
                                                 </ResponsiveContainer>
                                             ) : (
                                                 <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', background: 'var(--color-bg-alt)', borderRadius: '12px' }}>
-                                                    Tidak ada data pelanggaran
+                                                    {t.dashboard.noViolationData}
                                                 </div>
                                             )}
                                         </div>
@@ -783,11 +783,11 @@ export default function DashboardPage() {
                     setWarningActionNote('');
                     setWarningActionImage(null);
                 }}
-                title="Konfirmasi Tindakan"
+                title={t.dashboard.confirmAction}
                 footer={
                     <>
-                        <Button variant="secondary" onClick={() => setIsActionModalOpen(false)}>Batal</Button>
-                        <Button onClick={handleConfirmWarning}>Simpan Konfirmasi</Button>
+                        <Button variant="secondary" onClick={() => setIsActionModalOpen(false)}>{t.common.cancel}</Button>
+                        <Button onClick={handleConfirmWarning}>{t.dashboard.saveConfirmation}</Button>
                     </>
                 }
             >
@@ -802,13 +802,13 @@ export default function DashboardPage() {
 
                         return (
                             <div style={{ padding: '1rem', background: 'var(--color-bg-alt)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
-                                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text)' }}>Riwayat Tindakan Sebelumnya</h4>
+                                <h4 style={{ margin: '0 0 1rem 0', fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text)' }}>{t.dashboard.previousActions}</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '180px', overflowY: 'auto', paddingRight: '0.5rem' }}>
                                     {history.map((log, i) => (
                                         <div key={log.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', paddingBottom: i !== history.length - 1 ? '1rem' : '0', borderBottom: i !== history.length - 1 ? '1px dashed var(--color-border)' : 'none' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                 <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-primary)' }}>{new Date(log.timestamp).toLocaleString()}</span>
-                                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>Oleh: {users.find(u => u.id === log.contributorId)?.name || 'Admin'}</span>
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{t.dashboard.byLabel} {users.find(u => u.id === log.contributorId)?.name || 'Admin'}</span>
                                             </div>
                                             <div style={{ fontSize: '0.85rem', color: 'var(--color-text)' }}>{log.details.replace('[Peringatan] ', '')}</div>
                                             {log.evidence && (
@@ -823,13 +823,13 @@ export default function DashboardPage() {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: 'var(--color-warning-light)', color: 'var(--color-warning)', borderRadius: '12px', fontSize: '0.875rem', fontWeight: 500 }}>
                         <MessageSquare size={20} />
-                        <p style={{ margin: 0 }}>Catat konfirmasi tindak lanjut baru untuk <strong>{selectedMemberForWarning?.name}</strong>.</p>
+                        <p style={{ margin: 0 }}>{t.dashboard.recordAction} <strong>{selectedMemberForWarning?.name}</strong>.</p>
                     </div>
 
                     <textarea
                         value={warningActionNote}
                         onChange={(e) => setWarningActionNote(e.target.value)}
-                        placeholder="Detail tindakan (opsional)..."
+                        placeholder={t.dashboard.actionDetail}
                         style={{
                             width: '100%',
                             padding: '1rem',
@@ -846,7 +846,7 @@ export default function DashboardPage() {
 
                     <div>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.75rem' }}>
-                            <ImageIcon size={16} /> Bukti Gambar (Opsional)
+                            <ImageIcon size={16} /> {t.dashboard.photoEvidence}
                         </label>
                         <div style={{ position: 'relative' }}>
                             <input
@@ -864,7 +864,7 @@ export default function DashboardPage() {
                                     color: 'var(--color-primary)', background: 'var(--color-primary-light)'
                                 }}>
                                     <Loader2 size={24} style={{ animation: 'spin 1.5s linear infinite' }} />
-                                    <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Memproses gambar...</span>
+                                    <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{t.dashboard.processingImage}</span>
                                 </div>
                             ) : warningActionImage ? (
                                 <div style={{ position: 'relative', width: '100%', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
@@ -905,7 +905,7 @@ export default function DashboardPage() {
                                     }}
                                 >
                                     <Camera size={28} />
-                                    <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Ambil Foto atau Pilih File</span>
+                                    <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{t.transactions.uploadLabel}</span>
                                 </label>
                             )}
                         </div>
