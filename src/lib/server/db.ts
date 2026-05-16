@@ -98,12 +98,6 @@ export const getStoreData = async (): Promise<StoreData> => {
 export const saveStoreData = async (data: StoreData): Promise<void> => {
     if (!supabase) return;
 
-    // We can't easily "upsert all" efficiently in one go without potential conflicts
-    // or massive payload issues.
-    // However, for this architecture (Client Syncs State), we accept the overwrite/sync model
-    // but try to be smart using upsert.
-
-    // Note: This is "Heavy" for a real production app but fine for the requested scale.
     try {
         await Promise.all([
             supabase.from('members').upsert(data.members),
@@ -113,11 +107,40 @@ export const saveStoreData = async (data: StoreData): Promise<void> => {
             supabase.from('auditLogs').upsert(data.auditLogs),
             supabase.from('archives').upsert(data.archives.map(a => ({
                 ...a,
-                memberSnapshots: a.memberSnapshots // Supabase handles JSONB
+                memberSnapshots: a.memberSnapshots
             }))),
             supabase.from('users').upsert(data.users),
             supabase.from('appeals').upsert(data.appeals)
         ]);
+
+        const deleteMissing = async (table: string, items: any[]) => {
+            const currentIds = items.map(x => x.id);
+            const { data: existingData } = await supabase!.from(table).select('id');
+            if (!existingData) return;
+
+            const existingIds = existingData.map(d => d.id);
+            const missingIds = existingIds.filter(id => !currentIds.includes(id));
+
+            if (missingIds.length > 0) {
+                const chunkSize = 100;
+                for (let i = 0; i < missingIds.length; i += chunkSize) {
+                    const chunk = missingIds.slice(i, i + chunkSize);
+                    await supabase!.from(table).delete().in('id', chunk);
+                }
+            }
+        };
+
+        await Promise.all([
+            deleteMissing('members', data.members),
+            deleteMissing('rules', data.rules),
+            deleteMissing('warningRules', data.warningRules),
+            deleteMissing('transactions', data.transactions),
+            deleteMissing('auditLogs', data.auditLogs),
+            deleteMissing('archives', data.archives),
+            deleteMissing('users', data.users),
+            deleteMissing('appeals', data.appeals)
+        ]);
+
     } catch (error) {
         console.error('Error saving data to Supabase:', error);
     }

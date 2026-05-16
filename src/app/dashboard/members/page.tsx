@@ -21,7 +21,7 @@ export default function MembersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [divisionFilter, setDivisionFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newMember, setNewMember] = useState({ name: '', division: '', initialPoints: '' });
+    const [newMember, setNewMember] = useState({ name: '', division: '', birthDate: '', initialPoints: '' });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Sorting state
@@ -47,7 +47,7 @@ export default function MembersPage() {
     // Edit member state
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editingMember, setEditingMember] = useState<Member | null>(null);
-    const [editData, setEditData] = useState({ name: '', division: '' });
+    const [editData, setEditData] = useState({ name: '', division: '', birthDate: '' });
 
     // Archive state
     const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
@@ -100,7 +100,7 @@ export default function MembersPage() {
     };
 
     const handleAddMember = () => {
-        if (!newMember.name || !newMember.division) return;
+        if (!newMember.name || !newMember.division || !newMember.birthDate) return;
 
         const memberId = generateId('MEM');
         const points = Number(newMember.initialPoints) || 0;
@@ -109,6 +109,7 @@ export default function MembersPage() {
             id: memberId,
             name: newMember.name,
             division: newMember.division,
+            birthDate: newMember.birthDate,
             totalPoints: points,
             adminId: '' // Will be set by context
         } as Member);
@@ -129,7 +130,7 @@ export default function MembersPage() {
         }
 
         setIsModalOpen(false);
-        setNewMember({ name: '', division: '', initialPoints: '' });
+        setNewMember({ name: '', division: '', birthDate: '', initialPoints: '' });
     };
 
     const handleExportData = () => {
@@ -244,10 +245,29 @@ export default function MembersPage() {
                         id = `${prefixMem}${currentMaxSeq.toString().padStart(3, '0')}`;
                     }
 
+                    // Format Date Helper (supports YYYY-MM-DD and DD-MM-YYYY)
+                    const processBirthDate = (raw: any) => {
+                        if (!raw) return '2000-01-01';
+                        const str = String(raw).trim();
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+                        if (/^\d{2}-\d{2}-\d{4}$/.test(str)) {
+                            const [d, m, y] = str.split('-');
+                            return `${y}-${m}-${d}`;
+                        }
+                        try {
+                            const d = new Date(raw);
+                            if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+                        } catch { }
+                        return '2000-01-01';
+                    };
+
+                    const rawDate = row.BirthDate || row.TanggalLahir || row['TanggalLahir (YYYY-MM-DD)'] || row['Tanggal Lahir (YYYY-MM-DD)'] || row['TanggalLahir (DD-MM-YYYY)'] || row['Tanggal Lahir (DD-MM-YYYY)'];
+
                     importedMembers.push({
                         id,
                         name,
                         division: division || 'General',
+                        birthDate: processBirthDate(rawDate),
                         totalPoints: points,
                         adminId: '' // Will be set by context
                     } as Member);
@@ -304,8 +324,8 @@ export default function MembersPage() {
 
     const downloadExcelTemplate = () => {
         const templateData = [
-            { ID: "", Nama: "Contoh Siswa 1", Divisi: "Kelas 10A", "Poin Awal": 100 },
-            { ID: "M-EXAMPLE-01", Nama: "Contoh Siswa 2", Divisi: "Kelas 11B", "Poin Awal": 0 },
+            { ID: "", Nama: "Contoh Siswa 1", Divisi: "Kelas 10A", "TanggalLahir (YYYY-MM-DD)": "2005-08-15", "Poin Awal": 100 },
+            { ID: "M-EXAMPLE-01", Nama: "Contoh Siswa 2", Divisi: "Kelas 11B", "TanggalLahir (YYYY-MM-DD)": "2006-01-20", "Poin Awal": 0 }
         ];
 
         const ws = XLSX.utils.json_to_sheet(templateData);
@@ -382,16 +402,17 @@ export default function MembersPage() {
 
     const handleOpenEdit = (member: Member) => {
         setEditingMember(member);
-        setEditData({ name: member.name, division: member.division });
+        setEditData({ name: member.name, division: member.division, birthDate: member.birthDate || '' });
         setIsEditModalOpen(true);
     };
 
     const handleEditMember = () => {
-        if (!editingMember || !editData.name || !editData.division) return;
+        if (!editingMember || !editData.name || !editData.division || !editData.birthDate) return;
 
         updateMembers([editingMember.id], {
             name: editData.name,
-            division: editData.division
+            division: editData.division,
+            birthDate: editData.birthDate
         });
 
         setIsEditModalOpen(false);
@@ -934,6 +955,11 @@ export default function MembersPage() {
                                         {t.members.division} {getSortIcon('division')}
                                     </div>
                                 </TableHead>
+                                <TableHead onClick={() => requestSort('birthDate')} style={{ cursor: 'pointer', userSelect: 'none' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        {t.landing?.birthDate || 'Tanggal Lahir'} {getSortIcon('birthDate' as any)}
+                                    </div>
+                                </TableHead>
                                 <TableHead onClick={() => requestSort('totalPoints')} style={{ cursor: 'pointer', userSelect: 'none' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {t.members.points} {getSortIcon('totalPoints')}
@@ -971,6 +997,7 @@ export default function MembersPage() {
                                         </span>
                                     </TableCell>
                                     <TableCell>{member.division}</TableCell>
+                                    <TableCell>{member.birthDate}</TableCell>
                                     <TableCell style={{ fontWeight: 600, color: member.totalPoints >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
                                         {member.totalPoints}
                                         {warningRules.some(w => member.totalPoints <= w.threshold) && (
@@ -1077,6 +1104,13 @@ export default function MembersPage() {
                         onChange={(e) => setNewMember({ ...newMember, division: e.target.value })}
                     />
                     <Input
+                        type="date"
+                        label={t.landing?.birthDate || 'Tanggal Lahir'}
+                        required
+                        value={newMember.birthDate}
+                        onChange={(e) => setNewMember({ ...newMember, birthDate: e.target.value })}
+                    />
+                    <Input
                         label={t.members.initialPoints}
                         placeholder="0"
                         value={newMember.initialPoints}
@@ -1131,6 +1165,13 @@ export default function MembersPage() {
                         label={t.members.division}
                         value={editData.division}
                         onChange={(e) => setEditData({ ...editData, division: e.target.value })}
+                    />
+                    <Input
+                        type="date"
+                        label={t.landing?.birthDate || 'Tanggal Lahir'}
+                        required
+                        value={editData.birthDate}
+                        onChange={(e) => setEditData({ ...editData, birthDate: e.target.value })}
                     />
                 </div>
             </Modal>

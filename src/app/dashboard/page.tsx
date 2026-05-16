@@ -725,6 +725,28 @@ export default function DashboardPage() {
                                                 </div>
                                             )}
                                         </div>
+                                        {achievementTypeRank.length > 0 && (
+                                            <div style={{ marginTop: '1.5rem', background: 'var(--color-bg-subtle)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                                                    <thead>
+                                                        <tr style={{ background: 'var(--color-bg-alt)', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '40px' }}>#</th>
+                                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600 }}>{t.dashboard.achievementCategory}</th>
+                                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600 }}>Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {achievementTypeRank.map((item, idx) => (
+                                                            <tr key={idx} style={{ borderBottom: idx < achievementTypeRank.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+                                                                <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--color-success)' }}>{idx + 1}</td>
+                                                                <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text)' }}>{item.name}</td>
+                                                                <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600 }}>{item.count}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Violation Chart */}
@@ -766,6 +788,28 @@ export default function DashboardPage() {
                                                 </div>
                                             )}
                                         </div>
+                                        {violationTypeRank.length > 0 && (
+                                            <div style={{ marginTop: '1.5rem', background: 'var(--color-bg-subtle)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                                                    <thead>
+                                                        <tr style={{ background: 'var(--color-bg-alt)', borderBottom: '1px solid var(--color-border)', color: 'var(--color-text-muted)' }}>
+                                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, width: '40px' }}>#</th>
+                                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600 }}>{t.dashboard.violationCategory}</th>
+                                                            <th style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600 }}>Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {violationTypeRank.map((item, idx) => (
+                                                            <tr key={idx} style={{ borderBottom: idx < violationTypeRank.length - 1 ? '1px solid var(--color-border)' : 'none' }}>
+                                                                <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--color-danger)' }}>{idx + 1}</td>
+                                                                <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text)' }}>{item.name}</td>
+                                                                <td style={{ padding: '0.75rem 1rem', textAlign: 'right', fontWeight: 600 }}>{item.count}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );

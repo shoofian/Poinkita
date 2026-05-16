@@ -45,7 +45,7 @@ interface StoreContextType {
     deleteAppeal: (id: string) => void;
     updateMembers: (ids: string[], updates: Partial<Member>) => void;
     generateId: (prefix: 'USR' | 'MEM' | 'RUL' | 'TX' | 'ACT' | 'ARC' | 'WRN' | 'APL', type?: 'ACH' | 'VIO') => string;
-    lookupMemberPublic: (id: string, division: string) => Member | null;
+    lookupMemberPublic: (id: string, birthDate: string) => Member | null;
     lookupUser: (id: string) => User | undefined;
     lookupLogsPublic: (memberId: string) => AuditLog[];
     lookupAppealsPublic: (memberId: string) => Appeal[];
@@ -132,6 +132,13 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     });
 
                 dataToUse.users = migratedUsers;
+
+                // Migration: give old members a default birthDate
+                const migratedMembers = (dataToUse.members || []).map((m: Member) => {
+                    if (m.birthDate) return m;
+                    return { ...m, birthDate: '2000-01-01' };
+                });
+                dataToUse.members = migratedMembers;
 
                 if (shoudMigrate) {
                     console.log('Pushing Migration Data to Server...');
@@ -510,12 +517,12 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setAppeals(prev => prev.filter(a => a.id !== id));
     };
 
-    const lookupMemberPublic = (id: string, division: string): Member | null => {
+    const lookupMemberPublic = (id: string, birthDate: string): Member | null => {
         const searchId = id.trim().toLowerCase();
-        const searchDivision = division.trim().toLowerCase();
+        const searchDate = birthDate.trim();
         return members.find(m =>
             m.id.toLowerCase() === searchId &&
-            m.division.toLowerCase() === searchDivision
+            m.birthDate === searchDate
         ) || null;
     };
 

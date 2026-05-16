@@ -20,6 +20,19 @@
     align-items: center;
 }
 
+.logoWrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logoIcon {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 6px;
+}
+
 .logoText {
     font-size: 22px;
     font-weight: 700;

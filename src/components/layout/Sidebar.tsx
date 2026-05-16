@@ -46,7 +46,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     return (
         <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
             <div className={styles.logo}>
-                <span className={styles.logoText}>Poinkita</span>
+                <div className={styles.logoWrapper}>
+                    <span className={styles.logoText}>Poinkita</span>
+                </div>
                 <button className={styles.closeBtn} onClick={onClose}>
                     <FaTimes />
                 </button>

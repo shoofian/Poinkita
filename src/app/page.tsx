@@ -86,7 +86,7 @@ function LandingContent() {
 
   // Point Checker State
   const [checkId, setCheckId] = useState('');
-  const [checkDivision, setCheckDivision] = useState('');
+  const [checkBirthDate, setCheckBirthDate] = useState('');
   const [checkResult, setCheckResult] = useState<any | null>(null);
   const [checkError, setCheckError] = useState(false);
   const [memberLogs, setMemberLogs] = useState<any[]>([]);
@@ -167,7 +167,7 @@ function LandingContent() {
   // Refresh check results if appeals or logs change to show new statuses
   useEffect(() => {
     if (checkResult) {
-      const updatedMember = lookupMemberPublic(checkId, checkDivision);
+      const updatedMember = lookupMemberPublic(checkId, checkBirthDate);
       if (updatedMember) {
         setCheckResult(updatedMember);
         const logs = lookupLogsPublic(updatedMember.id);
@@ -317,7 +317,7 @@ function LandingContent() {
 
   const handleCheckPoints = (e: React.FormEvent) => {
     e.preventDefault();
-    const member = lookupMemberPublic(checkId, checkDivision);
+    const member = lookupMemberPublic(checkId, checkBirthDate);
     if (member) {
       setCheckResult(member);
       setCheckError(false);
@@ -379,7 +379,9 @@ function LandingContent() {
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 100, damping: 20 }}
       >
-        <div className={styles.navLogo}>Poinkita</div>
+        <div className={styles.navLogo}>
+          Poinkita
+        </div>
         <div className={styles.navActions}>
           <Button variant="ghost" className={styles.langBtn} onClick={toggleLanguage}>
             <Languages size={18} />
@@ -414,7 +416,9 @@ function LandingContent() {
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
           >
             <div className={styles.mobileMenuHeader}>
-              <div className={styles.navLogo}>Poinkita</div>
+              <div className={styles.navLogo}>
+                Poinkita
+              </div>
               <button className={styles.mobileMenuBtn} onClick={() => setIsMobileMenuOpen(false)}>
                 <X size={24} />
               </button>
@@ -552,11 +556,11 @@ function LandingContent() {
               icon={<ShieldCheck size={18} />}
             />
             <Input
-              label={t.landing.division}
-              placeholder="e.g. Class 10A"
+              type="date"
+              label={t.landing.birthDate || 'Tanggal Lahir'}
               required
-              value={checkDivision}
-              onChange={(e) => setCheckDivision(e.target.value)}
+              value={checkBirthDate}
+              onChange={(e) => setCheckBirthDate(e.target.value)}
               icon={<Users size={18} />}
             />
             <Button type="submit" variant="primary" className="w-full">

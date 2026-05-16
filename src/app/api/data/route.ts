@@ -19,7 +19,7 @@ function isValidHexColor(value: any): boolean {
 }
 function validateMembers(members: any[]): string | null {
     for (const m of members) {
-        if (!isNonEmptyString(m.id) || !isNonEmptyString(m.name) || !isNonEmptyString(m.division) || !isNumber(m.totalPoints) || !isNonEmptyString(m.adminId)) {
+        if (!isNonEmptyString(m.id) || !isNonEmptyString(m.name) || !isNonEmptyString(m.division) || !isNonEmptyString(m.birthDate) || !isNumber(m.totalPoints) || !isNonEmptyString(m.adminId)) {
             return 'Invalid member object';
         }
     }
