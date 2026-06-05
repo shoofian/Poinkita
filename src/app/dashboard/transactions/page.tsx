@@ -573,7 +573,16 @@ export default function TransactionsPage() {
                                 </div>
                             ))}
                             {filteredRules.length === 0 && (
-                                <div className={styles.emptyState}>{t.rules.noRules}</div>
+                                <div className={styles.emptyState}>
+                                    <div style={{ marginBottom: rules.length === 0 ? '1rem' : '0' }}>{t.rules.noRules}</div>
+                                    {rules.length === 0 && (
+                                        <Link href="/dashboard/rules" onClick={() => setIsModalOpen(false)}>
+                                            <Button variant="primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <FaPlus size={12} /> Tambah Aturan
+                                            </Button>
+                                        </Link>
+                                    )}
+                                </div>
                             )}
                         </div>
                         <div className={styles.modalFooter} style={{ padding: '1rem 1.5rem 1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
