@@ -29,7 +29,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         { label: t.sidebar.rules, href: '/dashboard/rules', icon: FaUserCog },
         { label: t.sidebar.archive, href: '/dashboard/archive', icon: FaArchive },
         { label: t.sidebar.appeals, href: '/dashboard/appeals', icon: FaGavel },
-        { label: t.sidebar.upgrade, href: '/dashboard/upgrade', icon: FaArrowCircleUp },
+        // { label: t.sidebar.upgrade, href: '/dashboard/upgrade', icon: FaArrowCircleUp },
     ];
 
     const MENU_ITEMS = allMenuItems;

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { Modal } from '@/components/ui/Modal';
@@ -369,7 +370,16 @@ export default function TransactionsPage() {
                         </div>
                     ))}
                     {filteredMembers.length === 0 && (
-                        <div className={styles.emptyState}>{t.transactions.noMembersFound}</div>
+                        <div className={styles.emptyState}>
+                            <div style={{ marginBottom: members.length === 0 ? '1rem' : '0' }}>{t.transactions.noMembersFound}</div>
+                            {members.length === 0 && (
+                                <Link href="/dashboard/members">
+                                    <Button variant="primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <FaPlus size={12} /> Tambah Anggota
+                                    </Button>
+                                </Link>
+                            )}
+                        </div>
                     )}
                 </div>
             </div>
