@@ -185,11 +185,14 @@ export default function TransactionsPage() {
         m.id.toLowerCase().includes(memberSearch.toLowerCase())
     );
 
-    const filteredRules = rules.filter(r =>
-        (selectedType ? r.type === selectedType : true) &&
-        (r.description.toLowerCase().includes(ruleSearch.toLowerCase()) ||
-            r.id.toLowerCase().includes(ruleSearch.toLowerCase()))
-    );
+    const searchTerms = ruleSearch.toLowerCase().split(/\s+/).filter(Boolean);
+    const filteredRules = rules.filter(r => {
+        if (selectedType && r.type !== selectedType) return false;
+        if (searchTerms.length === 0) return true;
+        const desc = r.description.toLowerCase();
+        const id = r.id.toLowerCase();
+        return searchTerms.every(term => desc.includes(term) || id.includes(term));
+    });
 
     const handleMemberClick = (member: Member) => {
         setSelectedMember(member);
