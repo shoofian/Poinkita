@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/context/LanguageContext';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useDialog } from '@/components/ui/ConfirmDialog';
-import { FaSearch, FaHistory, FaTrash, FaPlus, FaMinus, FaCamera, FaTimes, FaImage } from 'react-icons/fa';
+import { FaSearch, FaHistory, FaTrash, FaPlus, FaMinus, FaCamera, FaTimes, FaImage, FaSpinner } from 'react-icons/fa';
 import { Member, Rule } from '@/lib/store';
 import styles from './page.module.css';
 
@@ -541,7 +541,7 @@ export default function TransactionsPage() {
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isCompressing}
                                 >
-                                    <FaCamera /> {isCompressing ? t.transactions.compressing : t.transactions.addEvidence}
+                                    {isCompressing ? <FaSpinner className="animate-spin" /> : <FaCamera />} {isCompressing ? t.transactions.compressing : t.transactions.addEvidence}
                                 </button>
 
                                 {evidence && (

@@ -1,14 +1,14 @@
 :root {
-  /* Simple, Clean Color Palette */
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-primary-light: #dbeafe;
+  /* Royal Orchid & Mint Breeze Color Palette */
+  --color-primary: #6d28d9;
+  --color-primary-hover: #5b21b6;
+  --color-primary-light: #f5f3ff;
 
-  --color-success: #10b981;
-  --color-success-light: #d1fae5;
-  --color-danger: #ef4444;
-  --color-danger-light: #fee2e2;
-  --color-warning: #f59e0b;
+  --color-success: #059669;
+  --color-success-light: #ecfdf5;
+  --color-danger: #db2777;
+  --color-danger-light: #fdf2f8;
+  --color-warning: #ea580c;
 
   /* Neutrals - Clean and Professional */
   --color-white: #ffffff;
@@ -76,16 +76,16 @@
 }
 
 [data-theme='dark'] {
-  /* Simple, Clean Color Palette - Dark Mode Adjustments */
-  --color-primary: #60a5fa;
-  --color-primary-hover: #3b82f6;
-  --color-primary-light: #1e3a8a;
+  /* Royal Orchid & Mint Breeze Color Palette - Dark Mode Adjustments */
+  --color-primary: #a78bfa;
+  --color-primary-hover: #c4b5fd;
+  --color-primary-light: #2e1065;
 
   --color-success: #34d399;
   --color-success-light: #064e3b;
-  --color-danger: #f87171;
-  --color-danger-light: #7f1d1d;
-  --color-warning: #fbbf24;
+  --color-danger: #f472b6;
+  --color-danger-light: #4c0519;
+  --color-warning: #fb923c;
 
   /* Neutrals - Dark Mode Inverted */
   --color-white: #1f2937;
@@ -103,12 +103,12 @@
   --color-gray-900: #f9fafb;
 
   /* Semantic Colors */
-  --color-background: #0f172a;
-  /* Deep slate for background */
+  --color-background: #0b0f19;
+  /* Deep rich navy-slate for background */
   --color-bg: var(--color-background);
-  --color-surface: #1e293b;
-  /* Slightly lighter slate for cards */
-  --color-border: #334155;
+  --color-surface: #151c2c;
+  /* Premium dark slate for cards */
+  --color-border: #1e293b;
   --color-text: #f1f5f9;
   --color-text-main: #f1f5f9;
   --color-text-secondary: #cbd5e1;
@@ -116,12 +116,12 @@
   --color-text-muted: #94a3b8;
   --color-placeholder: #4b5563;
 
-  --color-bg-card: #1e293b;
-  --color-bg-subtle: #0f172a;
-  --color-bg-hover: #334155;
+  --color-bg-card: #151c2c;
+  --color-bg-subtle: #0b0f19;
+  --color-bg-hover: #1e293b;
 
   --color-success-bg: #064e3b;
-  --color-danger-bg: #7f1d1d;
+  --color-danger-bg: #4c0519;
 
   /* Shadows - Adjusted for dark mode (subtle glow) */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);

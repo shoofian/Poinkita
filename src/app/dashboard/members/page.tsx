@@ -24,6 +24,12 @@ export default function MembersPage() {
     const [newMember, setNewMember] = useState({ name: '', division: '', birthDate: '', initialPoints: '' });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+    // Excel Import Preview state
+    const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
+    const [pendingImportMembers, setPendingImportMembers] = useState<Member[]>([]);
+    const [pendingImportLogs, setPendingImportLogs] = useState<AuditLog[]>([]);
+    const [importItemStatuses, setImportItemStatuses] = useState<Record<string, 'new' | 'auto' | 'exists'>>({});
+
     // Sorting state
     const [sortConfig, setSortConfig] = useState<{ key: keyof Member; direction: 'asc' | 'desc' } | null>({ key: 'name', direction: 'asc' });
 
@@ -205,6 +211,7 @@ export default function MembersPage() {
 
                 const importedMembers: Member[] = [];
                 const importedLogs: AuditLog[] = [];
+                const itemStatuses: Record<string, 'new' | 'auto' | 'exists'> = {};
                 let currentMaxSeq = 0;
                 let currentMaxActSeq = 0;
 
@@ -230,17 +237,18 @@ export default function MembersPage() {
                     const name = row.Name || row.Nama || row.name || row.nama;
                     const division = row.Division || row.Divisi || row.Kelas || row.division || row.divisi || row.kelas;
                     const points = Number(row.Points || row.Poin || row.points || row.poin || row["Poin Awal"] || row["Initial Points"] || 0);
-                    let id = row.ID || row.id || row.Id;
+                    let rawId = row.ID || row.id || row.Id;
+                    let id = rawId;
 
                     if (!name) return; // Skip invalid rows
 
-                    if (!id) {
+                    let status: 'new' | 'auto' | 'exists' = 'new';
+                    if (!rawId) {
+                        status = 'auto';
                         currentMaxSeq++;
                         id = `${prefixMem}${currentMaxSeq.toString().padStart(3, '0')}`;
-                    }
-
-                    // Avoid duplicate IDs within the same import or existing members
-                    if (members.some(m => m.id === id) || importedMembers.some(m => m.id === id)) {
+                    } else if (members.some(m => m.id === rawId) || importedMembers.some(m => m.id === rawId)) {
+                        status = 'exists';
                         currentMaxSeq++;
                         id = `${prefixMem}${currentMaxSeq.toString().padStart(3, '0')}`;
                     }
@@ -272,6 +280,8 @@ export default function MembersPage() {
                         adminId: '' // Will be set by context
                     } as Member);
 
+                    itemStatuses[id] = status;
+
                     if (points !== 0) {
                         currentMaxActSeq++;
                         const typeCode = points > 0 ? 'ACH' : 'VIO';
@@ -289,13 +299,10 @@ export default function MembersPage() {
                 });
 
                 if (importedMembers.length > 0) {
-                    addMembers(importedMembers);
-                    if (importedLogs.length > 0) addAuditLogs(importedLogs);
-                    alert({
-                        title: t.members.importSuccessTitle,
-                        message: t.members.importSuccessDesc.replace('{0}', importedMembers.length.toString()),
-                        variant: 'danger'
-                    });
+                    setPendingImportMembers(importedMembers);
+                    setPendingImportLogs(importedLogs);
+                    setImportItemStatuses(itemStatuses);
+                    setIsImportPreviewOpen(true);
                 } else {
                     alert({
                         title: t.members.importFailedTitle,
@@ -1077,6 +1084,119 @@ export default function MembersPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Excel Import Preview Modal */}
+            <Modal
+                isOpen={isImportPreviewOpen}
+                onClose={() => {
+                    setIsImportPreviewOpen(false);
+                    setPendingImportMembers([]);
+                    setPendingImportLogs([]);
+                }}
+                title={t.members.previewImportTitle || "Pratinjau Impor Data"}
+                maxWidth="900px"
+                footer={
+                    <>
+                        <Button
+                            variant="secondary"
+                            onClick={() => {
+                                setIsImportPreviewOpen(false);
+                                setPendingImportMembers([]);
+                                setPendingImportLogs([]);
+                            }}
+                        >
+                            {t.members.previewImportCancel || "Batal"}
+                        </Button>
+                        <Button
+                            onClick={() => {
+                                if (pendingImportMembers.length > 0) {
+                                    addMembers(pendingImportMembers);
+                                    if (pendingImportLogs.length > 0) addAuditLogs(pendingImportLogs);
+                                    alert({
+                                        title: t.members.importSuccessTitle,
+                                        message: t.members.importSuccessDesc.replace('{0}', pendingImportMembers.length.toString()),
+                                        variant: 'success'
+                                    });
+                                }
+                                setIsImportPreviewOpen(false);
+                                setPendingImportMembers([]);
+                                setPendingImportLogs([]);
+                            }}
+                        >
+                            {t.members.previewImportConfirm || "Konfirmasi & Impor"}
+                        </Button>
+                    </>
+                }
+            >
+                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', maxHeight: '70vh', overflowY: 'auto' }}>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', margin: 0 }}>
+                        {t.members.previewImportDesc || "Silakan periksa data hasil baca Excel di bawah ini sebelum diimpor."}
+                    </p>
+                    <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>{t.members.previewImportId || "ID"}</TableHead>
+                                    <TableHead>{t.members.previewImportName || "Nama"}</TableHead>
+                                    <TableHead>{t.members.previewImportDivision || "Divisi"}</TableHead>
+                                    <TableHead>{t.members.previewImportBirthDate || "Tanggal Lahir"}</TableHead>
+                                    <TableHead>{t.members.previewImportPoints || "Poin Awal"}</TableHead>
+                                    <TableHead>{t.members.previewImportStatus || "Status"}</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {pendingImportMembers.map((m) => {
+                                    const status = importItemStatuses[m.id];
+                                    let badgeColor = 'var(--color-gray-600)';
+                                    let badgeBg = 'var(--color-gray-100)';
+                                    let statusText = '';
+
+                                    if (status === 'new') {
+                                        badgeColor = 'var(--color-success)';
+                                        badgeBg = 'var(--color-success-bg)';
+                                        statusText = t.members.statusNew || 'ID Baru';
+                                    } else if (status === 'auto') {
+                                        badgeColor = 'var(--color-primary)';
+                                        badgeBg = 'var(--color-primary-light)';
+                                        statusText = t.members.statusAuto || 'ID Otomatis';
+                                    } else if (status === 'exists') {
+                                        badgeColor = 'var(--color-warning)';
+                                        badgeBg = 'rgba(245, 158, 11, 0.1)';
+                                        statusText = t.members.statusExists || 'Duplikat (Dibuat Ulang)';
+                                    }
+
+                                    return (
+                                        <TableRow key={m.id}>
+                                            <TableCell style={{ fontFamily: 'monospace', fontSize: '0.8125rem' }}>{m.id}</TableCell>
+                                            <TableCell style={{ fontWeight: 600 }}>{m.name}</TableCell>
+                                            <TableCell>{m.division}</TableCell>
+                                            <TableCell>{m.birthDate}</TableCell>
+                                            <TableCell style={{ fontWeight: 700, color: m.totalPoints >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                                                {m.totalPoints >= 0 ? '+' : ''}{m.totalPoints}
+                                            </TableCell>
+                                            <TableCell>
+                                                <span
+                                                    style={{
+                                                        padding: '0.25rem 0.5rem',
+                                                        borderRadius: 'var(--radius-sm)',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        color: badgeColor,
+                                                        backgroundColor: badgeBg,
+                                                        whiteSpace: 'nowrap'
+                                                    }}
+                                                >
+                                                    {statusText}
+                                                </span>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+            </Modal>
 
             {/* Add Member Modal */}
             <Modal
