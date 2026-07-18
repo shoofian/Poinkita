@@ -169,6 +169,15 @@ export default function TransactionsPage() {
     const [selectedType, setSelectedType] = useState<'ACHIEVEMENT' | 'VIOLATION' | null>(null);
     const [ruleSearch, setRuleSearch] = useState('');
 
+    // Bulk selection state
+    const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+
+    // Touch swipe gesture refs & state
+    const touchStartX = React.useRef<number | null>(null);
+    const touchStartY = React.useRef<number | null>(null);
+    const [swipingMemberId, setSwipingMemberId] = useState<string | null>(null);
+    const [swipeOffset, setSwipeOffset] = useState<number>(0);
+
     // History modal state
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [historyMember, setHistoryMember] = useState<Member | null>(null);
@@ -195,6 +204,77 @@ export default function TransactionsPage() {
         return searchTerms.every(term => desc.includes(term) || id.includes(term));
     });
 
+    const getSmartRecommendations = () => {
+        const frequencies: Record<string, number> = {};
+        transactions.forEach(tx => {
+            if (tx.ruleId) {
+                frequencies[tx.ruleId] = (frequencies[tx.ruleId] || 0) + 1;
+            }
+        });
+        
+        const sortedRuleIds = Object.keys(frequencies).sort((a, b) => frequencies[b] - frequencies[a]);
+        
+        const topRules = sortedRuleIds
+            .map(id => rules.find(r => r.id === id))
+            .filter((r): r is Rule => !!r && (!selectedType || r.type === selectedType))
+            .slice(0, 3);
+            
+        if (topRules.length < 3) {
+            const matchingRules = rules.filter(r => !selectedType || r.type === selectedType);
+            for (const r of matchingRules) {
+                if (topRules.length >= 3) break;
+                if (!topRules.some(tr => tr.id === r.id)) {
+                    topRules.push(r);
+                }
+            }
+        }
+        return topRules;
+    };
+
+    const handleTouchStart = (e: React.TouchEvent, memberId: string) => {
+        touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
+        setSwipingMemberId(memberId);
+        setSwipeOffset(0);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (touchStartX.current === null || touchStartY.current === null) return;
+        const diffX = e.touches[0].clientX - touchStartX.current;
+        const diffY = e.touches[0].clientY - touchStartY.current;
+        
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            const cappedOffset = Math.max(-80, Math.min(80, diffX));
+            setSwipeOffset(cappedOffset);
+        }
+    };
+
+    const handleTouchEnd = (member: Member) => {
+        if (touchStartX.current === null) return;
+        
+        const threshold = 50;
+        if (swipeOffset > threshold) {
+            handleDirectTypeSelect(null as any, member, 'ACHIEVEMENT');
+        } else if (swipeOffset < -threshold) {
+            handleDirectTypeSelect(null as any, member, 'VIOLATION');
+        }
+        
+        touchStartX.current = null;
+        touchStartY.current = null;
+        setSwipingMemberId(null);
+        setSwipeOffset(0);
+    };
+
+    const handleBulkRecordStart = () => {
+        if (selectedMemberIds.length === 0) return;
+        setSelectedMember(null);
+        setStep('TYPE');
+        setSelectedType(null);
+        setRuleSearch('');
+        setEvidence(null);
+        setIsModalOpen(true);
+    };
+
     const handleMemberClick = (member: Member) => {
         setSelectedMember(member);
         setStep('TYPE');
@@ -205,7 +285,7 @@ export default function TransactionsPage() {
     };
 
     const handleDirectTypeSelect = (e: React.MouseEvent, member: Member, type: 'ACHIEVEMENT' | 'VIOLATION') => {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
         setSelectedMember(member);
         setSelectedType(type);
         setStep('RULE');
@@ -236,7 +316,7 @@ export default function TransactionsPage() {
     };
 
     const handleRuleSelect = async (rule: Rule) => {
-        if (!selectedMember || !currentUser) {
+        if (!currentUser) {
             alert({
                 title: t.common.error,
                 message: t.transactions.loginRequired,
@@ -245,43 +325,103 @@ export default function TransactionsPage() {
             return;
         }
 
+        const isBulk = selectedMember === null && selectedMemberIds.length > 0;
+
+        if (!selectedMember && !isBulk) {
+            alert({
+                title: t.common.error,
+                message: "Silakan pilih anggota terlebih dahulu.",
+                variant: 'info'
+            });
+            return;
+        }
+
+        // Daily limit check
         if (rule.oncePerDay) {
             const todayStr = new Date().toLocaleDateString();
 
-            const hasTxToday = transactions.some(tx => {
-                const txDate = new Date(tx.timestamp).toLocaleDateString();
-                return tx.memberId === selectedMember.id && tx.ruleId === rule.id && txDate === todayStr;
-            });
-
-            if (hasTxToday) {
-                alert({
-                    title: t.transactions.dailyLimitTitle,
-                    message: t.transactions.dailyLimitMessage.replace('{0}', rule.description),
-                    variant: 'warning'
+            if (isBulk) {
+                const membersWithTx = selectedMemberIds.filter(mId => {
+                    return transactions.some(tx => {
+                        const txDate = new Date(tx.timestamp).toLocaleDateString();
+                        return tx.memberId === mId && tx.ruleId === rule.id && txDate === todayStr;
+                    });
                 });
-                return;
+
+                if (membersWithTx.length > 0) {
+                    const names = membersWithTx.map(mId => members.find(m => m.id === mId)?.name || mId).join(', ');
+                    alert({
+                        title: t.transactions.dailyLimitTitle,
+                        message: `Anggota berikut sudah menerima aturan "${rule.description}" hari ini: ${names}`,
+                        variant: 'warning'
+                    });
+                    return;
+                }
+            } else if (selectedMember) {
+                const hasTxToday = transactions.some(tx => {
+                    const txDate = new Date(tx.timestamp).toLocaleDateString();
+                    return tx.memberId === selectedMember.id && tx.ruleId === rule.id && txDate === todayStr;
+                });
+
+                if (hasTxToday) {
+                    alert({
+                        title: t.transactions.dailyLimitTitle,
+                        message: t.transactions.dailyLimitMessage.replace('{0}', rule.description),
+                        variant: 'warning'
+                    });
+                    return;
+                }
             }
         }
 
+        const confirmationMsg = isBulk
+            ? `${t.members.added || "Ditambahkan"}: ${rule.description} (${rule.points} pts) untuk ${selectedMemberIds.length} anggota.`
+            : `${t.members.added || "Ditambahkan"}: ${rule.description} (${rule.points} pts) ${t.members.changedBy || "kepada"} ${selectedMember?.name}`;
+
         const ok = await confirm({
             title: t.transactions.confirm,
-            message: `${t.members.added}: ${rule.description} (${rule.points} pts) ${t.members.changedBy} ${selectedMember.name}`,
+            message: confirmationMsg,
             variant: 'warning',
             confirmLabel: t.common.save,
             cancelLabel: t.common.cancel
         });
 
         if (ok) {
-            addTransaction({
-                id: generateId('TX', rule.type === 'ACHIEVEMENT' ? 'ACH' : 'VIO'),
-                memberId: selectedMember.id,
-                contributorId: currentUser.id,
-                ruleId: rule.id,
-                timestamp: new Date().toISOString(),
-                pointsSnapshot: rule.points,
-                adminId: currentUser.adminId || currentUser.id, // Admin Scope Owner
-                evidence: evidence || undefined
-            });
+            if (isBulk) {
+                const baseTxId = generateId('TX', rule.type === 'ACHIEVEMENT' ? 'ACH' : 'VIO');
+                const parts = baseTxId.split('-');
+                const baseSeq = parseInt(parts[parts.length - 1], 10);
+                const prefixWithoutSeq = parts.slice(0, parts.length - 1).join('-');
+
+                selectedMemberIds.forEach((mId, idx) => {
+                    const seq = baseSeq + idx;
+                    const customTxId = `${prefixWithoutSeq}-${seq.toString().padStart(3, '0')}`;
+                    addTransaction({
+                        id: customTxId,
+                        memberId: mId,
+                        contributorId: currentUser.id,
+                        ruleId: rule.id,
+                        timestamp: new Date(Date.now() + idx * 10).toISOString(),
+                        pointsSnapshot: rule.points,
+                        adminId: currentUser.adminId || currentUser.id,
+                        evidence: evidence || undefined
+                    });
+                });
+                
+                setSelectedMemberIds([]); // Clear selection
+            } else if (selectedMember) {
+                addTransaction({
+                    id: generateId('TX', rule.type === 'ACHIEVEMENT' ? 'ACH' : 'VIO'),
+                    memberId: selectedMember.id,
+                    contributorId: currentUser.id,
+                    ruleId: rule.id,
+                    timestamp: new Date().toISOString(),
+                    pointsSnapshot: rule.points,
+                    adminId: currentUser.adminId || currentUser.id,
+                    evidence: evidence || undefined
+                });
+            }
+
             setIsModalOpen(false);
             setEvidence(null);
         }
@@ -317,8 +457,50 @@ export default function TransactionsPage() {
         <div className={styles.container}>
             {/* Left Panel - Member List */}
             <div className={styles.panel}>
+                {selectedMemberIds.length > 0 ? (
+                    <div className={styles.bulkBar}>
+                        <span className={styles.bulkInfo}>
+                            {selectedMemberIds.length} anggota terpilih
+                        </span>
+                        <div className={styles.bulkActions}>
+                            <button className={`${styles.bulkBtn} ${styles.bulkBtnPrimary}`} onClick={handleBulkRecordStart}>
+                                Catat Poin Massal
+                            </button>
+                            <button className={`${styles.bulkBtn} ${styles.bulkBtnSecondary}`} onClick={() => setSelectedMemberIds([])}>
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                ) : null}
                 <div className={styles.panelHeader}>
-                    <h2 className={styles.panelTitle}>{t.transactions.selectMember}</h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h2 className={styles.panelTitle}>{t.transactions.selectMember}</h2>
+                        {filteredMembers.length > 0 && (
+                            <button
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: 'var(--color-primary)',
+                                    fontSize: '0.8125rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => {
+                                    const allIds = filteredMembers.map(m => m.id);
+                                    const allSelected = allIds.every(id => selectedMemberIds.includes(id));
+                                    if (allSelected) {
+                                        setSelectedMemberIds(prev => prev.filter(id => !allIds.includes(id)));
+                                    } else {
+                                        setSelectedMemberIds(prev => Array.from(new Set([...prev, ...allIds])));
+                                    }
+                                }}
+                            >
+                                {filteredMembers.map(m => m.id).every(id => selectedMemberIds.includes(id))
+                                    ? "Batalkan Semua"
+                                    : "Pilih Semua"}
+                            </button>
+                        )}
+                    </div>
                     <div className={styles.searchBox}>
                         <FaSearch className={styles.searchIcon} />
                         <input
@@ -331,44 +513,81 @@ export default function TransactionsPage() {
                     </div>
                 </div>
                 <div className={styles.panelContent}>
-                    {filteredMembers.map(m => (
-                        <div
-                            key={m.id}
-                            className={styles.memberItem}
-                            onClick={() => handleMemberClick(m)}
-                        >
-                            <div className={styles.memberInfo}>
-                                <div className={styles.memberAvatar}>
-                                    {m.name.charAt(0).toUpperCase()}
-                                </div>
-                                <div className={styles.memberText}>
-                                    <div className={styles.memberName}>{m.name}</div>
-                                    <div className={styles.memberMeta}>{m.id} • {m.division}</div>
+                    {filteredMembers.map(m => {
+                        const isSelected = selectedMemberIds.includes(m.id);
+                        const isThisSwiping = swipingMemberId === m.id;
+                        const transformStyle = isThisSwiping ? `translateX(${swipeOffset}px)` : 'none';
+
+                        return (
+                            <div
+                                key={m.id}
+                                className={styles.swipeContainer}
+                                onTouchStart={(e) => handleTouchStart(e, m.id)}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={() => handleTouchEnd(m)}
+                            >
+                                {isThisSwiping && Math.abs(swipeOffset) > 10 && (
+                                    <div className={styles.swipeBg}>
+                                        {swipeOffset > 0 ? (
+                                            <div className={styles.swipeBgLeft}>✅ {t.rules.achievement || "Prestasi"}</div>
+                                        ) : (
+                                            <div className={styles.swipeBgRight}>⚠️ {t.rules.violation || "Pelanggaran"}</div>
+                                        )}
+                                    </div>
+                                )}
+                                <div
+                                    className={`${styles.memberItem} ${isSelected ? styles.memberItemSelected : ''} ${styles.swipeContent}`}
+                                    style={{ transform: transformStyle }}
+                                    onClick={() => handleMemberClick(m)}
+                                >
+                                    <div className={styles.memberInfo}>
+                                        <div className={styles.memberLeftCheckbox} onClick={(e) => e.stopPropagation()}>
+                                            <input
+                                                type="checkbox"
+                                                className={styles.checkbox}
+                                                checked={isSelected}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedMemberIds(prev => [...prev, m.id]);
+                                                    } else {
+                                                        setSelectedMemberIds(prev => prev.filter(id => id !== m.id));
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                        <div className={styles.memberAvatar}>
+                                            {m.name.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className={styles.memberText}>
+                                            <div className={styles.memberName}>{m.name}</div>
+                                            <div className={styles.memberMeta}>{m.id} • {m.division}</div>
+                                        </div>
+                                    </div>
+                                    <div className={styles.memberRight}>
+                                        <div className={`${styles.memberPoints} ${m.totalPoints >= 0 ? styles.pointsPositive : styles.pointsNegative}`}>
+                                            {m.totalPoints} pts
+                                        </div>
+                                        <div className={styles.memberActions}>
+                                            <button
+                                                className={`${styles.quickBtn} ${styles.quickBtnAchievement}`}
+                                                onClick={(e) => handleDirectTypeSelect(e, m, 'ACHIEVEMENT')}
+                                                title={t.rules.achievement}
+                                            >
+                                                <FaPlus size={10} />
+                                            </button>
+                                            <button
+                                                className={`${styles.quickBtn} ${styles.quickBtnViolation}`}
+                                                onClick={(e) => handleDirectTypeSelect(e, m, 'VIOLATION')}
+                                                title={t.rules.violation}
+                                            >
+                                                <FaMinus size={10} />
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div className={styles.memberRight}>
-                                <div className={`${styles.memberPoints} ${m.totalPoints >= 0 ? styles.pointsPositive : styles.pointsNegative}`}>
-                                    {m.totalPoints} pts
-                                </div>
-                                <div className={styles.memberActions}>
-                                    <button
-                                        className={`${styles.quickBtn} ${styles.quickBtnAchievement}`}
-                                        onClick={(e) => handleDirectTypeSelect(e, m, 'ACHIEVEMENT')}
-                                        title={t.rules.achievement}
-                                    >
-                                        <FaPlus size={10} />
-                                    </button>
-                                    <button
-                                        className={`${styles.quickBtn} ${styles.quickBtnViolation}`}
-                                        onClick={(e) => handleDirectTypeSelect(e, m, 'VIOLATION')}
-                                        title={t.rules.violation}
-                                    >
-                                        <FaMinus size={10} />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                     {filteredMembers.length === 0 && (
                         <div className={styles.emptyState}>
                             <div style={{ marginBottom: members.length === 0 ? '1rem' : '0' }}>{t.transactions.noMembersFound}</div>
@@ -461,136 +680,183 @@ export default function TransactionsPage() {
                 </div>
             </div>
 
-            {/* Modal */}
-            <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title={selectedMember ? `${selectedMember.name}` : ''}
-            >
-                {step === 'TYPE' ? (
-                    <>
-                        <div className={styles.modalTypeGrid}>
-                            <div
-                                className={`${styles.typeCard} ${styles.typeCardAchievement}`}
-                                onClick={() => handleTypeSelect('ACHIEVEMENT')}
-                            >
-                                <div className={styles.typeIcon}>✅</div>
-                                <div className={styles.typeLabel}>{t.rules.achievement}</div>
-                            </div>
-                            <div
-                                className={`${styles.typeCard} ${styles.typeCardViolation}`}
-                                onClick={() => handleTypeSelect('VIOLATION')}
-                            >
-                                <div className={styles.typeIcon}>⚠️</div>
-                                <div className={styles.typeLabel}>{t.rules.violation}</div>
-                            </div>
-                        </div>
-
-                        {/* Member History inside modal */}
-                        {selectedMember && (() => {
-                            const selectedMemberLogs = auditLogs.filter(log => log.memberId === selectedMember.id);
-                            return (
-                                <div style={{ borderTop: '1px solid var(--color-border)' }}>
-                                    <div style={{
-                                        padding: '1rem 1.5rem 0.5rem',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        color: 'var(--color-text-light)',
-                                        textTransform: 'uppercase' as const,
-                                        letterSpacing: '0.05em',
-                                    }}>
-                                        {t.members.historyTitle}
+            {/* Slide-over / Modal Panel */}
+            <div className={`${styles.slidePanelWrapper} ${isModalOpen ? styles.slidePanelActive : ''}`}>
+                <div className={styles.slidePanelOverlay} onClick={() => setIsModalOpen(false)} />
+                <div className={styles.slidePanel}>
+                    <div className={styles.slidePanelHeader}>
+                        <h3>
+                            {selectedMember 
+                                ? selectedMember.name 
+                                : selectedMemberIds.length > 0 
+                                    ? `${selectedMemberIds.length} Anggota Terpilih` 
+                                    : "Pencatatan Poin"}
+                        </h3>
+                        <button className={styles.slidePanelClose} onClick={() => setIsModalOpen(false)}>×</button>
+                    </div>
+                    <div className={styles.slidePanelBody}>
+                        {step === 'TYPE' ? (
+                            <>
+                                <div className={styles.modalTypeGrid}>
+                                    <div
+                                        className={`${styles.typeCard} ${styles.typeCardAchievement}`}
+                                        onClick={() => handleTypeSelect('ACHIEVEMENT')}
+                                    >
+                                        <div className={styles.typeIcon}>✅</div>
+                                        <div className={styles.typeLabel}>{t.rules.achievement}</div>
                                     </div>
-                                    <div style={{ padding: '0 1.5rem 1.5rem', maxHeight: '250px', overflowY: 'auto' }}>
-                                        <MemberHistoryContent
-                                            memberLogs={selectedMemberLogs}
-                                            t={t}
-                                            users={users}
-                                            onViewImage={(src) => setZoomImage(src)}
+                                    <div
+                                        className={`${styles.typeCard} ${styles.typeCardViolation}`}
+                                        onClick={() => handleTypeSelect('VIOLATION')}
+                                    >
+                                        <div className={styles.typeIcon}>⚠️</div>
+                                        <div className={styles.typeLabel}>{t.rules.violation}</div>
+                                    </div>
+                                </div>
+
+                                {/* Member History inside panel */}
+                                {selectedMember && (() => {
+                                    const selectedMemberLogs = auditLogs.filter(log => log.memberId === selectedMember.id);
+                                    return (
+                                        <div style={{ borderTop: '1px solid var(--color-border)' }}>
+                                            <div style={{
+                                                padding: '1rem 1.5rem 0.5rem',
+                                                fontSize: '0.85rem',
+                                                fontWeight: 600,
+                                                color: 'var(--color-text-light)',
+                                                textTransform: 'uppercase' as const,
+                                                letterSpacing: '0.05em',
+                                            }}>
+                                                {t.members.historyTitle}
+                                            </div>
+                                            <div style={{ padding: '0 1.5rem 1.5rem', maxHeight: '250px', overflowY: 'auto' }}>
+                                                <MemberHistoryContent
+                                                    memberLogs={selectedMemberLogs}
+                                                    t={t}
+                                                    users={users}
+                                                    onViewImage={(src) => setZoomImage(src)}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </>
+                        ) : (
+                            <>
+                                <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--color-border)' }}>
+                                    <div className={styles.searchBox} style={{ marginTop: 0 }}>
+                                        <FaSearch className={styles.searchIcon} />
+                                        <input
+                                            type="text"
+                                            className={styles.searchInput}
+                                            placeholder={t.transactions.searchRules}
+                                            value={ruleSearch}
+                                            onChange={(e) => setRuleSearch(e.target.value)}
                                         />
                                     </div>
-                                </div>
-                            );
-                        })()}
-                    </>
-                ) : (
-                    <>
-                        <div style={{ padding: '16px 24px', borderBottom: '1px solid #e5e7eb' }}>
-                            <div className={styles.searchBox} style={{ marginTop: 0 }}>
-                                <FaSearch className={styles.searchIcon} />
-                                <input
-                                    type="text"
-                                    className={styles.searchInput}
-                                    placeholder={t.transactions.searchRules}
-                                    value={ruleSearch}
-                                    onChange={(e) => setRuleSearch(e.target.value)}
-                                />
-                            </div>
 
-                            <div className={styles.evidenceSection}>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    hidden
-                                    ref={fileInputRef}
-                                    onChange={handleFileChange}
-                                />
-                                <button
-                                    className={styles.uploadBtn}
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isCompressing}
-                                >
-                                    {isCompressing ? <FaSpinner className="animate-spin" /> : <FaCamera />} {isCompressing ? t.transactions.compressing : t.transactions.addEvidence}
-                                </button>
-
-                                {evidence && (
-                                    <div className={styles.evidencePreview}>
-                                        <img src={evidence} alt="Preview" />
-                                        <button className={styles.removeImg} onClick={() => setEvidence(null)}>
-                                            <FaTimes />
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <div className={styles.rulesList} style={{ padding: '0.5rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {filteredRules.map(r => (
-                                <div
-                                    key={r.id}
-                                    className={styles.ruleItemCard}
-                                    onClick={() => handleRuleSelect(r)}
-                                >
-                                    <div className={styles.ruleHeader}>
-                                        <div className={styles.ruleContent}>
-                                            <span className={styles.ruleCode}>{r.id}</span>
-                                            <div className={styles.ruleName}>{r.description}</div>
-                                        </div>
-                                        <div className={`${styles.ruleBadge} ${r.points > 0 ? styles.pointsPositive : styles.pointsNegative}`}>
-                                            {r.points > 0 ? '+' : ''}{r.points} {t.transactions.pts}
-                                        </div>
+                                    {/* Upload Evidence Dropzone */}
+                                    <div className={styles.evidenceDropzone}>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            capture="environment"
+                                            ref={fileInputRef}
+                                            onChange={handleFileChange}
+                                            style={{ display: 'none' }}
+                                        />
+                                        {evidence ? (
+                                            <div className={styles.dropzonePreview}>
+                                                <img src={evidence} alt="Evidence preview" className={styles.previewImage} />
+                                                <button 
+                                                    className={styles.removeEvidenceBtn}
+                                                    onClick={() => setEvidence(null)}
+                                                    title="Hapus Bukti"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className={styles.dropzonePlaceholder} onClick={() => fileInputRef.current?.click()}>
+                                                {isCompressing ? (
+                                                    <>
+                                                        <FaSpinner className={styles.spinIcon} />
+                                                        <span>{t.transactions.compressing || "Mengompresi..."}</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <FaCamera className={styles.dropzoneIcon} />
+                                                        <span className={styles.dropzoneText}>
+                                                            <strong>Ambil Foto Bukti</strong> atau klik untuk unggah berkas
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            ))}
-                            {filteredRules.length === 0 && (
-                                <div className={styles.emptyState}>
-                                    <div style={{ marginBottom: rules.length === 0 ? '1rem' : '0' }}>{t.rules.noRules}</div>
-                                    {rules.length === 0 && (
-                                        <Link href="/dashboard/rules" onClick={() => setIsModalOpen(false)}>
-                                            <Button variant="primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <FaPlus size={12} /> Tambah Aturan
-                                            </Button>
-                                        </Link>
+
+                                {/* Smart Recommendations Section */}
+                                <div className={styles.recSection}>
+                                    <div className={styles.recTitle}>
+                                        ⭐ Rekomendasi Aturan Pintar
+                                    </div>
+                                    <div className={styles.recGrid}>
+                                        {getSmartRecommendations().map(r => (
+                                            <div
+                                                key={`rec-${r.id}`}
+                                                className={styles.recCard}
+                                                onClick={() => handleRuleSelect(r)}
+                                            >
+                                                <span className={styles.recDesc}>{r.description}</span>
+                                                <span className={`${styles.recPoints} ${r.points > 0 ? styles.pointsPositive : styles.pointsNegative}`}>
+                                                    {r.points > 0 ? '+' : ''}{r.points} pts
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className={styles.rulesList} style={{ padding: '0.5rem 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
+                                    {filteredRules.map(r => (
+                                        <div
+                                            key={r.id}
+                                            className={styles.ruleItemCard}
+                                            onClick={() => handleRuleSelect(r)}
+                                        >
+                                            <div className={styles.ruleHeader}>
+                                                <div className={styles.ruleContent}>
+                                                    <span className={styles.ruleCode}>{r.id}</span>
+                                                    <div className={styles.ruleName}>{r.description}</div>
+                                                </div>
+                                                <div className={`${styles.ruleBadge} ${r.points > 0 ? styles.pointsPositive : styles.pointsNegative}`}>
+                                                    {r.points > 0 ? '+' : ''}{r.points} {t.transactions.pts}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {filteredRules.length === 0 && (
+                                        <div className={styles.emptyState}>
+                                            <div style={{ marginBottom: rules.length === 0 ? '1rem' : '0' }}>{t.rules.noRules}</div>
+                                            {rules.length === 0 && (
+                                                <Link href="/dashboard/rules" onClick={() => setIsModalOpen(false)}>
+                                                    <Button variant="primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <FaPlus size={12} /> Tambah Aturan
+                                                    </Button>
+                                                </Link>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
-                            )}
-                        </div>
-                        <div className={styles.modalFooter} style={{ padding: '1rem 1.5rem 1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-                            <Button variant="secondary" onClick={() => setStep('TYPE')}>← {t.common.back}</Button>
-                            <Button variant="ghost" onClick={() => setIsModalOpen(false)}>{t.common.cancel}</Button>
-                        </div>
-                    </>
-                )}
-            </Modal>
+                                <div className={styles.modalFooter} style={{ padding: '1rem 1.5rem 1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', borderTop: '1px solid var(--color-border)' }}>
+                                    <Button variant="secondary" onClick={() => setStep('TYPE')}>← {t.common.back}</Button>
+                                    <Button variant="ghost" onClick={() => setIsModalOpen(false)}>{t.common.cancel}</Button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
 
             {/* History Modal */}
             <Modal

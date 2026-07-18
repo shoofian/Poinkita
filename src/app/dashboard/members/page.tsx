@@ -21,7 +21,7 @@ export default function MembersPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [divisionFilter, setDivisionFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [newMember, setNewMember] = useState({ name: '', division: '', birthDate: '', initialPoints: '' });
+    const [newMember, setNewMember] = useState({ id: '', name: '', division: '', birthDate: '', initialPoints: '' });
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     // Excel Import Preview state
@@ -108,7 +108,17 @@ export default function MembersPage() {
     const handleAddMember = () => {
         if (!newMember.name || !newMember.division || !newMember.birthDate) return;
 
-        const memberId = generateId('MEM');
+        const customId = newMember.id.trim();
+        if (customId && members.some(m => m.id.toLowerCase() === customId.toLowerCase())) {
+            alert({
+                title: t.common.error,
+                message: "ID Anggota sudah terdaftar. Silakan gunakan ID lain.",
+                variant: 'danger'
+            });
+            return;
+        }
+
+        const memberId = customId || generateId('MEM');
         const points = Number(newMember.initialPoints) || 0;
 
         addMember({
@@ -136,7 +146,7 @@ export default function MembersPage() {
         }
 
         setIsModalOpen(false);
-        setNewMember({ name: '', division: '', birthDate: '', initialPoints: '' });
+        setNewMember({ id: '', name: '', division: '', birthDate: '', initialPoints: '' });
     };
 
     const handleExportData = () => {
@@ -237,17 +247,18 @@ export default function MembersPage() {
                     const name = row.Name || row.Nama || row.name || row.nama;
                     const division = row.Division || row.Divisi || row.Kelas || row.division || row.divisi || row.kelas;
                     const points = Number(row.Points || row.Poin || row.points || row.poin || row["Poin Awal"] || row["Initial Points"] || 0);
-                    let rawId = row.ID || row.id || row.Id;
-                    let id = rawId;
+                    let rawId = (row.ID || row.id || row.Id || '').toString().trim();
+                    const isPlaceholder = rawId.toLowerCase().includes('kosongkan') || rawId.toLowerCase().includes('leave blank');
+                    let id = isPlaceholder ? '' : rawId;
 
                     if (!name) return; // Skip invalid rows
 
                     let status: 'new' | 'auto' | 'exists' = 'new';
-                    if (!rawId) {
+                    if (!id) {
                         status = 'auto';
                         currentMaxSeq++;
                         id = `${prefixMem}${currentMaxSeq.toString().padStart(3, '0')}`;
-                    } else if (members.some(m => m.id === rawId) || importedMembers.some(m => m.id === rawId)) {
+                    } else if (members.some(m => m.id === id) || importedMembers.some(m => m.id === id)) {
                         status = 'exists';
                         currentMaxSeq++;
                         id = `${prefixMem}${currentMaxSeq.toString().padStart(3, '0')}`;
@@ -331,7 +342,7 @@ export default function MembersPage() {
 
     const downloadExcelTemplate = () => {
         const templateData = [
-            { ID: "", Nama: "Contoh Siswa 1", Divisi: "Kelas 10A", "TanggalLahir (YYYY-MM-DD)": "2005-08-15", "Poin Awal": 100 },
+            { ID: "Kosongkan untuk otomatis / Leave blank for auto", Nama: "Contoh Siswa 1", Divisi: "Kelas 10A", "TanggalLahir (YYYY-MM-DD)": "2005-08-15", "Poin Awal": 100 },
             { ID: "M-EXAMPLE-01", Nama: "Contoh Siswa 2", Divisi: "Kelas 11B", "TanggalLahir (YYYY-MM-DD)": "2006-01-20", "Poin Awal": 0 }
         ];
 
@@ -1195,6 +1206,9 @@ export default function MembersPage() {
                             </TableBody>
                         </Table>
                     </div>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+                        *Catatan: Kolom ID yang kosong atau duplikat akan otomatis dibuatkan ID unik baru oleh sistem.
+                    </span>
                 </div>
             </Modal>
 
@@ -1211,6 +1225,17 @@ export default function MembersPage() {
                 }
             >
                 <div className="flex flex-col gap-6" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <Input
+                            label={t.members.previewImportId || "ID Anggota (Opsional)"}
+                            placeholder="e.g. 0109155449"
+                            value={newMember.id}
+                            onChange={(e) => setNewMember({ ...newMember, id: e.target.value })}
+                        />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '-0.25rem' }}>
+                            *Kosongkan jika ingin dibuat otomatis oleh sistem.
+                        </span>
+                    </div>
                     <Input
                         label={t.auth.name}
                         placeholder="e.g. John Doe"
