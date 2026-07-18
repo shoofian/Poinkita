@@ -283,6 +283,60 @@ export default function MembersPage() {
         printWindow.document.close();
     };
 
+    const handleDownloadQR = async () => {
+        if (!qrMember) return;
+        try {
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrMember.id)}`;
+            const response = await fetch(qrUrl);
+            const blob = await response.blob();
+            const blobUrl = window.URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = `QR_${qrMember.id}_${qrMember.name.replace(/\s+/g, '_')}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+        } catch (error) {
+            console.error("Failed to download QR code", error);
+            window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qrMember.id)}`, '_blank');
+        }
+    };
+
+    const handleBulkDownloadQR = async () => {
+        if (selectedIds.length === 0) return;
+        const selectedMembers = members.filter(m => selectedIds.includes(m.id));
+        
+        alert({
+            title: "Mengunduh QR Code",
+            message: `Memulai pengunduhan ${selectedMembers.length} gambar QR Code (Resolusi Tinggi 500x500px). Harap izinkan unduhan massal jika diminta oleh browser Anda.`,
+            variant: 'info'
+        });
+
+        for (const m of selectedMembers) {
+            try {
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(m.id)}`;
+                const response = await fetch(qrUrl);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `QR_${m.id}_${m.name.replace(/\s+/g, '_')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+                
+                // Add a small delay between downloads to prevent browser blocking
+                await new Promise(resolve => setTimeout(resolve, 300));
+            } catch (error) {
+                console.error(`Failed to download QR code for ${m.name}`, error);
+            }
+        }
+    };
+
     const filteredMembers = members.filter(m => {
         const search = searchTerm.toLowerCase().trim();
         const matchesSearch =
@@ -1157,6 +1211,14 @@ export default function MembersPage() {
                                     </Button>
                                     <Button
                                         variant="secondary"
+                                        onClick={handleBulkDownloadQR}
+                                        title="Unduh Gambar QR Terpilih"
+                                        style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    >
+                                        <FaDownload /> Unduh QR ({selectedIds.length})
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
                                         onClick={() => setIsBulkDivisionModalOpen(true)}
                                         style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                     >
@@ -1729,8 +1791,11 @@ export default function MembersPage() {
                 footer={
                     <>
                         <Button variant="secondary" onClick={() => setIsQrModalOpen(false)}>{t.common.cancel}</Button>
-                        <Button onClick={handlePrintQR} variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FaDownload /> Cetak / Unduh Kartu
+                        <Button onClick={handlePrintQR} variant="secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            Cetak Kartu
+                        </Button>
+                        <Button onClick={handleDownloadQR} variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaDownload /> Unduh Gambar QR (PNG)
                         </Button>
                     </>
                 }
