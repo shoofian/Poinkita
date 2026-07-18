@@ -318,11 +318,15 @@ export default function MembersPage() {
                 variant: 'info'
             });
 
+            const divisions = new Set(selectedMembers.map(m => m.division));
+            const useSubfolders = divisions.size > 1;
+
             for (const m of selectedMembers) {
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(m.id)}`;
                 const response = await fetch(qrUrl);
                 const arrayBuffer = await response.arrayBuffer();
-                zip.file(`${m.id}.png`, arrayBuffer);
+                const filePath = useSubfolders ? `${m.division}/${m.id}.png` : `${m.id}.png`;
+                zip.file(filePath, arrayBuffer);
             }
 
             const content = await zip.generateAsync({ type: "blob" });
