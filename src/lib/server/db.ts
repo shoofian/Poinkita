@@ -99,7 +99,7 @@ export const saveStoreData = async (data: StoreData): Promise<void> => {
     if (!supabase) return;
 
     try {
-        await Promise.all([
+        const results = await Promise.all([
             supabase.from('members').upsert(data.members),
             supabase.from('rules').upsert(data.rules),
             supabase.from('warningRules').upsert(data.warningRules),
@@ -113,9 +113,21 @@ export const saveStoreData = async (data: StoreData): Promise<void> => {
             supabase.from('appeals').upsert(data.appeals)
         ]);
 
+        for (let i = 0; i < results.length; i++) {
+            const { error } = results[i];
+            if (error) {
+                console.error(`Supabase upsert failed at index ${i}:`, error);
+                throw new Error(`Database save error: ${error.message}`);
+            }
+        }
+
         const deleteMissing = async (table: string, items: any[]) => {
             const currentIds = items.map(x => x.id);
-            const { data: existingData } = await supabase!.from(table).select('id');
+            const { data: existingData, error } = await supabase!.from(table).select('id');
+            if (error) {
+                console.error(`Select existing IDs failed for ${table}:`, error);
+                throw new Error(`Database select error: ${error.message}`);
+            }
             if (!existingData) return;
 
             const existingIds = existingData.map(d => d.id);
@@ -125,7 +137,11 @@ export const saveStoreData = async (data: StoreData): Promise<void> => {
                 const chunkSize = 100;
                 for (let i = 0; i < missingIds.length; i += chunkSize) {
                     const chunk = missingIds.slice(i, i + chunkSize);
-                    await supabase!.from(table).delete().in('id', chunk);
+                    const { error: delError } = await supabase!.from(table).delete().in('id', chunk);
+                    if (delError) {
+                        console.error(`Delete missing failed for ${table}:`, delError);
+                        throw new Error(`Database delete error: ${delError.message}`);
+                    }
                 }
             }
         };
@@ -143,5 +159,6 @@ export const saveStoreData = async (data: StoreData): Promise<void> => {
 
     } catch (error) {
         console.error('Error saving data to Supabase:', error);
+        throw error;
     }
 };

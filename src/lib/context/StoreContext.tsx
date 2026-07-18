@@ -175,10 +175,9 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     }
                 }
 
+                setIsLoaded(true);
             } catch (error) {
                 console.error('Failed to load store from API:', error);
-            } finally {
-                setIsLoaded(true);
             }
         };
 
