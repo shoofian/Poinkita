@@ -7,7 +7,7 @@ import { useLanguage } from '@/lib/context/LanguageContext';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useDialog } from '@/components/ui/ConfirmDialog';
-import { FaSearch, FaHistory, FaTrash, FaPlus, FaMinus, FaCamera, FaTimes, FaImage, FaSpinner } from 'react-icons/fa';
+import { FaSearch, FaHistory, FaTrash, FaPlus, FaMinus, FaCamera, FaTimes, FaImage, FaSpinner, FaQrcode } from 'react-icons/fa';
 import { Member, Rule } from '@/lib/store';
 import styles from './page.module.css';
 
@@ -189,6 +189,59 @@ export default function TransactionsPage() {
 
     // Image Zoom State
     const [zoomImage, setZoomImage] = useState<string | null>(null);
+
+    // QR Code scanner state & effect
+    const [isScannerOpen, setIsScannerOpen] = useState(false);
+    
+    React.useEffect(() => {
+        if (isScannerOpen) {
+            let html5QrCode: any = null;
+            
+            // html5-qrcode is only required inside useEffect (client-side)
+            const { Html5Qrcode } = require('html5-qrcode');
+            html5QrCode = new Html5Qrcode("reader");
+            
+            const startScan = async () => {
+                try {
+                    await html5QrCode.start(
+                        { facingMode: "environment" },
+                        {
+                            fps: 10,
+                            qrbox: { width: 220, height: 220 }
+                        },
+                        (decodedText: string) => {
+                            const trimmed = decodedText.trim();
+                            const scannedMember = members.find(m => m.id === trimmed);
+                            if (scannedMember) {
+                                handleMemberClick(scannedMember);
+                                html5QrCode.stop().catch((err: any) => console.error(err));
+                                setIsScannerOpen(false);
+                            } else {
+                                alert({
+                                    title: t.common.error,
+                                    message: `Anggota dengan ID "${trimmed}" tidak ditemukan.`,
+                                    variant: 'danger'
+                                });
+                            }
+                        },
+                        () => {
+                            // ignore silent scan errors
+                        }
+                    );
+                } catch (err) {
+                    console.error("Failed to start Html5Qrcode scanner", err);
+                }
+            };
+            
+            startScan();
+            
+            return () => {
+                if (html5QrCode && html5QrCode.isScanning) {
+                    html5QrCode.stop().catch((err: any) => console.error("Failed to stop scanner on clean up", err));
+                }
+            };
+        }
+    }, [isScannerOpen]);
 
     const filteredMembers = members.filter(m =>
         m.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
@@ -501,15 +554,24 @@ export default function TransactionsPage() {
                             </button>
                         )}
                     </div>
-                    <div className={styles.searchBox}>
-                        <FaSearch className={styles.searchIcon} />
-                        <input
-                            type="text"
-                            className={styles.searchInput}
-                            placeholder={t.transactions.searchPlaceholder}
-                            value={memberSearch}
-                            onChange={(e) => setMemberSearch(e.target.value)}
-                        />
+                    <div className={styles.searchRow}>
+                        <div className={styles.searchBox} style={{ flex: 1, marginTop: 0 }}>
+                            <FaSearch className={styles.searchIcon} />
+                            <input
+                                type="text"
+                                className={styles.searchInput}
+                                placeholder={t.transactions.searchPlaceholder}
+                                value={memberSearch}
+                                onChange={(e) => setMemberSearch(e.target.value)}
+                            />
+                        </div>
+                        <button
+                            className={styles.qrScanBtn}
+                            onClick={() => setIsScannerOpen(true)}
+                            title="Pindai Kartu Anggota (QR Code)"
+                        >
+                            <FaQrcode size={18} />
+                        </button>
                     </div>
                 </div>
                 <div className={styles.panelContent}>
@@ -886,6 +948,20 @@ export default function TransactionsPage() {
                         alt="Zoomed evidence"
                         style={{ maxWidth: '100%', borderRadius: '8px', boxShadow: 'var(--shadow-lg)' }}
                     />
+                </div>
+            </Modal>
+
+            {/* QR Scanner Overlay Modal */}
+            <Modal
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                title="Pindai Kartu Anggota (QR Code)"
+            >
+                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                    <div id="reader" style={{ width: '100%', maxWidth: '300px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--color-border)' }}></div>
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', textAlign: 'center', margin: 0 }}>
+                        Sorot Kode QR pada kartu anggota menggunakan kamera belakang perangkat Anda.
+                    </p>
                 </div>
             </Modal>
         </div>
