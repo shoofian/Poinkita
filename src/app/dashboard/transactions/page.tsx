@@ -604,7 +604,7 @@ export default function TransactionsPage() {
             </div>
 
             {/* Right Panel - History */}
-            <div className={styles.panel}>
+            <div className={`${styles.panel} ${isModalOpen ? styles.hideOnDesktop : ''}`}>
                 <div className={styles.panelHeader}>
                     <h2 className={styles.panelTitle}>
                         <FaHistory /> {t.transactions.recent}
