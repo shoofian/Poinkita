@@ -636,8 +636,8 @@ export default function MembersPage() {
 
     const downloadExcelTemplate = () => {
         const templateData = [
-            { ID: "Kosongkan untuk otomatis / Leave blank for auto", Nama: "Contoh Siswa 1", Divisi: "Kelas 10A", "TanggalLahir (YYYY-MM-DD)": "2005-08-15", "Poin Awal": 100 },
-            { ID: "M-EXAMPLE-01", Nama: "Contoh Siswa 2", Divisi: "Kelas 11B", "TanggalLahir (YYYY-MM-DD)": "2006-01-20", "Poin Awal": 0 }
+            { ID: "Kosongkan untuk otomatis / Leave blank for auto", Nama: "Contoh Siswa 1", Divisi: "Divisi A", "TanggalLahir (YYYY-MM-DD)": "2005-08-15", "Poin Awal": 100 },
+            { ID: "M-EXAMPLE-01", Nama: "Contoh Siswa 2", Divisi: "Divisi B", "TanggalLahir (YYYY-MM-DD)": "2006-01-20", "Poin Awal": 0 }
         ];
 
         const ws = XLSX.utils.json_to_sheet(templateData);
@@ -1559,7 +1559,7 @@ export default function MembersPage() {
                     />
                     <Input
                         label={t.members.division}
-                        placeholder="e.g. Staff / Class 12B"
+                        placeholder="e.g. Divisi A / Tim Marketing"
                         value={newMember.division}
                         onChange={(e) => setNewMember({ ...newMember, division: e.target.value })}
                     />
@@ -1649,7 +1649,7 @@ export default function MembersPage() {
                 <div style={{ padding: '1.5rem' }}>
                     <Input
                         label={t.members.selectNewDivision}
-                        placeholder="e.g. Class 11A"
+                        placeholder="e.g. Divisi A"
                         value={newBulkDivision}
                         onChange={(e) => setNewBulkDivision(e.target.value)}
                         autoFocus

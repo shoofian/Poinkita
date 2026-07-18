@@ -107,9 +107,9 @@ export interface WarningRule {
 export const INITIAL_WARNING_RULES: WarningRule[] = [];
 
 export const INITIAL_MEMBERS: Member[] = [
-  { id: 'MEM-20260210-001', name: 'Alice Smith', division: 'Class 10A', birthDate: '2005-01-15', totalPoints: 10, adminId: 'USR-20260210-001' },
-  { id: 'MEM-20260210-002', name: 'Bob Jones', division: 'Class 11B', birthDate: '2004-05-20', totalPoints: -5, adminId: 'USR-20260210-001' },
-  { id: 'MEM-20260210-003', name: 'Charlie Brown', division: 'Class 10A', birthDate: '2005-08-10', totalPoints: 50, adminId: 'USR-20260210-001' },
+  { id: 'MEM-20260210-001', name: 'Alice Smith', division: 'Divisi A', birthDate: '2005-01-15', totalPoints: 10, adminId: 'USR-20260210-001' },
+  { id: 'MEM-20260210-002', name: 'Bob Jones', division: 'Divisi B', birthDate: '2004-05-20', totalPoints: -5, adminId: 'USR-20260210-001' },
+  { id: 'MEM-20260210-003', name: 'Charlie Brown', division: 'Divisi A', birthDate: '2005-08-10', totalPoints: 50, adminId: 'USR-20260210-001' },
 ];
 
 export const INITIAL_RULES: Rule[] = [
