@@ -10,8 +10,7 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useDialog } from '@/components/ui/ConfirmDialog';
 import { Rule, WarningRule } from '@/lib/store';
-import { FaPlus, FaTrash, FaDownload, FaFileExcel, FaExclamationTriangle, FaEllipsisV } from 'react-icons/fa';
-import clsx from 'clsx';
+import { FaPlus, FaTrash, FaDownload, FaFileExcel, FaExclamationTriangle, FaEllipsisV, FaTrophy, FaBan } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 
 export default function RulesPage() {
@@ -38,25 +37,45 @@ export default function RulesPage() {
         backgroundColor: '#ef4444' // Default red
     });
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-    const [selectedRuleIds, setSelectedRuleIds] = useState<string[]>([]);
+    const [selectedAchievementIds, setSelectedAchievementIds] = useState<string[]>([]);
+    const [selectedViolationIds, setSelectedViolationIds] = useState<string[]>([]);
 
-    const toggleSelectAll = () => {
-        if (selectedRuleIds.length === rules.length) {
-            setSelectedRuleIds([]);
+    // Filtered lists
+    const achievementRules = rules.filter(r => r.type === 'ACHIEVEMENT');
+    const violationRules = rules.filter(r => r.type === 'VIOLATION');
+
+    const toggleSelectAll = (type: 'ACHIEVEMENT' | 'VIOLATION') => {
+        if (type === 'ACHIEVEMENT') {
+            if (selectedAchievementIds.length === achievementRules.length) {
+                setSelectedAchievementIds([]);
+            } else {
+                setSelectedAchievementIds(achievementRules.map(r => r.id));
+            }
         } else {
-            setSelectedRuleIds(rules.map(r => r.id));
+            if (selectedViolationIds.length === violationRules.length) {
+                setSelectedViolationIds([]);
+            } else {
+                setSelectedViolationIds(violationRules.map(r => r.id));
+            }
         }
     };
 
-    const toggleSelect = (id: string) => {
-        setSelectedRuleIds(prev =>
-            prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
-        );
+    const toggleSelect = (id: string, type: 'ACHIEVEMENT' | 'VIOLATION') => {
+        if (type === 'ACHIEVEMENT') {
+            setSelectedAchievementIds(prev =>
+                prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+            );
+        } else {
+            setSelectedViolationIds(prev =>
+                prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+            );
+        }
     };
 
-    const handleBulkDelete = async () => {
+    const handleBulkDelete = async (type: 'ACHIEVEMENT' | 'VIOLATION') => {
+        const ids = type === 'ACHIEVEMENT' ? selectedAchievementIds : selectedViolationIds;
         const ok = await confirm({
-            title: t.rules.deleteMassConfirm.replace('{0}', selectedRuleIds.length.toString()),
+            title: t.rules.deleteMassConfirm.replace('{0}', ids.length.toString()),
             message: t.rules.deleteMassMessage,
             variant: 'danger',
             confirmLabel: t.common.delete,
@@ -64,11 +83,15 @@ export default function RulesPage() {
         });
 
         if (ok) {
-            deleteRules(selectedRuleIds);
-            setSelectedRuleIds([]);
+            deleteRules(ids);
+            if (type === 'ACHIEVEMENT') {
+                setSelectedAchievementIds([]);
+            } else {
+                setSelectedViolationIds([]);
+            }
             alert({
                 title: t.common.success,
-                message: t.rules.deleteAllSuccess.replace('{0}', selectedRuleIds.length.toString()),
+                message: t.rules.deleteAllSuccess.replace('{0}', ids.length.toString()),
                 variant: 'success'
             });
         }
@@ -266,26 +289,21 @@ export default function RulesPage() {
             </div>
 
             {activeTab === 'rules' ? (
-                <Card style={{ overflow: 'visible' }}>
-                    <CardHeader style={{
-                        padding: '1.5rem',
-                        display: 'flex',
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        flexWrap: 'wrap',
-                        gap: '1rem'
-                    }}>
-                        <div>
-                            <CardTitle style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0, color: 'var(--color-primary)' }}>
-                                {t.rules.title}
-                            </CardTitle>
-                            <p style={{ margin: '0.25rem 0 0', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                                {rules.length} {t.rules.title.toLowerCase()}
-                            </p>
-                        </div>
-
-                        {isAdmin && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                    {/* Global Actions Bar */}
+                    {isAdmin && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '0.75rem'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <span style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
+                                    {rules.length} {t.rules.title.toLowerCase()}
+                                </span>
+                            </div>
                             <div style={{ display: 'flex', gap: '0.625rem', alignItems: 'center' }}>
                                 <Button onClick={() => setIsRuleModalOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <FaPlus /> {t.rules.addRule}
@@ -375,76 +393,95 @@ export default function RulesPage() {
                                     ref={fileInputRef}
                                     onChange={handleExcelImport}
                                 />
-
-                                {selectedRuleIds.length > 0 && isAdmin && (
-                                    <Button
-                                        variant="danger"
-                                        onClick={handleBulkDelete}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                                    >
-                                        <FaTrash />
-                                        <span style={{ display: 'inline' }}>
-                                            {t.common.delete} ({selectedRuleIds.length})
-                                        </span>
-                                    </Button>
-                                )}
                             </div>
-                        )}
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    {isAdmin && (
-                                        <TableHead style={{ width: '40px' }}>
-                                            <input
-                                                type="checkbox"
-                                                checked={rules.length > 0 && selectedRuleIds.length === rules.length}
-                                                onChange={toggleSelectAll}
-                                                style={{ cursor: 'pointer', width: '16px', height: '16px' }}
-                                            />
-                                        </TableHead>
-                                    )}
-                                    <TableHead>{t.rules.code}</TableHead>
-                                    <TableHead>{t.rules.description}</TableHead>
-                                    <TableHead>{t.rules.type}</TableHead>
-                                    <TableHead>{t.rules.points}</TableHead>
-                                    <TableHead>{t.rules.oncePerDay || "Once per Day"}</TableHead>
-                                    {isAdmin && <TableHead>{t.common.actions}</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {rules.map((rule) => {
-                                    const typeLabel = rule.type === 'ACHIEVEMENT' ? t.rules.achievement : t.rules.violation;
-                                    return (
-                                        <TableRow key={rule.id} style={{ background: selectedRuleIds.includes(rule.id) ? 'var(--color-primary-light)' : 'transparent' }}>
+                        </div>
+                    )}
+
+                    {/* ===== ACHIEVEMENT SECTION ===== */}
+                    <Card style={{ overflow: 'visible' }}>
+                        <CardHeader style={{
+                            padding: '1.25rem 1.5rem',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '0.75rem',
+                            borderBottom: '2px solid var(--color-success-bg, #dcfce7)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                    fontSize: '1rem',
+                                    boxShadow: '0 2px 8px rgba(34,197,94,0.3)'
+                                }}>
+                                    <FaTrophy />
+                                </div>
+                                <div>
+                                    <CardTitle style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
+                                        {t.rules.achievement}
+                                    </CardTitle>
+                                    <p style={{ margin: '0.125rem 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                        {achievementRules.length} {t.rules.title.toLowerCase()}
+                                    </p>
+                                </div>
+                            </div>
+                            {isAdmin && selectedAchievementIds.length > 0 && (
+                                <Button
+                                    variant="danger"
+                                    onClick={() => handleBulkDelete('ACHIEVEMENT')}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}
+                                >
+                                    <FaTrash />
+                                    {t.common.delete} ({selectedAchievementIds.length})
+                                </Button>
+                            )}
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        {isAdmin && (
+                                            <TableHead style={{ width: '40px' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={achievementRules.length > 0 && selectedAchievementIds.length === achievementRules.length}
+                                                    onChange={() => toggleSelectAll('ACHIEVEMENT')}
+                                                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                                />
+                                            </TableHead>
+                                        )}
+                                        <TableHead>{t.rules.code}</TableHead>
+                                        <TableHead>{t.rules.description}</TableHead>
+                                        <TableHead>{t.rules.points}</TableHead>
+                                        <TableHead>{t.rules.oncePerDay || "Once per Day"}</TableHead>
+                                        {isAdmin && <TableHead>{t.common.actions}</TableHead>}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {achievementRules.map((rule) => (
+                                        <TableRow key={rule.id} style={{ background: selectedAchievementIds.includes(rule.id) ? 'var(--color-success-bg, #dcfce7)' : 'transparent' }}>
                                             {isAdmin && (
                                                 <TableCell>
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedRuleIds.includes(rule.id)}
-                                                        onChange={() => toggleSelect(rule.id)}
+                                                        checked={selectedAchievementIds.includes(rule.id)}
+                                                        onChange={() => toggleSelect(rule.id, 'ACHIEVEMENT')}
                                                         style={{ cursor: 'pointer', width: '16px', height: '16px' }}
                                                     />
                                                 </TableCell>
                                             )}
                                             <TableCell className="font-medium">{rule.id}</TableCell>
                                             <TableCell>{rule.description}</TableCell>
-                                            <TableCell>
-                                                <span className={clsx(
-                                                    "px-2 py-1 rounded text-xs font-bold",
-                                                    rule.type === 'ACHIEVEMENT' ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                                                )} style={{
-                                                    color: rule.type === 'ACHIEVEMENT' ? 'var(--color-success)' : 'var(--color-danger)',
-                                                    background: rule.type === 'ACHIEVEMENT' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
-                                                    padding: '0.25rem 0.5rem',
-                                                    borderRadius: 'var(--radius-sm)'
-                                                }}>
-                                                    {typeLabel}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell style={{ fontWeight: 600, color: rule.points > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                                                {rule.points > 0 ? `+${rule.points}` : rule.points}
+                                            <TableCell style={{ fontWeight: 600, color: 'var(--color-success)' }}>
+                                                +{rule.points}
                                             </TableCell>
                                             <TableCell>
                                                 {isAdmin ? (
@@ -499,12 +536,171 @@ export default function RulesPage() {
                                                 </TableCell>
                                             )}
                                         </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                                    ))}
+                                    {achievementRules.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={isAdmin ? 6 : 4} style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>
+                                                {t.rules.noRules}
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+
+                    {/* ===== VIOLATION SECTION ===== */}
+                    <Card style={{ overflow: 'visible' }}>
+                        <CardHeader style={{
+                            padding: '1.25rem 1.5rem',
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: '0.75rem',
+                            borderBottom: '2px solid var(--color-danger-bg, #fee2e2)'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                    fontSize: '1rem',
+                                    boxShadow: '0 2px 8px rgba(239,68,68,0.3)'
+                                }}>
+                                    <FaBan />
+                                </div>
+                                <div>
+                                    <CardTitle style={{ fontSize: '1.125rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
+                                        {t.rules.violation}
+                                    </CardTitle>
+                                    <p style={{ margin: '0.125rem 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                                        {violationRules.length} {t.rules.title.toLowerCase()}
+                                    </p>
+                                </div>
+                            </div>
+                            {isAdmin && selectedViolationIds.length > 0 && (
+                                <Button
+                                    variant="danger"
+                                    onClick={() => handleBulkDelete('VIOLATION')}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8125rem' }}
+                                >
+                                    <FaTrash />
+                                    {t.common.delete} ({selectedViolationIds.length})
+                                </Button>
+                            )}
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        {isAdmin && (
+                                            <TableHead style={{ width: '40px' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={violationRules.length > 0 && selectedViolationIds.length === violationRules.length}
+                                                    onChange={() => toggleSelectAll('VIOLATION')}
+                                                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                                />
+                                            </TableHead>
+                                        )}
+                                        <TableHead>{t.rules.code}</TableHead>
+                                        <TableHead>{t.rules.description}</TableHead>
+                                        <TableHead>{t.rules.points}</TableHead>
+                                        <TableHead>{t.rules.oncePerDay || "Once per Day"}</TableHead>
+                                        {isAdmin && <TableHead>{t.common.actions}</TableHead>}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {violationRules.map((rule) => (
+                                        <TableRow key={rule.id} style={{ background: selectedViolationIds.includes(rule.id) ? 'var(--color-danger-bg, #fee2e2)' : 'transparent' }}>
+                                            {isAdmin && (
+                                                <TableCell>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedViolationIds.includes(rule.id)}
+                                                        onChange={() => toggleSelect(rule.id, 'VIOLATION')}
+                                                        style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                                                    />
+                                                </TableCell>
+                                            )}
+                                            <TableCell className="font-medium">{rule.id}</TableCell>
+                                            <TableCell>{rule.description}</TableCell>
+                                            <TableCell style={{ fontWeight: 600, color: 'var(--color-danger)' }}>
+                                                {rule.points}
+                                            </TableCell>
+                                            <TableCell>
+                                                {isAdmin ? (
+                                                    <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', gap: '0.5rem' }}>
+                                                        <div style={{
+                                                            position: 'relative',
+                                                            width: '36px',
+                                                            height: '20px',
+                                                            backgroundColor: rule.oncePerDay ? 'var(--color-primary)' : 'var(--color-gray-300)',
+                                                            borderRadius: '20px',
+                                                            transition: 'background-color 0.2s',
+                                                        }}>
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                top: '2px',
+                                                                left: rule.oncePerDay ? '18px' : '2px',
+                                                                width: '16px',
+                                                                height: '16px',
+                                                                backgroundColor: 'white',
+                                                                borderRadius: '50%',
+                                                                transition: 'left 0.2s',
+                                                                boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+                                                            }} />
+                                                            <input
+                                                                type="checkbox"
+                                                                hidden
+                                                                checked={rule.oncePerDay || false}
+                                                                onChange={(e) => updateRule(rule.id, { oncePerDay: e.target.checked })}
+                                                            />
+                                                        </div>
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: rule.oncePerDay ? 700 : 500, color: rule.oncePerDay ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                                                            {rule.oncePerDay ? (t.common.yes || "Ya") : (t.common.no || "Tidak")}
+                                                        </span>
+                                                    </label>
+                                                ) : (
+                                                    rule.oncePerDay ? (
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'var(--color-primary-light)', color: 'var(--color-primary)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>
+                                                            {t.common.yes || "Ya"}
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>
+                                                            {t.common.no || "Tidak"}
+                                                        </span>
+                                                    )
+                                                )}
+                                            </TableCell>
+                                            {isAdmin && (
+                                                <TableCell>
+                                                    <Button variant="ghost" className="p-2 text-danger" onClick={() => handleDeleteRule(rule.id)}>
+                                                        <FaTrash />
+                                                    </Button>
+                                                </TableCell>
+                                            )}
+                                        </TableRow>
+                                    ))}
+                                    {violationRules.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={isAdmin ? 6 : 4} style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '2rem' }}>
+                                                {t.rules.noRules}
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
             ) : (
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between" style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
