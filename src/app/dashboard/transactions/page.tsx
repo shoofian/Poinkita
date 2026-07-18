@@ -524,7 +524,6 @@ export default function TransactionsPage() {
                                     placeholder={t.transactions.searchRules}
                                     value={ruleSearch}
                                     onChange={(e) => setRuleSearch(e.target.value)}
-                                    autoFocus
                                 />
                             </div>
 
