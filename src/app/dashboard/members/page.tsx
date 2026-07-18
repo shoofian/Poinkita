@@ -10,7 +10,7 @@ import { useStore } from '@/lib/context/StoreContext';
 import { useLanguage } from '@/lib/context/LanguageContext';
 import { useDialog } from '@/components/ui/ConfirmDialog';
 import { Member, Rule, AuditLog } from '@/lib/store';
-import { FaPlus, FaSearch, FaTrash, FaEdit, FaClipboardList, FaFileExcel, FaDownload, FaSort, FaSortUp, FaSortDown, FaExclamationTriangle, FaArchive, FaEllipsisV, FaFileWord } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaTrash, FaEdit, FaClipboardList, FaFileExcel, FaDownload, FaSort, FaSortUp, FaSortDown, FaExclamationTriangle, FaArchive, FaEllipsisV, FaFileWord, FaQrcode } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import clsx from 'clsx';
 
@@ -59,6 +59,229 @@ export default function MembersPage() {
     const [isArchiveModalOpen, setIsArchiveModalOpen] = useState(false);
     const [archiveTitle, setArchiveTitle] = useState('');
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+
+    // QR Code modal state
+    const [qrMember, setQrMember] = useState<Member | null>(null);
+    const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+    const handleOpenQR = (member: Member) => {
+        setQrMember(member);
+        setIsQrModalOpen(true);
+    };
+
+    const handlePrintQR = () => {
+        if (!qrMember) return;
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Cetak Kartu Anggota - ${qrMember.name}</title>
+                <style>
+                    body {
+                        font-family: sans-serif;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: 100vh;
+                        margin: 0;
+                        background: #f3f4f6;
+                    }
+                    .card {
+                        width: 350px;
+                        padding: 24px;
+                        background: white;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                        text-align: center;
+                        border: 1px solid #e5e7eb;
+                    }
+                    .title {
+                        font-size: 20px;
+                        font-weight: bold;
+                        color: #4f46e5;
+                        margin-bottom: 4px;
+                    }
+                    .subtitle {
+                        font-size: 12px;
+                        color: #6b7280;
+                        margin-bottom: 20px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                    }
+                    .qr {
+                        margin: 16px 0;
+                    }
+                    .qr img {
+                        width: 180px;
+                        height: 180px;
+                    }
+                    .name {
+                        font-size: 18px;
+                        font-weight: 600;
+                        color: #1f2937;
+                        margin-bottom: 4px;
+                    }
+                    .meta {
+                        font-size: 13px;
+                        color: #4b5563;
+                        margin-bottom: 12px;
+                    }
+                    .no-print {
+                        margin-top: 16px;
+                        padding: 8px 16px;
+                        background: #4f46e5;
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 600;
+                    }
+                    @media print {
+                        body { background: white; }
+                        .card { box-shadow: none; border: 1px solid #ccc; }
+                        .no-print { display: none; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="card">
+                    <div class="title">Poinkita</div>
+                    <div class="subtitle">Kartu Anggota Resmi</div>
+                    <div class="qr">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrMember.id)}" alt="QR Code" />
+                    </div>
+                    <div class="name">${qrMember.name}</div>
+                    <div class="meta">${qrMember.id} • ${qrMember.division}</div>
+                    <button class="no-print" onclick="window.print()">
+                        Cetak Kartu
+                    </button>
+                </div>
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
+
+    const handleBulkPrintQR = () => {
+        if (selectedIds.length === 0) return;
+        const selectedMembers = members.filter(m => selectedIds.includes(m.id));
+        
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+        
+        const cardsHTML = selectedMembers.map(m => `
+            <div class="card">
+                <div class="title">Poinkita</div>
+                <div class="subtitle">Kartu Anggota Resmi</div>
+                <div class="qr">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(m.id)}" alt="QR Code" />
+                </div>
+                <div class="name">${m.name}</div>
+                <div class="meta">${m.id} • ${m.division}</div>
+            </div>
+        `).join('');
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Cetak Kartu Anggota Massal</title>
+                <style>
+                    body {
+                        font-family: sans-serif;
+                        margin: 0;
+                        padding: 20px;
+                        background: #f3f4f6;
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 20px;
+                        justify-content: center;
+                    }
+                    .card {
+                        width: 300px;
+                        padding: 20px;
+                        background: white;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                        text-align: center;
+                        border: 1px solid #e5e7eb;
+                        page-break-inside: avoid;
+                    }
+                    .title {
+                        font-size: 18px;
+                        font-weight: bold;
+                        color: #4f46e5;
+                        margin-bottom: 2px;
+                    }
+                    .subtitle {
+                        font-size: 10px;
+                        color: #6b7280;
+                        margin-bottom: 12px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.05em;
+                    }
+                    .qr {
+                        margin: 12px 0;
+                    }
+                    .qr img {
+                        width: 140px;
+                        height: 140px;
+                    }
+                    .name {
+                        font-size: 15px;
+                        font-weight: 600;
+                        color: #1f2937;
+                        margin-bottom: 2px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .meta {
+                        font-size: 12px;
+                        color: #4b5563;
+                    }
+                    .print-bar {
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        z-index: 1000;
+                    }
+                    .print-btn {
+                        padding: 10px 20px;
+                        background: #4f46e5;
+                        color: white;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+                    }
+                    @media print {
+                        body {
+                            background: white;
+                            padding: 0;
+                        }
+                        .print-bar { display: none; }
+                        .card {
+                            box-shadow: none;
+                            border: 1px solid #ccc;
+                            margin: 10px;
+                        }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="print-bar">
+                    <button class="print-btn" onclick="window.print()">Cetak Semua Kartu</button>
+                </div>
+                ${cardsHTML}
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+    };
 
     const filteredMembers = members.filter(m => {
         const search = searchTerm.toLowerCase().trim();
@@ -926,6 +1149,14 @@ export default function MembersPage() {
                                 <div style={{ display: 'flex', gap: '0.5rem', marginLeft: 'auto' }}>
                                     <Button
                                         variant="secondary"
+                                        onClick={handleBulkPrintQR}
+                                        title="Cetak Kartu QR Terpilih"
+                                        style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    >
+                                        <FaQrcode /> Kartu ({selectedIds.length})
+                                    </Button>
+                                    <Button
+                                        variant="secondary"
                                         onClick={() => setIsBulkDivisionModalOpen(true)}
                                         style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                     >
@@ -1032,6 +1263,9 @@ export default function MembersPage() {
                                             <div className="flex gap-2" style={{ display: 'flex', gap: '0.5rem' }}>
                                                 <Button variant="ghost" onClick={() => handleViewHistory(member)} title={t.members.history}>
                                                     <FaClipboardList />
+                                                </Button>
+                                                <Button variant="ghost" onClick={() => handleOpenQR(member)} title="Lihat QR Code">
+                                                    <FaQrcode />
                                                 </Button>
                                                 <Button variant="ghost" onClick={() => handleOpenEdit(member)}>
                                                     <FaEdit />
@@ -1485,6 +1719,66 @@ export default function MembersPage() {
                         autoFocus
                     />
                 </div>
+            </Modal>
+
+            {/* QR Code Viewer Modal */}
+            <Modal
+                isOpen={isQrModalOpen}
+                onClose={() => setIsQrModalOpen(false)}
+                title={qrMember ? `Kartu Anggota — ${qrMember.name}` : 'Kartu Anggota'}
+                footer={
+                    <>
+                        <Button variant="secondary" onClick={() => setIsQrModalOpen(false)}>{t.common.cancel}</Button>
+                        <Button onClick={handlePrintQR} variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FaDownload /> Cetak / Unduh Kartu
+                        </Button>
+                    </>
+                }
+            >
+                {qrMember && (
+                    <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem', background: 'var(--color-bg-subtle)' }}>
+                        <div style={{
+                            width: '320px',
+                            background: 'var(--color-bg-card)',
+                            border: '1px solid var(--color-border)',
+                            borderRadius: '12px',
+                            boxShadow: 'var(--shadow-md)',
+                            padding: '1.5rem',
+                            textAlign: 'center',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: '1rem',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}>
+                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-primary)' }}>Poinkita</div>
+                            <div style={{ fontSize: '0.625rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '-0.75rem' }}>
+                                Kartu Anggota Resmi
+                            </div>
+                            
+                            <div style={{
+                                padding: '12px',
+                                background: 'white',
+                                borderRadius: '8px',
+                                border: '1px solid var(--color-border)'
+                            }}>
+                                <img
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(qrMember.id)}`}
+                                    alt="QR Code"
+                                    style={{ width: '160px', height: '160px', display: 'block' }}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                <div style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-text-main)' }}>{qrMember.name}</div>
+                                <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', fontWeight: 500 }}>
+                                    {qrMember.id} • {qrMember.division}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </div>
     );
