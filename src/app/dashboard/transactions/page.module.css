@@ -709,65 +709,82 @@
 
 /* Smart Recommendations Styles */
 .recSection {
-    margin-top: 1rem;
-    margin-bottom: 1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
     padding: 0 24px;
 }
 
 .recTitle {
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .recGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    display: flex;
     gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+}
+
+.recGrid::-webkit-scrollbar {
+    display: none;
 }
 
 .recCard {
-    padding: 10px 12px;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
     background: var(--color-bg-subtle);
     border: 1px solid var(--color-border);
-    border-radius: 8px;
+    border-radius: 999px;
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
     color: var(--color-text-main);
-    text-align: center;
     transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    gap: 4px;
-    height: 70px;
+    max-width: 240px;
 }
 
 .recCard:hover {
     border-color: var(--color-primary);
     background: var(--color-bg-hover);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .recDesc {
     overflow: hidden;
     text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
+    white-space: nowrap;
+    font-size: 11px;
+    color: var(--color-text-main);
 }
 
 .recPoints {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+
+.recCard .pointsPositive {
+    background: var(--color-success-bg);
+    color: var(--color-success) !important;
+}
+
+.recCard .pointsNegative {
+    background: var(--color-danger-bg);
+    color: var(--color-danger) !important;
 }
 
 /* Slide-over Panel Styles */
