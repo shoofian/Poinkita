@@ -477,9 +477,11 @@ function LandingContent() {
             <Button variant="primary" size="lg" className={styles.ctaPrimary} onClick={() => setActiveModal('REGISTER')}>
               <UserPlus size={20} /> {t.landing.registerBtn}
             </Button>
+            {false && (
             <Button variant="secondary" size="lg" className={`${styles.ctaSecondary} ${styles.ctaBiometric}`} onClick={handleBiometricLogin}>
               <Fingerprint size={20} /> {t.auth.biometricLogin}
             </Button>
+            )}
             <Button variant="ghost" size="lg" className={styles.ctaTertiary} onClick={() => {
               const checker = document.getElementById('point-checker');
               checker?.scrollIntoView({ behavior: 'smooth' });
@@ -714,6 +716,8 @@ function LandingContent() {
             <LogIn size={18} /> {!isLoaded ? (t.auth.dataLoading || 'Loading...') : t.auth.signIn}
           </Button>
 
+          {false && (
+          <>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.5rem 0' }}>
             <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
             <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>OR</span>
@@ -729,6 +733,8 @@ function LandingContent() {
           >
             <Fingerprint size={18} /> {t.auth.biometricLogin}
           </Button>
+          </>
+          )}
           <div className={styles.formLink}>
             {t.auth.alreadyHaveAccount ? "" : t.landing.registerBtn}
             <button type="button" className={styles.formLinkBtn} onClick={() => setActiveModal('REGISTER')}>

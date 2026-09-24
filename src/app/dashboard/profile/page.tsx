@@ -488,6 +488,7 @@ export default function AccountSettingsPage() {
                                 </Button>
                             </div>
 
+                            {false && (
                             <div style={{ borderTop: '1px solid var(--color-border)', margin: '0.5rem 0', paddingTop: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
                                 <div>
                                     <h4 className="font-semibold text-lg" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -505,6 +506,7 @@ export default function AccountSettingsPage() {
                                     {currentUser.biometricEnabled ? t.auth.biometricSuccess.split(' ')[0] : t.auth.enableBiometric}
                                 </Button>
                             </div>
+                            )}
                         </CardContent>
                         <CardFooter style={{ justifyContent: 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
                             {isProfileSuccess && (
