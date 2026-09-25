@@ -111,7 +111,7 @@
 }
 
 .heroTitle {
-  font-size: 3.5rem;
+  font-size: 2rem;
   font-weight: 900;
   color: var(--color-gray-900);
   line-height: 1.1;
@@ -168,7 +168,7 @@
 }
 
 .heroDesc {
-  font-size: 1.125rem;
+  font-size: 0.925rem;
   color: var(--color-text-light);
   line-height: 1.7;
   max-width: 560px;
@@ -177,14 +177,16 @@
 
 .heroCta {
   display: flex;
-  gap: 1.25rem;
-  justify-content: center;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
 }
 
 .ctaPrimary {
-  padding: 0.875rem 2rem;
-  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  width: 100%;
+  justify-content: center;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -193,8 +195,10 @@
 }
 
 .ctaSecondary {
-  padding: 0.875rem 2rem;
-  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  width: 100%;
+  justify-content: center;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -228,11 +232,11 @@
 /* ─── Features ─── */
 .features {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
   max-width: 960px;
   margin: 0 auto;
-  padding: 0 2rem 4rem;
+  padding: 0 1.25rem 3rem;
 }
 
 .featureCard {
@@ -1293,6 +1297,7 @@
   color: var(--color-text-muted);
   text-decoration: line-through;
 }
+
 /* --- Desktop Restorations --- */
 @media (min-width: 768px) {
   .hero {
@@ -1312,5 +1317,10 @@
     width: auto;
     padding: 0.875rem 2rem;
     font-size: 1rem;
+  }
+  .features {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    padding: 0 2rem 4rem;
   }
 }
