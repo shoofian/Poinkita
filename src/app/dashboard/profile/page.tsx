@@ -498,12 +498,12 @@ export default function AccountSettingsPage() {
                                 </div>
                                 <Button
                                     type="button"
-                                    onClick={currentUser.biometricEnabled ? handleDisableBiometric : handleEnableBiometric}
-                                    variant={currentUser.biometricEnabled ? "secondary" : "primary"}
+                                    onClick={currentUser?.biometricEnabled ? handleDisableBiometric : handleEnableBiometric}
+                                    variant={currentUser?.biometricEnabled ? "secondary" : "primary"}
                                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                                 >
-                                    {currentUser.biometricEnabled ? <FaCheckCircle /> : <FaFingerprint />}
-                                    {currentUser.biometricEnabled ? t.auth.biometricSuccess.split(' ')[0] : t.auth.enableBiometric}
+                                    {currentUser?.biometricEnabled ? <FaCheckCircle /> : <FaFingerprint />}
+                                    {currentUser?.biometricEnabled ? t.auth.biometricSuccess.split(' ')[0] : t.auth.enableBiometric}
                                 </Button>
                             </div>
                             )}
